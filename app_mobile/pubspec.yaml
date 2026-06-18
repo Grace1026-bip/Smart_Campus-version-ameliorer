@@ -1,7 +1,7 @@
 
 
 name: smart_campus_app
-description: Smart Campus mobile app
+description: Frontend Flutter de Smart Faculty.
 publish_to: none
 version: 0.0.1
 environment:
@@ -17,5 +17,5 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/logo.png
+    - assets/images/logo.PNG
 

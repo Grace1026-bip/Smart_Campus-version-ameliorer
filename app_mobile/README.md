@@ -1,17 +1,18 @@
-# smart_campus_app
+# Smart Faculty
 
-A new Flutter project.
+Frontend Flutter responsive pour une faculté universitaire.
 
-## Getting Started
+## Lancer l'application
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+flutter run -d chrome
+```
 
-A few resources to get you started if this is your first Flutter project:
+## État actuel
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- Frontend uniquement, sans backend.
+- Données fictives dans `lib/data/mock`.
+- Repository mock dans `lib/data/services`, remplaçable plus tard par une couche PHP POO/API REST.
+- Navigation responsive avec sidebar sur web/tablette et bottom navigation sur mobile.
+- Dashboards séparés pour Administrateur, Étudiant, Enseignant, Chef de promotion et Doyen.
