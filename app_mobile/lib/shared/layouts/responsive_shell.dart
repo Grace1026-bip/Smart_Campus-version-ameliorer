@@ -63,8 +63,6 @@ class SmartFacultyShell extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        leading: const SizedBox.shrink(),
-        leadingWidth: 0,
         titleSpacing: 16,
         title: Text(
           title,
@@ -72,7 +70,7 @@ class SmartFacultyShell extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
         ),
-        actions: actions,
+        actions: _topActions(context, actions),
       ),
       body: _MobilePageFrame(child: body),
       bottomNavigationBar: _BottomNav(
@@ -92,9 +90,14 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.adminDashboard,
           ),
           SmartNavItem(
-            label: 'Réclamations',
+            label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
+          ),
+          SmartNavItem(
+            label: 'Notes',
+            icon: Icons.fact_check_rounded,
+            route: AppRoutes.grades,
           ),
           SmartNavItem(
             label: 'Projets',
@@ -107,11 +110,6 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.internships,
           ),
           SmartNavItem(
-            label: 'Notes',
-            icon: Icons.fact_check_rounded,
-            route: AppRoutes.grades,
-          ),
-          SmartNavItem(
             label: 'Analytics',
             icon: Icons.insights_rounded,
             route: AppRoutes.analytics,
@@ -120,6 +118,16 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Risque',
             icon: Icons.health_and_safety_rounded,
             route: AppRoutes.riskStudents,
+          ),
+          SmartNavItem(
+            label: 'Notifications',
+            icon: Icons.notifications_rounded,
+            route: AppRoutes.notifications,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
           ),
         ];
       case UserRole.student:
@@ -145,9 +153,24 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.internships,
           ),
           SmartNavItem(
-            label: 'Réclamations',
+            label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
+          ),
+          SmartNavItem(
+            label: 'Analytics',
+            icon: Icons.insights_rounded,
+            route: AppRoutes.analytics,
+          ),
+          SmartNavItem(
+            label: 'Notifications',
+            icon: Icons.notifications_rounded,
+            route: AppRoutes.notifications,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
           ),
         ];
       case UserRole.teacher:
@@ -168,7 +191,12 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.projects,
           ),
           SmartNavItem(
-            label: 'Réclamations',
+            label: 'Stages',
+            icon: Icons.business_center_rounded,
+            route: AppRoutes.internships,
+          ),
+          SmartNavItem(
+            label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
           ),
@@ -176,6 +204,16 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Analytics',
             icon: Icons.insights_rounded,
             route: AppRoutes.analytics,
+          ),
+          SmartNavItem(
+            label: 'Risque',
+            icon: Icons.health_and_safety_rounded,
+            route: AppRoutes.riskStudents,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
           ),
         ];
       case UserRole.promotionChief:
@@ -191,7 +229,7 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.riskStudents,
           ),
           SmartNavItem(
-            label: 'Réclamations',
+            label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
           ),
@@ -205,11 +243,26 @@ class SmartFacultyShell extends StatelessWidget {
             icon: Icons.insights_rounded,
             route: AppRoutes.analytics,
           ),
+          SmartNavItem(
+            label: 'Projets',
+            icon: Icons.workspaces_rounded,
+            route: AppRoutes.projects,
+          ),
+          SmartNavItem(
+            label: 'Stages',
+            icon: Icons.business_center_rounded,
+            route: AppRoutes.internships,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
+          ),
         ];
       case UserRole.dean:
         return const [
           SmartNavItem(
-            label: 'Décisionnel',
+            label: 'Decisionnel',
             icon: Icons.dashboard_rounded,
             route: AppRoutes.deanDashboard,
           ),
@@ -224,7 +277,7 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.riskStudents,
           ),
           SmartNavItem(
-            label: 'Réclamations',
+            label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
           ),
@@ -232,6 +285,21 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Notes',
             icon: Icons.fact_check_rounded,
             route: AppRoutes.grades,
+          ),
+          SmartNavItem(
+            label: 'Projets',
+            icon: Icons.workspaces_rounded,
+            route: AppRoutes.projects,
+          ),
+          SmartNavItem(
+            label: 'Stages',
+            icon: Icons.business_center_rounded,
+            route: AppRoutes.internships,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
           ),
         ];
     }
@@ -254,10 +322,9 @@ class _Sidebar extends StatelessWidget {
     final user = SessionService.currentUser;
 
     return Container(
-      width: 284,
+      width: 292,
       decoration: const BoxDecoration(
-        color: AppColors.surface,
-        border: Border(right: BorderSide(color: AppColors.border)),
+        color: AppColors.primaryDark,
       ),
       child: SafeArea(
         child: Padding(
@@ -265,23 +332,25 @@ class _Sidebar extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const AppLogo(),
-              const SizedBox(height: 28),
+              const AppLogo(onDark: true),
+              const SizedBox(height: 24),
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.background,
+                  color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.border),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.16),
+                  ),
                 ),
                 child: Row(
                   children: [
                     CircleAvatar(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Colors.white,
                       child: Text(
                         user.avatarText,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.primaryDark,
                           fontWeight: FontWeight.w900,
                         ),
                       ),
@@ -296,17 +365,19 @@ class _Sidebar extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: AppColors.textPrimary,
+                              color: Colors.white,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
+                          const SizedBox(height: 2),
                           Text(
                             role.label,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: AppColors.textSecondary,
+                              color: AppColors.sidebarMuted,
                               fontSize: 12,
+                              fontWeight: FontWeight.w700,
                             ),
                           ),
                         ],
@@ -331,10 +402,30 @@ class _Sidebar extends StatelessWidget {
                   },
                 ),
               ),
-              const Divider(),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.12),
+                  ),
+                ),
+                child: const Text(
+                  'Mode demonstration, donnees mock. API PHP REST prevue.',
+                  style: TextStyle(
+                    color: AppColors.sidebarMuted,
+                    height: 1.35,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
               _NavButton(
                 item: const SmartNavItem(
-                  label: 'Déconnexion',
+                  label: 'Deconnexion',
                   icon: Icons.logout_rounded,
                   route: AppRoutes.login,
                 ),
@@ -365,9 +456,7 @@ class _NavButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected
-          ? AppColors.primary.withValues(alpha: 0.1)
-          : Colors.transparent,
+      color: selected ? Colors.white : Colors.transparent,
       borderRadius: BorderRadius.circular(8),
       child: InkWell(
         onTap: onTap,
@@ -378,7 +467,7 @@ class _NavButton extends StatelessWidget {
             children: [
               Icon(
                 item.icon,
-                color: selected ? AppColors.primary : AppColors.textSecondary,
+                color: selected ? AppColors.primaryDark : AppColors.sidebarText,
                 size: 21,
               ),
               const SizedBox(width: 12),
@@ -388,8 +477,10 @@ class _NavButton extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    color: selected ? AppColors.primary : AppColors.textPrimary,
-                    fontWeight: selected ? FontWeight.w900 : FontWeight.w700,
+                    color: selected
+                        ? AppColors.primaryDark
+                        : AppColors.sidebarText,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
@@ -422,7 +513,7 @@ class _PageFrame extends StatelessWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(28, 18, 28, 18),
             decoration: const BoxDecoration(
-              color: AppColors.surface,
+              color: AppColors.background,
               border: Border(bottom: BorderSide(color: AppColors.border)),
             ),
             child: Row(
@@ -440,15 +531,20 @@ class _PageFrame extends StatelessWidget {
                         subtitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.textSecondary),
+                        style: const TextStyle(
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
                 ),
-                if (actions.isNotEmpty) ...[
-                  const SizedBox(width: 12),
-                  Wrap(spacing: 8, children: actions),
-                ],
+                const SizedBox(width: 12),
+                Wrap(
+                  spacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: _topActions(context, actions),
+                ),
               ],
             ),
           ),
@@ -509,6 +605,22 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
+List<Widget> _topActions(BuildContext context, List<Widget> actions) {
+  return [
+    ...actions,
+    IconButton(
+      tooltip: 'Notifications',
+      onPressed: () => _goTo(context, AppRoutes.notifications),
+      icon: const Icon(Icons.notifications_rounded),
+    ),
+    IconButton(
+      tooltip: 'Profil',
+      onPressed: () => _goTo(context, AppRoutes.profile),
+      icon: const Icon(Icons.account_circle_rounded),
+    ),
+  ];
+}
+
 int _selectedIndex(List<SmartNavItem> items, String selectedRoute) {
   final index = items.indexWhere(
     (item) => _matchesRoute(item.route, selectedRoute),
@@ -533,9 +645,9 @@ void _goTo(BuildContext context, String route) {
 
 String _mobileLabel(String label) {
   switch (label) {
-    case 'Réclamations':
-      return 'Réclam.';
-    case 'Décisionnel':
+    case 'Reclamations':
+      return 'Reclam.';
+    case 'Decisionnel':
       return 'Doyen';
     case 'Dashboard':
       return 'Accueil';

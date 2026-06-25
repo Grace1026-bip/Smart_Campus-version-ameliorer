@@ -1,19 +1,23 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF0B4A7A);
-  static const Color primaryDark = Color(0xFF07375D);
-  static const Color secondary = Color(0xFF178CA4);
-  static const Color accent = Color(0xFF17A673);
-  static const Color background = Color(0xFFF4F7FB);
+  static const Color primaryDark = Color(0xFF0B3D91);
+  static const Color primary = Color(0xFF2563EB);
+  static const Color primarySoft = Color(0xFFEFF6FF);
+  static const Color background = Color(0xFFF3F7FC);
+  static const Color scaffold = Color(0xFFF8FAFC);
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFEAF0F6);
-  static const Color border = Color(0xFFD9E2EC);
-  static const Color textPrimary = Color(0xFF172033);
-  static const Color textSecondary = Color(0xFF667085);
-  static const Color success = Color(0xFF16A34A);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFDC2626);
+  static const Color surfaceMuted = Color(0xFFE2E8F0);
+  static const Color border = Color(0xFFDCE5F1);
+  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textSecondary = Color(0xFF64748B);
+  static const Color success = Color(0xFF10B981);
+  static const Color warning = Color(0xFFF97316);
+  static const Color danger = Color(0xFFEF4444);
   static const Color info = Color(0xFF2563EB);
+  static const Color cyan = Color(0xFF0891B2);
+  static const Color secondary = cyan;
   static const Color violet = Color(0xFF7C3AED);
+  static const Color sidebarText = Color(0xFFEAF2FF);
+  static const Color sidebarMuted = Color(0xFFBBD0F6);
 }

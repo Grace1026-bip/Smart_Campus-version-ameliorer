@@ -6,13 +6,28 @@ extension UserRoleLabel on UserRole {
       case UserRole.administrator:
         return 'Administrateur';
       case UserRole.student:
-        return 'Étudiant';
+        return 'Etudiant';
       case UserRole.teacher:
         return 'Enseignant';
       case UserRole.promotionChief:
         return 'Chef de promotion';
       case UserRole.dean:
         return 'Doyen';
+    }
+  }
+
+  String get workspaceLabel {
+    switch (this) {
+      case UserRole.administrator:
+        return 'Administration facultaire';
+      case UserRole.student:
+        return 'Espace etudiant';
+      case UserRole.teacher:
+        return 'Espace enseignant';
+      case UserRole.promotionChief:
+        return 'Espace promotion';
+      case UserRole.dean:
+        return 'Pilotage decisionnel';
     }
   }
 }
@@ -27,9 +42,9 @@ extension ComplaintStatusLabel on ComplaintStatus {
       case ComplaintStatus.inProgress:
         return 'En cours';
       case ComplaintStatus.resolved:
-        return 'Résolue';
+        return 'Resolue';
       case ComplaintStatus.rejected:
-        return 'Rejetée';
+        return 'Rejetee';
     }
   }
 }
@@ -49,15 +64,15 @@ extension ComplaintTypeLabel on ComplaintType {
       case ComplaintType.gradeError:
         return 'Erreur de note';
       case ComplaintType.registration:
-        return 'Problème d’inscription';
+        return 'Probleme inscription';
       case ComplaintType.administration:
-        return 'Problème administratif';
+        return 'Probleme administratif';
       case ComplaintType.payment:
         return 'Paiement';
       case ComplaintType.schedule:
         return 'Horaire';
       case ComplaintType.academicDocument:
-        return 'Document académique';
+        return 'Document academique';
     }
   }
 }
@@ -72,10 +87,12 @@ extension RiskLevelLabel on RiskLevel {
       case RiskLevel.medium:
         return 'Moyen';
       case RiskLevel.high:
-        return 'Élevé';
+        return 'Eleve';
     }
   }
 }
+
+enum NotificationTone { info, success, warning, danger }
 
 class KpiMetric {
   const KpiMetric({
@@ -105,6 +122,9 @@ class FacultyUser {
     required this.role,
     required this.department,
     required this.avatarText,
+    required this.matricule,
+    required this.phone,
+    required this.location,
   });
 
   final String name;
@@ -112,6 +132,9 @@ class FacultyUser {
   final UserRole role;
   final String department;
   final String avatarText;
+  final String matricule;
+  final String phone;
+  final String location;
 }
 
 class Complaint {
@@ -124,6 +147,7 @@ class Complaint {
     required this.createdAt,
     required this.assignedTo,
     required this.description,
+    required this.priority,
     required this.history,
   });
 
@@ -135,29 +159,58 @@ class Complaint {
   final DateTime createdAt;
   final String assignedTo;
   final String description;
-  final List<String> history;
+  final String priority;
+  final List<ComplaintHistory> history;
+}
+
+class ComplaintHistory {
+  const ComplaintHistory({
+    required this.date,
+    required this.actor,
+    required this.message,
+  });
+
+  final DateTime date;
+  final String actor;
+  final String message;
 }
 
 class AcademicProject {
   const AcademicProject({
     required this.id,
     required this.title,
+    required this.summary,
     required this.supervisor,
     required this.members,
     required this.progress,
     required this.status,
     required this.nextDeliverable,
+    required this.defenseWindow,
     required this.deliverables,
   });
 
   final String id;
   final String title;
+  final String summary;
   final String supervisor;
   final List<String> members;
   final double progress;
   final String status;
   final String nextDeliverable;
-  final List<String> deliverables;
+  final String defenseWindow;
+  final List<ProjectDeliverable> deliverables;
+}
+
+class ProjectDeliverable {
+  const ProjectDeliverable({
+    required this.name,
+    required this.status,
+    required this.dueDate,
+  });
+
+  final String name;
+  final String status;
+  final DateTime dueDate;
 }
 
 class InternshipOffer {
@@ -170,6 +223,7 @@ class InternshipOffer {
     required this.status,
     required this.applicants,
     required this.description,
+    required this.requirements,
   });
 
   final String id;
@@ -180,6 +234,37 @@ class InternshipOffer {
   final String status;
   final int applicants;
   final String description;
+  final List<String> requirements;
+}
+
+class InternshipApplication {
+  const InternshipApplication({
+    required this.student,
+    required this.company,
+    required this.position,
+    required this.status,
+    required this.updatedAt,
+  });
+
+  final String student;
+  final String company;
+  final String position;
+  final String status;
+  final DateTime updatedAt;
+}
+
+class PartnerCompany {
+  const PartnerCompany({
+    required this.name,
+    required this.sector,
+    required this.activeInterns,
+    required this.agreementStatus,
+  });
+
+  final String name;
+  final String sector;
+  final int activeInterns;
+  final String agreementStatus;
 }
 
 class CourseGrade {
@@ -189,6 +274,7 @@ class CourseGrade {
     required this.credits,
     required this.grade,
     required this.result,
+    required this.publishedAt,
   });
 
   final String course;
@@ -196,6 +282,7 @@ class CourseGrade {
   final int credits;
   final double grade;
   final String result;
+  final DateTime publishedAt;
 }
 
 class AcademicHistory {
@@ -219,6 +306,7 @@ class RiskStudent {
     required this.average,
     required this.failures,
     required this.level,
+    required this.reason,
   });
 
   final String name;
@@ -226,6 +314,7 @@ class RiskStudent {
   final double average;
   final int failures;
   final RiskLevel level;
+  final String reason;
 }
 
 class CourseAssignment {
@@ -234,10 +323,54 @@ class CourseAssignment {
     required this.promotion,
     required this.students,
     required this.publishedGrades,
+    required this.average,
   });
 
   final String course;
   final String promotion;
   final int students;
   final int publishedGrades;
+  final double average;
+}
+
+class PromotionStudent {
+  const PromotionStudent({
+    required this.name,
+    required this.matricule,
+    required this.average,
+    required this.status,
+  });
+
+  final String name;
+  final String matricule;
+  final double average;
+  final String status;
+}
+
+class FacultyNotification {
+  const FacultyNotification({
+    required this.title,
+    required this.message,
+    required this.timeLabel,
+    required this.tone,
+    required this.audience,
+  });
+
+  final String title;
+  final String message;
+  final String timeLabel;
+  final NotificationTone tone;
+  final String audience;
+}
+
+class ActivityItem {
+  const ActivityItem({
+    required this.title,
+    required this.detail,
+    required this.timeLabel,
+  });
+
+  final String title;
+  final String detail;
+  final String timeLabel;
 }

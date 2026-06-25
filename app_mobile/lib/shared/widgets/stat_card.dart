@@ -18,12 +18,19 @@ class StatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      constraints: const BoxConstraints(minHeight: 132),
+      constraints: const BoxConstraints(minHeight: 138),
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,8 +38,8 @@ class StatCard extends StatelessWidget {
           Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -47,9 +54,9 @@ class StatCard extends StatelessWidget {
                     metric.trend,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.accent,
-                      fontWeight: FontWeight.w800,
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w900,
                       fontSize: 12,
                     ),
                   ),
@@ -89,6 +96,7 @@ class StatCard extends StatelessWidget {
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

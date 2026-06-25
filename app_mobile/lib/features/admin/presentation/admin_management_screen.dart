@@ -6,6 +6,7 @@ import '../../../data/models/faculty_models.dart';
 import '../../../shared/layouts/responsive_shell.dart';
 import '../../../shared/widgets/section_panel.dart';
 import '../../../shared/widgets/smart_table.dart';
+import '../../../shared/widgets/status_badge.dart';
 
 class AdminManagementArgs {
   const AdminManagementArgs(this.category);
@@ -38,21 +39,21 @@ class AdminManagementScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionPanel(
-            title: 'Créer ou modifier',
-            subtitle: 'Formulaire visuel prêt à brancher sur le futur backend.',
+            title: 'Creer ou modifier',
+            subtitle: 'Formulaire mocke, pret pour une mutation API REST.',
             child: LayoutBuilder(
               builder: (context, constraints) {
-                final compact = constraints.maxWidth < 720;
+                final compact = constraints.maxWidth < 760;
                 final fields = [
                   const TextField(
                     decoration: InputDecoration(
-                      labelText: 'Libellé principal',
+                      labelText: 'Libelle principal',
                       prefixIcon: Icon(Icons.edit_rounded),
                     ),
                   ),
                   const TextField(
                     decoration: InputDecoration(
-                      labelText: 'Référence',
+                      labelText: 'Reference',
                       prefixIcon: Icon(Icons.tag_rounded),
                     ),
                   ),
@@ -69,14 +70,18 @@ class AdminManagementScreen extends StatelessWidget {
                         child: Text('Brouillon'),
                       ),
                       DropdownMenuItem(
-                        value: 'Archivé',
-                        child: Text('Archivé'),
-                      ),
+                          value: 'Archive', child: Text('Archive')),
                     ],
                     onChanged: (_) {},
                   ),
                   ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text(
+                          'Les modifications sont pretes a etre envoyees.',
+                        ),
+                      ),
+                    ),
                     icon: const Icon(Icons.save_rounded),
                     label: const Text('Enregistrer'),
                   ),
@@ -116,8 +121,19 @@ class AdminManagementScreen extends StatelessWidget {
                 .map(
                   (row) => DataRow(
                     cells: [
-                      for (final cell in row)
-                        DataCell(Text(cell, overflow: TextOverflow.ellipsis)),
+                      for (var i = 0; i < row.length; i++)
+                        i == row.length - 1
+                            ? DataCell(
+                                StatusBadge(
+                                  label: row[i],
+                                  color: row[i] == 'A risque'
+                                      ? AppColors.warning
+                                      : AppColors.success,
+                                ),
+                              )
+                            : DataCell(
+                                Text(row[i], overflow: TextOverflow.ellipsis),
+                              ),
                     ],
                   ),
                 )
@@ -134,44 +150,44 @@ class AdminManagementScreen extends StatelessWidget {
         return const _ManagementConfig(
           title: 'Enseignants',
           subtitle: 'Administration des enseignants et affectations.',
-          tableSubtitle: 'Aperçu des profils académiques actifs.',
-          columns: ['Nom', 'Spécialité', 'Cours', 'Statut'],
+          tableSubtitle: 'Apercu des profils academiques actifs.',
+          columns: ['Nom', 'Specialite', 'Cours', 'Statut'],
           rows: [
-            ['Pr. David Mutombo', 'Bases de données', '3', 'Actif'],
+            ['Pr. David Mutombo', 'Bases de donnees', '3', 'Actif'],
             ['Dr. Esther Kalonji', 'Architecture', '2', 'Actif'],
-            ['Ir. Michel Lukusa', 'Réseaux', '2', 'Actif'],
+            ['Ir. Michel Lukusa', 'Reseaux', '2', 'Actif'],
           ],
         );
       case 'Promotions':
         return const _ManagementConfig(
           title: 'Promotions',
           subtitle: 'Suivi des cohortes, niveaux et responsables.',
-          tableSubtitle: 'Promotions ouvertes pour l’année académique.',
-          columns: ['Promotion', 'Étudiants', 'Chef', 'Statut'],
+          tableSubtitle: 'Promotions ouvertes pour l annee academique.',
+          columns: ['Promotion', 'Etudiants', 'Chef', 'Statut'],
           rows: [
             ['L1 Informatique', '312', 'Mireille Nzuzi', 'Actif'],
             ['L2 Informatique', '276', 'Sarah Mbuyi', 'Actif'],
-            ['L3 Génie logiciel', '188', 'Grâce Ilunga', 'Actif'],
+            ['L3 Genie logiciel', '188', 'Grace Ilunga', 'Actif'],
           ],
         );
       case 'Cours':
         return const _ManagementConfig(
           title: 'Cours',
-          subtitle: 'Catalogue académique et charges d’enseignement.',
-          tableSubtitle: 'Unités d’enseignement configurées.',
-          columns: ['Cours', 'Crédits', 'Titulaire', 'Promotion'],
+          subtitle: 'Catalogue academique et charges d enseignement.',
+          tableSubtitle: 'Unites d enseignement configurees.',
+          columns: ['Cours', 'Credits', 'Titulaire', 'Promotion'],
           rows: [
-            ['Bases de données avancées', '5', 'Pr. David Mutombo', 'L3'],
+            ['Bases de donnees avancees', '5', 'Pr. David Mutombo', 'L3'],
             ['Algorithmique II', '4', 'Dr. Esther Kalonji', 'L2'],
-            ['Réseaux informatiques', '4', 'Ir. Michel Lukusa', 'L3'],
+            ['Reseaux informatiques', '4', 'Ir. Michel Lukusa', 'L3'],
           ],
         );
       case 'Utilisateurs':
         return const _ManagementConfig(
           title: 'Utilisateurs',
-          subtitle: 'Comptes, rôles et accès de la plateforme.',
-          tableSubtitle: 'Comptes institutionnels de démonstration.',
-          columns: ['Utilisateur', 'Email', 'Rôle', 'Statut'],
+          subtitle: 'Comptes, roles et acces de la plateforme.',
+          tableSubtitle: 'Comptes institutionnels de demonstration.',
+          columns: ['Utilisateur', 'Email', 'Role', 'Statut'],
           rows: [
             [
               'Nadine Kabeya',
@@ -179,20 +195,20 @@ class AdminManagementScreen extends StatelessWidget {
               'Administrateur',
               'Actif',
             ],
-            ['Grâce Ilunga', 'student@smartfaculty.cd', 'Étudiant', 'Actif'],
+            ['Grace Ilunga', 'student@smartfaculty.cd', 'Etudiant', 'Actif'],
             ['Sarah Mbuyi', 'chief@smartfaculty.cd', 'Chef promotion', 'Actif'],
           ],
         );
       default:
         return const _ManagementConfig(
-          title: 'Étudiants',
-          subtitle: 'Dossiers étudiants, promotions et situation académique.',
-          tableSubtitle: 'Échantillon de profils étudiants.',
+          title: 'Etudiants',
+          subtitle: 'Dossiers etudiants, promotions et situation academique.',
+          tableSubtitle: 'Echantillon de profils etudiants.',
           columns: ['Nom', 'Promotion', 'Moyenne', 'Statut'],
           rows: [
-            ['Grâce Ilunga', 'L3 Génie logiciel', '13,7', 'Régulier'],
-            ['Noah Kanku', 'L2 Informatique', '8,7', 'À risque'],
-            ['Aline Mbala', 'L2 Informatique', '12,1', 'Régulier'],
+            ['Grace Ilunga', 'L3 Genie logiciel', '13,7', 'Actif'],
+            ['Noah Kanku', 'L2 Informatique', '8,7', 'A risque'],
+            ['Aline Mbala', 'L2 Informatique', '12,1', 'Actif'],
           ],
         );
     }

@@ -20,8 +20,8 @@ class DeanDashboardScreen extends StatelessWidget {
     return SmartFacultyShell(
       role: UserRole.dean,
       selectedRoute: AppRoutes.deanDashboard,
-      title: 'Tableau de bord décisionnel',
-      subtitle: 'Indicateurs stratégiques pour le pilotage de la faculté.',
+      title: 'Tableau de bord decisionnel',
+      subtitle: 'Indicateurs strategiques pour le pilotage de la faculte.',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -30,7 +30,7 @@ class DeanDashboardScreen extends StatelessWidget {
               StatCard(
                 metric: MockFacultyData.decisionKpis[0],
                 icon: Icons.trending_up_rounded,
-                color: AppColors.accent,
+                color: AppColors.success,
               ),
               StatCard(
                 metric: MockFacultyData.decisionKpis[1],
@@ -44,8 +44,8 @@ class DeanDashboardScreen extends StatelessWidget {
               ),
               StatCard(
                 metric: MockFacultyData.decisionKpis[3],
-                icon: Icons.timer_rounded,
-                color: AppColors.secondary,
+                icon: Icons.health_and_safety_rounded,
+                color: AppColors.warning,
               ),
             ],
           ),
@@ -55,11 +55,20 @@ class DeanDashboardScreen extends StatelessWidget {
             maxColumns: 2,
             children: [
               LineChartCard(
-                title: 'Taux de réussite par promotion',
+                title: 'Performances par promotion',
                 data: MockFacultyData.performanceByPromotion,
               ),
+              BarChartCard(
+                title: 'Performances par cours',
+                data: MockFacultyData.performanceByCourse,
+              ),
               DonutChartCard(
-                title: 'Réclamations par catégorie',
+                title: 'Reclamations par statut',
+                data: MockFacultyData.complaintsByStatus,
+                centerLabel: '142',
+              ),
+              DonutChartCard(
+                title: 'Reclamations par categorie',
                 data: MockFacultyData.complaintsByCategory,
                 centerLabel: '124',
               ),
@@ -73,22 +82,22 @@ class DeanDashboardScreen extends StatelessWidget {
               FeatureTile(
                 icon: Icons.insights_rounded,
                 title: 'Analytics complets',
-                subtitle: 'Graphiques détaillés par cours et promotion.',
+                subtitle: 'Graphiques par cours et promotion.',
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.analytics),
               ),
               FeatureTile(
                 icon: Icons.health_and_safety_rounded,
-                title: 'Étudiants à risque',
-                subtitle: 'Identifier les priorités d’accompagnement.',
+                title: 'Etudiants a risque',
+                subtitle: 'Identifier les priorites d accompagnement.',
                 color: AppColors.danger,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.riskStudents),
               ),
               FeatureTile(
                 icon: Icons.mark_email_unread_rounded,
-                title: 'Réclamations',
-                subtitle: 'Mesurer les volumes et temps de traitement.',
+                title: 'Reclamations',
+                subtitle: 'Mesurer volumes et temps de traitement.',
                 color: AppColors.warning,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.complaints),
@@ -96,25 +105,25 @@ class DeanDashboardScreen extends StatelessWidget {
               FeatureTile(
                 icon: Icons.fact_check_rounded,
                 title: 'Notes',
-                subtitle: 'Analyser les résultats finaux.',
-                color: AppColors.accent,
+                subtitle: 'Analyser les resultats finaux.',
+                color: AppColors.success,
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.grades),
               ),
             ],
           ),
           const SizedBox(height: 22),
           SmartTable(
-            title: 'Étudiants prioritaires',
-            subtitle: 'Synthèse des alertes académiques.',
+            title: 'Etudiants prioritaires',
+            subtitle: 'Synthese des alertes academiques.',
             columns: const [
               DataColumn(label: Text('Nom')),
               DataColumn(label: Text('Promotion')),
               DataColumn(label: Text('Moyenne')),
-              DataColumn(label: Text('Échecs')),
+              DataColumn(label: Text('Echecs')),
               DataColumn(label: Text('Risque')),
             ],
             rows: [
-              for (final student in MockFacultyData.riskStudents.take(3))
+              for (final student in MockFacultyData.riskStudents)
                 DataRow(
                   cells: [
                     DataCell(Text(student.name)),

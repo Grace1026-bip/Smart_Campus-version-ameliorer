@@ -29,9 +29,10 @@ class SmartTable extends StatelessWidget {
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: DataTable(
+          headingRowColor: WidgetStateProperty.all(AppColors.primarySoft),
           headingTextStyle: const TextStyle(
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w800,
+            color: AppColors.primaryDark,
+            fontWeight: FontWeight.w900,
             fontSize: 12,
           ),
           dataTextStyle: const TextStyle(
@@ -39,6 +40,7 @@ class SmartTable extends StatelessWidget {
             fontWeight: FontWeight.w600,
             fontSize: 13,
           ),
+          dividerThickness: 0.8,
           columns: columns,
           rows: rows,
         ),

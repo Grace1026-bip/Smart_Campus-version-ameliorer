@@ -8,6 +8,7 @@ import '../../../shared/layouts/responsive_shell.dart';
 import '../../../shared/widgets/chart_widgets.dart';
 import '../../../shared/widgets/feature_tile.dart';
 import '../../../shared/widgets/responsive_grid.dart';
+import '../../../shared/widgets/section_panel.dart';
 import '../../../shared/widgets/smart_table.dart';
 import '../../../shared/widgets/stat_card.dart';
 import '../../../shared/widgets/status_badge.dart';
@@ -22,14 +23,7 @@ class AdminDashboardScreen extends StatelessWidget {
       role: UserRole.administrator,
       selectedRoute: AppRoutes.adminDashboard,
       title: 'Dashboard administrateur',
-      subtitle: 'Vue consolidée des services académiques et administratifs.',
-      actions: [
-        IconButton(
-          tooltip: 'Notifications',
-          onPressed: () {},
-          icon: const Icon(Icons.notifications_rounded),
-        ),
-      ],
+      subtitle: 'Vue consolidee des services academiques et administratifs.',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -43,17 +37,17 @@ class AdminDashboardScreen extends StatelessWidget {
               StatCard(
                 metric: MockFacultyData.adminKpis[1],
                 icon: Icons.co_present_rounded,
-                color: AppColors.secondary,
+                color: AppColors.cyan,
               ),
               StatCard(
                 metric: MockFacultyData.adminKpis[2],
-                icon: Icons.mark_email_unread_rounded,
-                color: AppColors.warning,
+                icon: Icons.menu_book_rounded,
+                color: AppColors.success,
               ),
               StatCard(
                 metric: MockFacultyData.adminKpis[3],
-                icon: Icons.business_center_rounded,
-                color: AppColors.accent,
+                icon: Icons.mark_email_unread_rounded,
+                color: AppColors.warning,
               ),
             ],
           ),
@@ -64,17 +58,17 @@ class AdminDashboardScreen extends StatelessWidget {
             children: [
               FeatureTile(
                 icon: Icons.person_search_rounded,
-                title: 'Gestion des étudiants',
-                subtitle: 'Dossiers, promotions, statut académique.',
+                title: 'Gestion des etudiants',
+                subtitle: 'Dossiers, promotions et situation academique.',
                 meta: '1 284 profils',
-                onTap: () => _openManagement(context, 'Étudiants'),
+                onTap: () => _openManagement(context, 'Etudiants'),
               ),
               FeatureTile(
                 icon: Icons.co_present_rounded,
                 title: 'Gestion des enseignants',
-                subtitle: 'Affectations, cours et responsabilités.',
+                subtitle: 'Affectations, cours et responsabilites.',
                 meta: '86 enseignants',
-                color: AppColors.secondary,
+                color: AppColors.cyan,
                 onTap: () => _openManagement(context, 'Enseignants'),
               ),
               FeatureTile(
@@ -88,24 +82,24 @@ class AdminDashboardScreen extends StatelessWidget {
               FeatureTile(
                 icon: Icons.menu_book_rounded,
                 title: 'Gestion des cours',
-                subtitle: 'Unités d’enseignement, crédits et titulaires.',
+                subtitle: 'Unites d enseignement, credits et titulaires.',
                 meta: '62 cours',
-                color: AppColors.accent,
+                color: AppColors.success,
                 onTap: () => _openManagement(context, 'Cours'),
               ),
               FeatureTile(
                 icon: Icons.manage_accounts_rounded,
                 title: 'Gestion des utilisateurs',
-                subtitle: 'Rôles, accès et comptes institutionnels.',
-                meta: '5 rôles actifs',
+                subtitle: 'Roles, acces et comptes institutionnels.',
+                meta: '5 roles actifs',
                 color: AppColors.info,
                 onTap: () => _openManagement(context, 'Utilisateurs'),
               ),
               FeatureTile(
                 icon: Icons.insights_rounded,
                 title: 'Analytics',
-                subtitle: 'Indicateurs décisionnels de la faculté.',
-                meta: 'Dashboard complet',
+                subtitle: 'Indicateurs decisionnels de la faculte.',
+                meta: 'Vue globale',
                 color: AppColors.primaryDark,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.analytics),
@@ -122,40 +116,54 @@ class AdminDashboardScreen extends StatelessWidget {
                 data: MockFacultyData.performanceByPromotion,
               ),
               DonutChartCard(
-                title: 'Réclamations par statut',
+                title: 'Reclamations par statut',
                 data: MockFacultyData.complaintsByStatus,
                 centerLabel: '142',
               ),
             ],
           ),
           const SizedBox(height: 22),
-          SmartTable(
-            title: 'Réclamations récentes',
-            subtitle: 'Suivi administratif des demandes étudiantes.',
-            trailing: TextButton.icon(
-              onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.complaints),
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: const Text('Ouvrir'),
-            ),
-            columns: const [
-              DataColumn(label: Text('ID')),
-              DataColumn(label: Text('Objet')),
-              DataColumn(label: Text('Type')),
-              DataColumn(label: Text('Statut')),
-              DataColumn(label: Text('Assignée à')),
-            ],
-            rows: [
-              for (final complaint in MockFacultyData.complaints)
-                DataRow(
-                  cells: [
-                    DataCell(Text(complaint.id)),
-                    DataCell(Text(complaint.title)),
-                    DataCell(Text(complaint.type.label)),
-                    DataCell(StatusBadge.complaint(complaint.status)),
-                    DataCell(Text(complaint.assignedTo)),
+          ResponsiveGrid(
+            minItemWidth: 360,
+            maxColumns: 2,
+            children: [
+              SmartTable(
+                title: 'Reclamations recentes',
+                subtitle: 'Suivi administratif des demandes etudiantes.',
+                trailing: TextButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.complaints),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Ouvrir'),
+                ),
+                columns: const [
+                  DataColumn(label: Text('ID')),
+                  DataColumn(label: Text('Objet')),
+                  DataColumn(label: Text('Statut')),
+                  DataColumn(label: Text('Service')),
+                ],
+                rows: [
+                  for (final complaint in MockFacultyData.complaints.take(4))
+                    DataRow(
+                      cells: [
+                        DataCell(Text(complaint.id)),
+                        DataCell(Text(complaint.title)),
+                        DataCell(StatusBadge.complaint(complaint.status)),
+                        DataCell(Text(complaint.assignedTo)),
+                      ],
+                    ),
+                ],
+              ),
+              SectionPanel(
+                title: 'Activites recentes',
+                subtitle: 'Evenements administratifs de la journee.',
+                child: Column(
+                  children: [
+                    for (final item in MockFacultyData.recentActivities)
+                      _ActivityLine(item: item),
                   ],
                 ),
+              ),
             ],
           ),
         ],
@@ -167,6 +175,68 @@ class AdminDashboardScreen extends StatelessWidget {
     Navigator.of(context).pushNamed(
       AppRoutes.adminManagement,
       arguments: AdminManagementArgs(category),
+    );
+  }
+}
+
+class _ActivityLine extends StatelessWidget {
+  const _ActivityLine({required this.item});
+
+  final ActivityItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.bolt_rounded,
+              color: AppColors.primary,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  item.detail,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            item.timeLabel,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w800,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

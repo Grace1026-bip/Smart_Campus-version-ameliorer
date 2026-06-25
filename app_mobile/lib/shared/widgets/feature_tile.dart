@@ -25,12 +25,20 @@ class FeatureTile extends StatelessWidget {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(8),
-      child: Ink(
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 156),
         padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(color: AppColors.border),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primaryDark.withValues(alpha: 0.035),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,10 +55,10 @@ class FeatureTile extends StatelessWidget {
                   child: Icon(icon, color: color),
                 ),
                 const Spacer(),
-                const Icon(
+                Icon(
                   Icons.arrow_forward_rounded,
                   size: 18,
-                  color: AppColors.textSecondary,
+                  color: onTap == null ? AppColors.border : color,
                 ),
               ],
             ),
@@ -73,9 +81,11 @@ class FeatureTile extends StatelessWidget {
               style: const TextStyle(
                 color: AppColors.textSecondary,
                 height: 1.35,
+                fontWeight: FontWeight.w600,
               ),
             ),
             if (meta != null) ...[
+              const Spacer(),
               const SizedBox(height: 12),
               Text(
                 meta!,
@@ -84,7 +94,7 @@ class FeatureTile extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                 ),
               ),
             ],

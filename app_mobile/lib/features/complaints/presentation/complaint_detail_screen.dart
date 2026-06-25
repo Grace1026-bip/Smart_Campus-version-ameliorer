@@ -11,7 +11,7 @@ import '../../../shared/widgets/status_badge.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
   ComplaintDetailScreen({super.key, Complaint? complaint})
-    : complaint = complaint ?? MockFacultyData.complaints.first;
+      : complaint = complaint ?? MockFacultyData.complaints.first;
 
   final Complaint complaint;
 
@@ -25,11 +25,13 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final complaint = widget.complaint;
+    final role = SessionService.currentRole;
+    final canUpdateStatus = _canUpdateStatus(role, complaint);
 
     return SmartFacultyShell(
-      role: SessionService.currentRole,
+      role: role,
       selectedRoute: AppRoutes.complaintDetail,
-      title: 'Détail ${complaint.id}',
+      title: 'Detail ${complaint.id}',
       subtitle: complaint.title,
       actions: [
         IconButton(
@@ -50,9 +52,10 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               children: [
                 _DetailItem(label: 'Type', value: complaint.type.label),
                 _DetailItem(label: 'Demandeur', value: complaint.author),
-                _DetailItem(label: 'Assignée à', value: complaint.assignedTo),
+                _DetailItem(label: 'Priorite', value: complaint.priority),
+                _DetailItem(label: 'Service', value: complaint.assignedTo),
                 _DetailItem(
-                  label: 'Créée le',
+                  label: 'Creee le',
                   value: _formatDate(complaint.createdAt),
                 ),
               ],
@@ -66,45 +69,74 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               style: const TextStyle(
                 color: AppColors.textPrimary,
                 height: 1.5,
-                fontWeight: FontWeight.w600,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
           const SizedBox(height: 22),
-          SectionPanel(
-            title: 'Changement de statut',
-            subtitle: 'Simulation frontend du traitement administratif.',
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: 260,
-                  child: DropdownButtonFormField<ComplaintStatus>(
-                    initialValue: _status,
-                    decoration: const InputDecoration(labelText: 'Statut'),
-                    items: ComplaintStatus.values
-                        .map(
-                          (status) => DropdownMenuItem(
-                            value: status,
-                            child: Text(status.label),
-                          ),
-                        )
-                        .toList(),
-                    onChanged: (status) {
-                      if (status != null) setState(() => _status = status);
-                    },
+          if (canUpdateStatus)
+            SectionPanel(
+              title: role == UserRole.teacher
+                  ? 'Reponse academique'
+                  : 'Traitement administratif',
+              subtitle: 'Mettez a jour le statut apres verification.',
+              child: Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 260,
+                    child: DropdownButtonFormField<ComplaintStatus>(
+                      initialValue: _status,
+                      decoration: const InputDecoration(labelText: 'Statut'),
+                      items: ComplaintStatus.values
+                          .map(
+                            (status) => DropdownMenuItem(
+                              value: status,
+                              child: Text(status.label),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (status) {
+                        if (status != null) setState(() => _status = status);
+                      },
+                    ),
                   ),
+                  const SizedBox(
+                    width: 320,
+                    child: TextField(
+                      decoration: InputDecoration(
+                        labelText: 'Commentaire',
+                        prefixIcon: Icon(Icons.rate_review_rounded),
+                      ),
+                    ),
+                  ),
+                  ElevatedButton.icon(
+                    onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Le statut est pret a etre enregistre.'),
+                      ),
+                    ),
+                    icon: const Icon(Icons.save_rounded),
+                    label: const Text('Enregistrer'),
+                  ),
+                ],
+              ),
+            )
+          else
+            SectionPanel(
+              title: 'Suivi du dossier',
+              subtitle: 'Le changement de statut est reserve au service.',
+              child: Text(
+                _readOnlyMessage(role),
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  height: 1.5,
+                  fontWeight: FontWeight.w700,
                 ),
-                ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.save_rounded),
-                  label: const Text('Enregistrer'),
-                ),
-              ],
+              ),
             ),
-          ),
           const SizedBox(height: 22),
           SectionPanel(
             title: 'Historique de traitement',
@@ -112,7 +144,7 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
               children: [
                 for (var i = 0; i < complaint.history.length; i++)
                   _TimelineItem(
-                    text: complaint.history[i],
+                    item: complaint.history[i],
                     isLast: i == complaint.history.length - 1,
                   ),
               ],
@@ -125,6 +157,26 @@ class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
 
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+}
+
+bool _canUpdateStatus(UserRole role, Complaint complaint) {
+  if (role == UserRole.administrator) return true;
+  return role == UserRole.teacher && complaint.type == ComplaintType.gradeError;
+}
+
+String _readOnlyMessage(UserRole role) {
+  switch (role) {
+    case UserRole.student:
+      return 'Vous pouvez suivre chaque etape et attendre la reponse du service assigne.';
+    case UserRole.promotionChief:
+      return 'Vous suivez l avancement de la demande collective pour informer la promotion.';
+    case UserRole.dean:
+      return 'Cette vue sert au pilotage. Les actions operationnelles restent aux services concernes.';
+    case UserRole.teacher:
+      return 'Cette demande ne releve pas directement de vos cours.';
+    case UserRole.administrator:
+      return 'Le dossier est consultable en lecture simple.';
+  }
 }
 
 class _DetailItem extends StatelessWidget {
@@ -165,9 +217,9 @@ class _DetailItem extends StatelessWidget {
 }
 
 class _TimelineItem extends StatelessWidget {
-  const _TimelineItem({required this.text, required this.isLast});
+  const _TimelineItem({required this.item, required this.isLast});
 
-  final String text;
+  final ComplaintHistory item;
   final bool isLast;
 
   @override
@@ -186,19 +238,32 @@ class _TimelineItem extends StatelessWidget {
               ),
             ),
             if (!isLast)
-              Container(width: 2, height: 36, color: AppColors.border),
+              Container(width: 2, height: 48, color: AppColors.border),
           ],
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.only(bottom: 18),
-            child: Text(
-              text,
-              style: const TextStyle(
-                color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${item.actor} - ${_formatDateShort(item.date)}',
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  item.message,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -206,3 +271,6 @@ class _TimelineItem extends StatelessWidget {
     );
   }
 }
+
+String _formatDateShort(DateTime date) =>
+    '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}';

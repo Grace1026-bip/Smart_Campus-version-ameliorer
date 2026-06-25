@@ -18,57 +18,36 @@ class PromotionChiefDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final promotionRiskStudents = MockFacultyData.riskStudents
+        .where((student) => student.promotion == 'L2 Informatique')
+        .toList();
+
     return SmartFacultyShell(
       role: UserRole.promotionChief,
       selectedRoute: AppRoutes.promotionChiefDashboard,
-      title: 'Espace chef de promotion',
-      subtitle:
-          'Suivi de promotion, réclamations collectives et signaux de risque.',
+      title: 'Dashboard chef de promotion',
+      subtitle: 'Statistiques, etudiants a risque et reclamations collectives.',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ResponsiveGrid(
+          ResponsiveGrid(
             children: [
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Étudiants',
-                  value: '276',
-                  trend: 'L2 info',
-                  description: 'promotion suivie',
+              for (var i = 0; i < MockFacultyData.promotionKpis.length; i++)
+                StatCard(
+                  metric: MockFacultyData.promotionKpis[i],
+                  icon: [
+                    Icons.groups_rounded,
+                    Icons.grade_rounded,
+                    Icons.health_and_safety_rounded,
+                    Icons.mark_email_unread_rounded,
+                  ][i],
+                  color: [
+                    AppColors.primary,
+                    AppColors.success,
+                    AppColors.danger,
+                    AppColors.warning,
+                  ][i],
                 ),
-                icon: Icons.groups_rounded,
-                color: AppColors.primary,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'À risque',
-                  value: '18',
-                  trend: '6 élevés',
-                  description: 'alertes pédagogiques',
-                ),
-                icon: Icons.health_and_safety_rounded,
-                color: AppColors.danger,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Réclamations',
-                  value: '24',
-                  trend: '7 ouvertes',
-                  description: 'promotion',
-                ),
-                icon: Icons.mark_email_unread_rounded,
-                color: AppColors.warning,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Moyenne',
-                  value: '12,9',
-                  trend: '+0,3',
-                  description: 'promotion',
-                ),
-                icon: Icons.insights_rounded,
-                color: AppColors.accent,
-              ),
             ],
           ),
           const SizedBox(height: 22),
@@ -77,43 +56,68 @@ class PromotionChiefDashboardScreen extends StatelessWidget {
             maxColumns: 2,
             children: [
               LineChartCard(
-                title: 'Évolution de la promotion',
-                data: MockFacultyData.performanceByPromotion,
+                title: 'Evolution de la promotion',
+                data: MockFacultyData.l2ProgressTrend,
               ),
               BarChartCard(
-                title: 'Cours à surveiller',
-                data: MockFacultyData.performanceByCourse,
+                title: 'Cours a surveiller',
+                data: MockFacultyData.l2CoursePerformance,
               ),
             ],
           ),
           const SizedBox(height: 22),
-          SmartTable(
-            title: 'Étudiants à risque',
-            subtitle: 'Priorités de suivi pour la promotion.',
-            trailing: TextButton.icon(
-              onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.riskStudents),
-              icon: const Icon(Icons.open_in_new_rounded),
-              label: const Text('Voir tout'),
-            ),
-            columns: const [
-              DataColumn(label: Text('Nom')),
-              DataColumn(label: Text('Promotion')),
-              DataColumn(label: Text('Moyenne')),
-              DataColumn(label: Text('Échecs')),
-              DataColumn(label: Text('Risque')),
-            ],
-            rows: [
-              for (final student in MockFacultyData.riskStudents)
-                DataRow(
-                  cells: [
-                    DataCell(Text(student.name)),
-                    DataCell(Text(student.promotion)),
-                    DataCell(Text(student.average.toStringAsFixed(1))),
-                    DataCell(Text('${student.failures}')),
-                    DataCell(StatusBadge.risk(student.level)),
-                  ],
+          ResponsiveGrid(
+            minItemWidth: 360,
+            maxColumns: 2,
+            children: [
+              SmartTable(
+                title: 'Liste des etudiants',
+                subtitle: 'Echantillon de la promotion L2 Informatique.',
+                columns: const [
+                  DataColumn(label: Text('Nom')),
+                  DataColumn(label: Text('Matricule')),
+                  DataColumn(label: Text('Moyenne')),
+                  DataColumn(label: Text('Statut')),
+                ],
+                rows: [
+                  for (final student in MockFacultyData.promotionStudents)
+                    DataRow(
+                      cells: [
+                        DataCell(Text(student.name)),
+                        DataCell(Text(student.matricule)),
+                        DataCell(Text(student.average.toStringAsFixed(1))),
+                        DataCell(Text(student.status)),
+                      ],
+                    ),
+                ],
+              ),
+              SmartTable(
+                title: 'Etudiants a risque',
+                subtitle: 'Priorites de suivi pour la promotion.',
+                trailing: TextButton.icon(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.riskStudents),
+                  icon: const Icon(Icons.open_in_new_rounded),
+                  label: const Text('Voir tout'),
                 ),
+                columns: const [
+                  DataColumn(label: Text('Nom')),
+                  DataColumn(label: Text('Moyenne')),
+                  DataColumn(label: Text('Echecs')),
+                  DataColumn(label: Text('Risque')),
+                ],
+                rows: [
+                  for (final student in promotionRiskStudents)
+                    DataRow(
+                      cells: [
+                        DataCell(Text(student.name)),
+                        DataCell(Text(student.average.toStringAsFixed(1))),
+                        DataCell(Text('${student.failures}')),
+                        DataCell(StatusBadge.risk(student.level)),
+                      ],
+                    ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 22),
@@ -123,7 +127,7 @@ class PromotionChiefDashboardScreen extends StatelessWidget {
             children: [
               FeatureTile(
                 icon: Icons.mark_email_unread_rounded,
-                title: 'Réclamations promotion',
+                title: 'Reclamations promotion',
                 subtitle: 'Suivre les demandes collectives.',
                 color: AppColors.warning,
                 onTap: () =>
@@ -131,32 +135,32 @@ class PromotionChiefDashboardScreen extends StatelessWidget {
               ),
               FeatureTile(
                 icon: Icons.campaign_rounded,
-                title: 'Informations importantes',
-                subtitle: 'Centraliser les annonces à relayer.',
-                color: AppColors.secondary,
-                onTap: () {},
+                title: 'Annonces importantes',
+                subtitle: 'Relayer les informations de la semaine.',
+                color: AppColors.cyan,
+                onTap: () =>
+                    Navigator.of(context).pushNamed(AppRoutes.notifications),
               ),
               FeatureTile(
                 icon: Icons.fact_check_rounded,
-                title: 'Résultats',
+                title: 'Resultats',
                 subtitle: 'Analyser les notes de la promotion.',
-                color: AppColors.accent,
+                color: AppColors.success,
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.grades),
               ),
             ],
           ),
           const SizedBox(height: 22),
           const SectionPanel(
-            title: 'Informations importantes',
-            subtitle: 'Annonces à suivre cette semaine.',
+            title: 'Annonces importantes',
+            subtitle: 'Informations a relayer cette semaine.',
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _InfoLine(text: 'Dépôt des fiches de stage avant vendredi.'),
+                _InfoLine(text: 'Depot des fiches de stage avant vendredi.'),
                 _InfoLine(
-                  text: 'Rattrapage Réseaux informatiques: salle B204.',
-                ),
-                _InfoLine(text: 'Réunion des chefs de promotion lundi 9h00.'),
+                    text: 'Rattrapage Reseaux informatiques: salle B204.'),
+                _InfoLine(text: 'Reunion des chefs de promotion lundi 9h00.'),
               ],
             ),
           ),
@@ -179,7 +183,7 @@ class _InfoLine extends StatelessWidget {
         children: [
           const Icon(
             Icons.check_circle_rounded,
-            color: AppColors.accent,
+            color: AppColors.success,
             size: 18,
           ),
           const SizedBox(width: 10),
@@ -188,7 +192,7 @@ class _InfoLine extends StatelessWidget {
               text,
               style: const TextStyle(
                 color: AppColors.textPrimary,
-                fontWeight: FontWeight.w700,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),

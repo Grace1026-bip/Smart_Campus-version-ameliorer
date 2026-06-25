@@ -27,6 +27,13 @@ class SectionPanel extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.04),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -48,16 +55,22 @@ class SectionPanel extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             subtitle!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: AppColors.textSecondary,
                               fontSize: 13,
+                              height: 1.35,
                             ),
                           ),
                         ],
                       ],
                     ),
                   ),
-                if (trailing != null) trailing!,
+                if (trailing != null) ...[
+                  const SizedBox(width: 12),
+                  trailing!,
+                ],
               ],
             ),
             const SizedBox(height: 16),

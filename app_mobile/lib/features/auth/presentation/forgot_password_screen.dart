@@ -13,21 +13,31 @@ class ForgotPasswordScreen extends StatelessWidget {
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 460),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 470),
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.border),
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const AppLogo(),
-                const SizedBox(height: 34),
+                const SizedBox(height: 32),
                 Text(
-                  'Récupération du compte',
+                  'Recuperation du compte',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Saisissez votre email institutionnel pour recevoir les instructions de réinitialisation.',
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+                  'Saisissez votre email institutionnel pour recevoir les instructions de reinitialisation.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    height: 1.4,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 28),
                 const TextField(

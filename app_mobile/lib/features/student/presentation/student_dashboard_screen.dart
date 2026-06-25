@@ -23,102 +23,83 @@ class StudentDashboardScreen extends StatelessWidget {
     return SmartFacultyShell(
       role: UserRole.student,
       selectedRoute: AppRoutes.studentDashboard,
-      title: 'Espace étudiant',
-      subtitle:
-          'Informations personnelles, notes, projets, stages et réclamations.',
+      title: 'Dashboard etudiant',
+      subtitle: 'Notes, cours, projets, stages et reclamations personnelles.',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionPanel(
-            title: 'Profil académique',
+            title: 'Bonjour ${user.name}',
             subtitle: user.department,
+            trailing: const StatusBadge(
+              label: 'Regulier',
+              color: AppColors.success,
+              icon: Icons.verified_rounded,
+            ),
             child: Wrap(
               spacing: 16,
               runSpacing: 14,
               children: [
-                _ProfileInfo(label: 'Nom', value: user.name),
+                _ProfileInfo(label: 'Matricule', value: user.matricule),
                 _ProfileInfo(label: 'Email', value: user.email),
-                const _ProfileInfo(label: 'Matricule', value: 'SF-GL-2026-014'),
-                const _ProfileInfo(label: 'Statut', value: 'Régulier'),
+                const _ProfileInfo(label: 'Semestre', value: 'S6 en cours'),
+                const _ProfileInfo(
+                    label: 'Resultat', value: 'Admis provisoire'),
               ],
             ),
           ),
           const SizedBox(height: 22),
-          const ResponsiveGrid(
+          ResponsiveGrid(
             children: [
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Moyenne',
-                  value: '13,7',
-                  trend: '+0,8',
-                  description: 'semestre actuel',
+              for (var i = 0; i < MockFacultyData.studentKpis.length; i++)
+                StatCard(
+                  metric: MockFacultyData.studentKpis[i],
+                  icon: [
+                    Icons.grade_rounded,
+                    Icons.workspace_premium_rounded,
+                    Icons.menu_book_rounded,
+                    Icons.mark_email_unread_rounded,
+                  ][i],
+                  color: [
+                    AppColors.primary,
+                    AppColors.success,
+                    AppColors.cyan,
+                    AppColors.warning,
+                  ][i],
                 ),
-                icon: Icons.grade_rounded,
-                color: AppColors.primary,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Cours validés',
-                  value: '7/8',
-                  trend: '87%',
-                  description: 'progression académique',
-                ),
-                icon: Icons.fact_check_rounded,
-                color: AppColors.accent,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Réclamations',
-                  value: '2',
-                  trend: '1 en cours',
-                  description: 'demandes soumises',
-                ),
-                icon: Icons.mark_email_unread_rounded,
-                color: AppColors.warning,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Notifications',
-                  value: '5',
-                  trend: '2 nouvelles',
-                  description: 'messages académiques',
-                ),
-                icon: Icons.notifications_rounded,
-                color: AppColors.secondary,
-              ),
             ],
           ),
           const SizedBox(height: 22),
           ResponsiveGrid(
-            minItemWidth: 260,
+            minItemWidth: 250,
             maxColumns: 4,
             children: [
               FeatureTile(
                 icon: Icons.fact_check_rounded,
-                title: 'Notes et résultats',
-                subtitle: 'Consulter les notes par cours et l’historique.',
+                title: 'Mes notes',
+                subtitle: 'Consulter les resultats par cours.',
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.grades),
               ),
               FeatureTile(
                 icon: Icons.workspaces_rounded,
-                title: 'Projets académiques',
-                subtitle: 'Voir les livrables et l’état d’avancement.',
+                title: 'Mes projets',
+                subtitle: 'Avancement, membres et livrables.',
                 color: AppColors.violet,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.projects),
               ),
               FeatureTile(
                 icon: Icons.business_center_rounded,
-                title: 'Stages',
-                subtitle: 'Offres, candidatures et validation du stage.',
-                color: AppColors.accent,
+                title: 'Mes stages',
+                subtitle: 'Offres, candidatures et suivi.',
+                color: AppColors.success,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.internships),
               ),
               FeatureTile(
                 icon: Icons.add_comment_rounded,
-                title: 'Créer une réclamation',
-                subtitle: 'Soumettre et suivre une demande académique.',
+                title: 'Reclamation',
+                subtitle: 'Soumettre une demande academique.',
                 color: AppColors.warning,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.complaints),
@@ -126,55 +107,40 @@ class StudentDashboardScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 22),
-          SmartTable(
-            title: 'Mes dernières notes',
-            subtitle: 'Cours publiés pour le semestre actuel.',
-            columns: const [
-              DataColumn(label: Text('Cours')),
-              DataColumn(label: Text('Enseignant')),
-              DataColumn(label: Text('Note')),
-              DataColumn(label: Text('Résultat')),
-            ],
-            rows: [
-              for (final grade in MockFacultyData.grades.take(3))
-                DataRow(
-                  cells: [
-                    DataCell(Text(grade.course)),
-                    DataCell(Text(grade.teacher)),
-                    DataCell(Text(grade.grade.toStringAsFixed(1))),
-                    DataCell(Text(grade.result)),
+          ResponsiveGrid(
+            minItemWidth: 360,
+            maxColumns: 2,
+            children: [
+              SmartTable(
+                title: 'Mes dernieres notes',
+                subtitle: 'Cours publies pour le semestre actuel.',
+                columns: const [
+                  DataColumn(label: Text('Cours')),
+                  DataColumn(label: Text('Note')),
+                  DataColumn(label: Text('Resultat')),
+                ],
+                rows: [
+                  for (final grade in MockFacultyData.grades.take(4))
+                    DataRow(
+                      cells: [
+                        DataCell(Text(grade.course)),
+                        DataCell(Text(grade.grade.toStringAsFixed(1))),
+                        DataCell(Text(grade.result)),
+                      ],
+                    ),
+                ],
+              ),
+              SectionPanel(
+                title: 'Notifications',
+                subtitle: 'Messages importants pour votre parcours.',
+                child: Column(
+                  children: [
+                    for (final item in MockFacultyData.notifications.take(3))
+                      _NotificationLine(item: item),
                   ],
                 ),
+              ),
             ],
-          ),
-          const SizedBox(height: 22),
-          const SectionPanel(
-            title: 'Notifications',
-            subtitle: 'Messages importants de la faculté.',
-            child: Column(
-              children: [
-                _NotificationLine(
-                  icon: Icons.event_available_rounded,
-                  title: 'Soutenance blanche',
-                  detail: 'Prévue vendredi à 10h00, salle Labo 2.',
-                ),
-                _NotificationLine(
-                  icon: Icons.assignment_turned_in_rounded,
-                  title: 'Livrable projet',
-                  detail: 'Le rapport intermédiaire est attendu cette semaine.',
-                ),
-                _NotificationLine(
-                  icon: Icons.mark_email_read_rounded,
-                  title: 'Réclamation REC-2401',
-                  detail: 'Votre dossier est en cours de traitement.',
-                  badge: StatusBadge(
-                    label: 'En cours',
-                    color: AppColors.info,
-                    icon: Icons.sync_rounded,
-                  ),
-                ),
-              ],
-            ),
           ),
         ],
       ),
@@ -200,7 +166,7 @@ class _ProfileInfo extends StatelessWidget {
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
             ),
           ),
           const SizedBox(height: 4),
@@ -220,17 +186,9 @@ class _ProfileInfo extends StatelessWidget {
 }
 
 class _NotificationLine extends StatelessWidget {
-  const _NotificationLine({
-    required this.icon,
-    required this.title,
-    required this.detail,
-    this.badge,
-  });
+  const _NotificationLine({required this.item});
 
-  final IconData icon;
-  final String title;
-  final String detail;
-  final Widget? badge;
+  final FacultyNotification item;
 
   @override
   Widget build(BuildContext context) {
@@ -239,14 +197,14 @@ class _NotificationLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.primary),
+          const Icon(Icons.notifications_rounded, color: AppColors.primary),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  item.title,
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w900,
@@ -254,13 +212,23 @@ class _NotificationLine extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  detail,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                  item.message,
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
           ),
-          if (badge != null) badge!,
+          Text(
+            item.timeLabel,
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ],
       ),
     );

@@ -21,63 +21,40 @@ class TeacherDashboardScreen extends StatelessWidget {
       role: UserRole.teacher,
       selectedRoute: AppRoutes.teacherDashboard,
       title: 'Dashboard enseignant',
-      subtitle: 'Cours attribués, publication des notes et suivi pédagogique.',
+      subtitle: 'Cours attribues, publication des notes et suivi pedagogique.',
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ResponsiveGrid(
+          ResponsiveGrid(
             children: [
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Cours attribués',
-                  value: '3',
-                  trend: '2 promotions',
-                  description: 'semestre actuel',
+              for (var i = 0; i < MockFacultyData.teacherKpis.length; i++)
+                StatCard(
+                  metric: MockFacultyData.teacherKpis[i],
+                  icon: [
+                    Icons.menu_book_rounded,
+                    Icons.groups_rounded,
+                    Icons.workspaces_rounded,
+                    Icons.rate_review_rounded,
+                  ][i],
+                  color: [
+                    AppColors.primary,
+                    AppColors.success,
+                    AppColors.violet,
+                    AppColors.warning,
+                  ][i],
                 ),
-                icon: Icons.menu_book_rounded,
-                color: AppColors.primary,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Notes publiées',
-                  value: '181',
-                  trend: '76%',
-                  description: 'copies encodées',
-                ),
-                icon: Icons.upload_file_rounded,
-                color: AppColors.accent,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Projets suivis',
-                  value: '8',
-                  trend: '3 critiques',
-                  description: 'groupes encadrés',
-                ),
-                icon: Icons.workspaces_rounded,
-                color: AppColors.violet,
-              ),
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Réponses',
-                  value: '14',
-                  trend: '+6',
-                  description: 'réclamations traitées',
-                ),
-                icon: Icons.forum_rounded,
-                color: AppColors.warning,
-              ),
             ],
           ),
           const SizedBox(height: 22),
           SmartTable(
-            title: 'Cours attribués',
+            title: 'Cours attribues',
             subtitle: 'Progression de publication par promotion.',
             columns: const [
               DataColumn(label: Text('Cours')),
               DataColumn(label: Text('Promotion')),
-              DataColumn(label: Text('Étudiants')),
-              DataColumn(label: Text('Notes publiées')),
+              DataColumn(label: Text('Etudiants')),
+              DataColumn(label: Text('Publiees')),
+              DataColumn(label: Text('Moyenne')),
             ],
             rows: [
               for (final course in MockFacultyData.courseAssignments)
@@ -89,49 +66,49 @@ class TeacherDashboardScreen extends StatelessWidget {
                     DataCell(
                       Text('${course.publishedGrades}/${course.students}'),
                     ),
+                    DataCell(Text(course.average.toStringAsFixed(1))),
                   ],
                 ),
             ],
           ),
           const SizedBox(height: 22),
           ResponsiveGrid(
-            minItemWidth: 300,
+            minItemWidth: 270,
             maxColumns: 3,
             children: [
               FeatureTile(
                 icon: Icons.upload_file_rounded,
                 title: 'Publier les notes',
-                subtitle: 'Encoder les résultats et préparer la validation.',
+                subtitle: 'Encoder les resultats de vos cours.',
                 onTap: () => Navigator.of(context).pushNamed(AppRoutes.grades),
               ),
               FeatureTile(
                 icon: Icons.groups_rounded,
-                title: 'Étudiants par cours',
-                subtitle: 'Consulter les listes et les performances.',
-                color: AppColors.secondary,
+                title: 'Etudiants par cours',
+                subtitle: 'Lire les listes et performances.',
+                color: AppColors.cyan,
                 onTap: () =>
                     Navigator.of(context).pushNamed(AppRoutes.analytics),
               ),
               FeatureTile(
-                icon: Icons.rate_review_rounded,
-                title: 'Réclamations académiques',
-                subtitle: 'Répondre aux demandes liées aux notes.',
-                color: AppColors.warning,
+                icon: Icons.workspaces_rounded,
+                title: 'Projets encadres',
+                subtitle: 'Valider les livrables et retours.',
+                color: AppColors.violet,
                 onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.complaints),
+                    Navigator.of(context).pushNamed(AppRoutes.projects),
               ),
             ],
           ),
           const SizedBox(height: 22),
           SectionPanel(
-            title: 'Réclamations à traiter',
-            subtitle: 'Demandes assignées au volet académique.',
+            title: 'Reclamations liees aux cours',
+            subtitle: 'Demandes qui peuvent necessiter une verification.',
             child: Column(
               children: [
-                for (final complaint
-                    in MockFacultyData.complaints
-                        .where((item) => item.type == ComplaintType.gradeError)
-                        .take(2))
+                for (final complaint in MockFacultyData.complaints
+                    .where((item) => item.type == ComplaintType.gradeError)
+                    .take(3))
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Row(
@@ -141,7 +118,7 @@ class TeacherDashboardScreen extends StatelessWidget {
                             complaint.title,
                             style: const TextStyle(
                               color: AppColors.textPrimary,
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),

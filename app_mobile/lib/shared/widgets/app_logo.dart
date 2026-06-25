@@ -18,12 +18,19 @@ class AppLogo extends StatelessWidget {
           width: 42,
           height: 42,
           decoration: BoxDecoration(
-            color: onDark ? Colors.white : AppColors.primary,
+            color: onDark ? Colors.white : AppColors.primaryDark,
             borderRadius: BorderRadius.circular(8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: onDark ? 0.12 : 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Icon(
             Icons.school_rounded,
-            color: onDark ? AppColors.primary : Colors.white,
+            color: onDark ? AppColors.primaryDark : Colors.white,
             size: 24,
           ),
         ),
@@ -51,9 +58,10 @@ class AppLogo extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     color: onDark
-                        ? const Color(0xFFE6EEF7)
+                        ? AppColors.sidebarMuted
                         : AppColors.textSecondary,
                     fontSize: 12,
+                    fontWeight: FontWeight.w700,
                     letterSpacing: 0,
                   ),
                 ),

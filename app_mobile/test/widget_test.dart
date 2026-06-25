@@ -7,6 +7,6 @@ void main() {
     await tester.pumpWidget(const SmartFacultyApp());
 
     expect(find.text('Connexion'), findsOneWidget);
-    expect(find.text('Smart Faculty'), findsWidgets);
+    expect(find.text('FASI Smart Faculty'), findsWidgets);
   });
 }

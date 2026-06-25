@@ -7,8 +7,8 @@ import '../../data/models/faculty_models.dart';
 
 const _chartPalette = [
   AppColors.primary,
-  AppColors.secondary,
-  AppColors.accent,
+  AppColors.cyan,
+  AppColors.success,
   AppColors.warning,
   AppColors.violet,
   AppColors.danger,
@@ -118,6 +118,7 @@ class DonutChartCard extends StatelessWidget {
                           style: TextStyle(
                             color: AppColors.textSecondary,
                             fontSize: 12,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ],
@@ -150,7 +151,7 @@ class DonutChartCard extends StatelessWidget {
                                 overflow: TextOverflow.ellipsis,
                                 style: const TextStyle(
                                   color: AppColors.textPrimary,
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                 ),
                               ),
                             ),
@@ -158,7 +159,7 @@ class DonutChartCard extends StatelessWidget {
                               data[i].value.toStringAsFixed(0),
                               style: const TextStyle(
                                 color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
                           ],
@@ -190,6 +191,13 @@ class _ChartFrame extends StatelessWidget {
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(8),
         border: Border.all(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryDark.withValues(alpha: 0.04),
+            blurRadius: 22,
+            offset: const Offset(0, 12),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,11 +254,15 @@ class _BarChartPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      ellipsis: '…',
+      ellipsis: '...',
       textAlign: TextAlign.center,
     )..layout(maxWidth: size.width);
     painter.paint(
@@ -318,11 +330,15 @@ class _LineChartPainter extends CustomPainter {
     final painter = TextPainter(
       text: TextSpan(
         text: label,
-        style: const TextStyle(color: AppColors.textSecondary, fontSize: 11),
+        style: const TextStyle(
+          color: AppColors.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-      ellipsis: '…',
+      ellipsis: '...',
     )..layout(maxWidth: 44);
     painter.paint(canvas, offset);
   }
@@ -341,6 +357,7 @@ class _DonutPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (data.isEmpty) return;
     final total = data.fold<double>(0, (sum, item) => sum + item.value);
+    if (total == 0) return;
     final rect = Offset.zero & size;
     var start = -math.pi / 2;
     final stroke = math.max(18.0, size.shortestSide * 0.12);
