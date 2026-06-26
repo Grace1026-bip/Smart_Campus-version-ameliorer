@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'app.dart';
+import 'application.dart';
 
 void main() {
   runApp(const SmartFacultyApp());
