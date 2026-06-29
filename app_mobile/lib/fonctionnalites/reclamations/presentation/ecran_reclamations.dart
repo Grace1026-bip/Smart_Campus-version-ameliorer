@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -26,6 +28,10 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
+    if (role == UserRole.teacher) {
+      return const _TeacherComplaintsScreen();
+    }
+
     final config = _configForRole(role);
     final scopedComplaints = _complaintsForRole(role);
     final complaints = scopedComplaints.where((complaint) {
@@ -204,6 +210,374 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
         color: AppColors.success,
       ),
     ];
+  }
+}
+
+class _TeacherComplaintsScreen extends StatefulWidget {
+  const _TeacherComplaintsScreen();
+
+  @override
+  State<_TeacherComplaintsScreen> createState() =>
+      _TeacherComplaintsScreenState();
+}
+
+class _TeacherComplaintsScreenState extends State<_TeacherComplaintsScreen> {
+  late Future<List<dynamic>> _future = EnseignantDataSource.service.reclamations();
+  String? _statusFilter;
+  int? _courseFilter;
+
+  void _refresh() {
+    setState(() => _future = EnseignantDataSource.service.reclamations());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFacultyShell(
+      role: UserRole.teacher,
+      selectedRoute: AppRoutes.complaints,
+      title: 'Reclamations academiques',
+      subtitle: 'Demandes liees uniquement a vos cours.',
+      body: FutureBuilder<List<dynamic>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(
+                ApiConfig.serverUnavailableMessage,
+              ),
+            );
+          }
+
+          final allComplaints = snapshot.data ?? [];
+          final courses = <int, String>{};
+          for (final item in allComplaints) {
+            final courseId = _asInt(item['cours_id']);
+            if (courseId > 0) {
+              courses[courseId] = '${item['code_cours'] ?? ''} ${item['cours'] ?? ''}'.trim();
+            }
+          }
+
+          final complaints = allComplaints.where((item) {
+            final statusOk =
+                _statusFilter == null || item['statut'] == _statusFilter;
+            final courseOk =
+                _courseFilter == null || _asInt(item['cours_id']) == _courseFilter;
+            return statusOk && courseOk;
+          }).toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ResponsiveGrid(children: _teacherComplaintStats(allComplaints)),
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Filtres',
+                subtitle: 'Limiter par cours ou statut.',
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: 260,
+                      child: DropdownButtonFormField<String?>(
+                        initialValue: _statusFilter,
+                        decoration: const InputDecoration(labelText: 'Statut'),
+                        items: const [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Tous les statuts'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'en_attente',
+                            child: Text('En attente'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'en_cours',
+                            child: Text('En cours'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'resolue',
+                            child: Text('Resolue'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'transmise_apparitorat',
+                            child: Text('Transmise apparitorat'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _statusFilter = value),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 320,
+                      child: DropdownButtonFormField<int?>(
+                        initialValue: _courseFilter,
+                        decoration: const InputDecoration(labelText: 'Cours'),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text('Tous les cours'),
+                          ),
+                          for (final entry in courses.entries)
+                            DropdownMenuItem<int?>(
+                              value: entry.key,
+                              child: Text(entry.value),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _courseFilter = value),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SmartTable(
+                title: 'Demandes a traiter',
+                subtitle: '${complaints.length} reclamation(s).',
+                columns: const [
+                  DataColumn(label: Text('Objet')),
+                  DataColumn(label: Text('Cours')),
+                  DataColumn(label: Text('Etudiant')),
+                  DataColumn(label: Text('Priorite')),
+                  DataColumn(label: Text('Statut')),
+                  DataColumn(label: Text('Action')),
+                ],
+                rows: [
+                  for (final item in complaints)
+                    DataRow(cells: [
+                      DataCell(Text('${item['titre'] ?? '-'}')),
+                      DataCell(Text('${item['code_cours'] ?? '-'}')),
+                      DataCell(Text('${item['etudiant'] ?? '-'}')),
+                      DataCell(Text('${item['priorite'] ?? '-'}')),
+                      DataCell(_statusBadge('${item['statut'] ?? '-'}')),
+                      DataCell(
+                        TextButton.icon(
+                          onPressed: () => _openDetail(item),
+                          icon: const Icon(Icons.rate_review_rounded, size: 18),
+                          label: const Text('Repondre'),
+                        ),
+                      ),
+                    ]),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+
+  Future<void> _openDetail(dynamic item) async {
+    final detail =
+        await EnseignantDataSource.service.detailReclamation(_asInt(item['id']));
+    if (!mounted) return;
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => _TeacherComplaintDialog(reclamation: detail),
+    );
+    if (saved == true) _refresh();
+  }
+}
+
+class _TeacherComplaintDialog extends StatefulWidget {
+  const _TeacherComplaintDialog({required this.reclamation});
+
+  final Map<String, dynamic> reclamation;
+
+  @override
+  State<_TeacherComplaintDialog> createState() =>
+      _TeacherComplaintDialogState();
+}
+
+class _TeacherComplaintDialogState extends State<_TeacherComplaintDialog> {
+  final _messageController = TextEditingController();
+  late String _status = '${widget.reclamation['statut'] ?? 'en_cours'}';
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final responses = widget.reclamation['reponses'] as List<dynamic>? ?? [];
+
+    return AlertDialog(
+      title: Text('${widget.reclamation['titre'] ?? 'Reclamation'}'),
+      content: SizedBox(
+        width: 620,
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '${widget.reclamation['description'] ?? '-'}',
+                style: const TextStyle(height: 1.4),
+              ),
+              const SizedBox(height: 14),
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                children: [
+                  StatusBadge(
+                    label: '${widget.reclamation['cours'] ?? '-'}',
+                    color: AppColors.primary,
+                  ),
+                  StatusBadge(
+                    label: '${widget.reclamation['etudiant'] ?? '-'}',
+                    color: AppColors.cyan,
+                  ),
+                  _statusBadge(_status),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _status,
+                decoration: const InputDecoration(labelText: 'Nouveau statut'),
+                items: const [
+                  DropdownMenuItem(value: 'en_attente', child: Text('En attente')),
+                  DropdownMenuItem(value: 'en_cours', child: Text('En cours')),
+                  DropdownMenuItem(value: 'resolue', child: Text('Resolue')),
+                  DropdownMenuItem(
+                    value: 'transmise_apparitorat',
+                    child: Text('Transmise apparitorat'),
+                  ),
+                ],
+                onChanged: (value) => setState(() => _status = value ?? _status),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _messageController,
+                minLines: 3,
+                maxLines: 5,
+                decoration: const InputDecoration(labelText: 'Reponse'),
+              ),
+              const SizedBox(height: 16),
+              if (responses.isNotEmpty) ...[
+                Text('Historique', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                for (final response in responses)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Text(
+                      '${response['auteur'] ?? '-'} : ${response['message'] ?? '-'}',
+                      style: const TextStyle(color: AppColors.textSecondary),
+                    ),
+                  ),
+              ],
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+          child: const Text('Annuler'),
+        ),
+        ElevatedButton(
+          onPressed: _saving ? null : _save,
+          child: Text(_saving ? 'Enregistrement...' : 'Enregistrer'),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _save() async {
+    if (_messageController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Le message de reponse est obligatoire.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await EnseignantDataSource.service.repondreReclamation(
+        reclamationId: _asInt(widget.reclamation['id']),
+        message: _messageController.text.trim(),
+        statut: _status,
+      );
+      if (!mounted) return;
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
+List<Widget> _teacherComplaintStats(List<dynamic> complaints) {
+  int count(String status) =>
+      complaints.where((item) => item['statut'] == status).length;
+
+  return [
+    StatCard(
+      metric: KpiMetric(
+        title: 'Total',
+        value: '${complaints.length}',
+        trend: 'mes cours',
+        description: 'reclamations liees',
+      ),
+      icon: Icons.mark_email_unread_rounded,
+      color: AppColors.primary,
+    ),
+    StatCard(
+      metric: KpiMetric(
+        title: 'En attente',
+        value: '${count('en_attente')}',
+        trend: 'a lire',
+        description: 'sans reponse',
+      ),
+      icon: Icons.schedule_rounded,
+      color: AppColors.warning,
+    ),
+    StatCard(
+      metric: KpiMetric(
+        title: 'En cours',
+        value: '${count('en_cours')}',
+        trend: 'traitement',
+        description: 'reponse en cours',
+      ),
+      icon: Icons.sync_rounded,
+      color: AppColors.cyan,
+    ),
+    StatCard(
+      metric: KpiMetric(
+        title: 'Resolues',
+        value: '${count('resolue')}',
+        trend: 'cloturees',
+        description: 'solution apportee',
+      ),
+      icon: Icons.check_circle_rounded,
+      color: AppColors.success,
+    ),
+  ];
+}
+
+StatusBadge _statusBadge(String status) {
+  switch (status) {
+    case 'en_attente':
+      return const StatusBadge(label: 'En attente', color: AppColors.warning);
+    case 'en_cours':
+      return const StatusBadge(label: 'En cours', color: AppColors.cyan);
+    case 'resolue':
+      return const StatusBadge(label: 'Resolue', color: AppColors.success);
+    case 'transmise_apparitorat':
+      return const StatusBadge(label: 'Transmise', color: AppColors.primary);
+    default:
+      return StatusBadge(label: status, color: AppColors.textSecondary);
   }
 }
 
@@ -434,4 +808,10 @@ String _totalTitle(UserRole role) {
     case UserRole.administrator:
       return 'Total';
   }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse('${value ?? 0}') ?? 0;
 }

@@ -16,7 +16,7 @@ class Requete
     public function chemin(): string
     {
         $uri = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
-        $chemin = '/' . trim($uri, '/');
+        $chemin = $this->normaliserChemin($uri);
 
         return $chemin === '/' ? '/' : $chemin;
     }
@@ -64,5 +64,24 @@ class Requete
         $type = $_SERVER['CONTENT_TYPE'] ?? '';
 
         return stripos($type, 'application/json') !== false;
+    }
+
+    private function normaliserChemin(string $uri): string
+    {
+        $chemin = '/' . trim(str_replace('\\', '/', $uri), '/');
+        $script = '/' . trim(str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? ''), '/');
+        $position = strrpos($script, '/');
+        $base = $position === false ? '/' : substr($script, 0, $position);
+        $base = '/' . trim($base, '/');
+
+        if ($script !== '/' && str_ends_with($script, '.php') && str_starts_with($chemin, $script)) {
+            $chemin = substr($chemin, strlen($script)) ?: '/';
+        } elseif ($script !== '/' && str_ends_with($script, '.php') && $base !== '/' && str_starts_with($chemin, $base . '/')) {
+            $chemin = substr($chemin, strlen($base)) ?: '/';
+        }
+
+        $chemin = '/' . trim($chemin, '/');
+
+        return $chemin === '/' ? '/' : $chemin;
     }
 }

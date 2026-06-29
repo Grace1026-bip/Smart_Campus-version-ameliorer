@@ -20,27 +20,38 @@ class BaseDeDonnees
         }
 
         $configuration = require chemin_base('configuration/base_de_donnees.php');
-        $dsn = sprintf(
-            '%s:host=%s;port=%d;dbname=%s;charset=%s',
-            $configuration['pilote'],
-            $configuration['hote'],
-            $configuration['port'],
-            $configuration['base'],
-            $configuration['encodage']
-        );
+        $ports = self::portsConnexion($configuration);
+        $dernierEchec = null;
 
-        try {
-            self::$connexion = new PDO(
-                $dsn,
-                $configuration['utilisateur'],
-                $configuration['mot_de_passe'],
-                $configuration['options']
+        foreach ($ports as $port) {
+            $dsn = sprintf(
+                '%s:host=%s;port=%d;dbname=%s;charset=%s',
+                $configuration['pilote'],
+                $configuration['hote'],
+                $port,
+                $configuration['base'],
+                $configuration['encodage']
             );
-        } catch (PDOException $exception) {
-            throw new RuntimeException('Connexion a la base de donnees impossible.', 0, $exception);
+
+            try {
+                self::$connexion = new PDO(
+                    $dsn,
+                    $configuration['utilisateur'],
+                    $configuration['mot_de_passe'],
+                    $configuration['options']
+                );
+
+                return self::$connexion;
+            } catch (PDOException $exception) {
+                $dernierEchec = $exception;
+            }
         }
 
-        return self::$connexion;
+        throw new RuntimeException(
+            'Connexion a la base de donnees impossible sur les ports: ' . implode(', ', $ports) . '.',
+            0,
+            $dernierEchec
+        );
     }
 
     public static function transaction(callable $traitement): mixed
@@ -60,5 +71,18 @@ class BaseDeDonnees
 
             throw $exception;
         }
+    }
+
+    private static function portsConnexion(array $configuration): array
+    {
+        $ports = array_merge(
+            [(int) $configuration['port']],
+            array_map('intval', $configuration['ports_secours'] ?? [])
+        );
+
+        return array_values(array_unique(array_filter(
+            $ports,
+            static fn (int $port): bool => $port > 0
+        )));
     }
 }

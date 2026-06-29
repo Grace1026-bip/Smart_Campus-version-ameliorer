@@ -49,6 +49,7 @@ class SmartFacultyShell extends StatelessWidget {
             _Sidebar(role: role, items: items, selectedRoute: selectedRoute),
             Expanded(
               child: _PageFrame(
+                role: role,
                 title: title,
                 subtitle: subtitle,
                 actions: actions,
@@ -70,7 +71,7 @@ class SmartFacultyShell extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
         ),
-        actions: _topActions(context, actions),
+        actions: _topActions(context, actions, role),
       ),
       body: _MobilePageFrame(child: body),
       bottomNavigationBar: _BottomNav(
@@ -100,14 +101,14 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.grades,
           ),
           SmartNavItem(
-            label: 'Projets',
-            icon: Icons.workspaces_rounded,
-            route: AppRoutes.projects,
+            label: 'Mes cours',
+            icon: Icons.menu_book_rounded,
+            route: AppRoutes.teacherCourses,
           ),
           SmartNavItem(
-            label: 'Stages',
-            icon: Icons.business_center_rounded,
-            route: AppRoutes.internships,
+            label: 'Valve',
+            icon: Icons.campaign_rounded,
+            route: AppRoutes.notifications,
           ),
           SmartNavItem(
             label: 'Analytics',
@@ -229,19 +230,19 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.teacherDashboard,
           ),
           SmartNavItem(
+            label: 'Mes cours',
+            icon: Icons.menu_book_rounded,
+            route: AppRoutes.teacherCourses,
+          ),
+          SmartNavItem(
+            label: 'Valve',
+            icon: Icons.campaign_rounded,
+            route: AppRoutes.notifications,
+          ),
+          SmartNavItem(
             label: 'Notes',
             icon: Icons.fact_check_rounded,
             route: AppRoutes.grades,
-          ),
-          SmartNavItem(
-            label: 'Projets',
-            icon: Icons.workspaces_rounded,
-            route: AppRoutes.projects,
-          ),
-          SmartNavItem(
-            label: 'Stages',
-            icon: Icons.business_center_rounded,
-            route: AppRoutes.internships,
           ),
           SmartNavItem(
             label: 'Reclamations',
@@ -249,12 +250,7 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.complaints,
           ),
           SmartNavItem(
-            label: 'Analytics',
-            icon: Icons.insights_rounded,
-            route: AppRoutes.analytics,
-          ),
-          SmartNavItem(
-            label: 'Risque',
+            label: 'A risque',
             icon: Icons.health_and_safety_rounded,
             route: AppRoutes.riskStudents,
           ),
@@ -460,9 +456,9 @@ class _Sidebar extends StatelessWidget {
                     color: Colors.white.withValues(alpha: 0.12),
                   ),
                 ),
-                child: const Text(
-                  'Mode demonstration, donnees mock. API PHP REST prevue.',
-                  style: TextStyle(
+                child: Text(
+                  _sidebarNote(role),
+                  style: const TextStyle(
                     color: AppColors.sidebarMuted,
                     height: 1.35,
                     fontSize: 12,
@@ -542,12 +538,14 @@ class _NavButton extends StatelessWidget {
 
 class _PageFrame extends StatelessWidget {
   const _PageFrame({
+    required this.role,
     required this.title,
     required this.subtitle,
     required this.actions,
     required this.child,
   });
 
+  final UserRole role;
   final String title;
   final String subtitle;
   final List<Widget> actions;
@@ -591,7 +589,7 @@ class _PageFrame extends StatelessWidget {
                 Wrap(
                   spacing: 8,
                   crossAxisAlignment: WrapCrossAlignment.center,
-                  children: _topActions(context, actions),
+                  children: _topActions(context, actions, role),
                 ),
               ],
             ),
@@ -653,13 +651,21 @@ class _BottomNav extends StatelessWidget {
   }
 }
 
-List<Widget> _topActions(BuildContext context, List<Widget> actions) {
+List<Widget> _topActions(
+  BuildContext context,
+  List<Widget> actions,
+  UserRole role,
+) {
+  final teacher = role == UserRole.teacher;
+
   return [
     ...actions,
     IconButton(
-      tooltip: 'Notifications',
+      tooltip: teacher ? 'Valve' : 'Notifications',
       onPressed: () => _goTo(context, AppRoutes.notifications),
-      icon: const Icon(Icons.notifications_rounded),
+      icon: Icon(
+        teacher ? Icons.campaign_rounded : Icons.notifications_rounded,
+      ),
     ),
     IconButton(
       tooltip: 'Profil',
@@ -695,6 +701,8 @@ String _mobileLabel(String label) {
   switch (label) {
     case 'Reclamations':
       return 'Reclam.';
+    case 'Mes cours':
+      return 'Cours';
     case 'Decisionnel':
       return 'Doyen';
     case 'Dashboard':
@@ -702,4 +710,16 @@ String _mobileLabel(String label) {
     default:
       return label;
   }
+}
+
+String _sidebarNote(UserRole role) {
+  if (role == UserRole.teacher) {
+    return 'Espace enseignant centre sur vos cours, la valve, les notes et les reclamations.';
+  }
+
+  if (role == UserRole.student) {
+    return 'Vos donnees academiques proviennent des publications et notes officielles.';
+  }
+
+  return 'Espace academique connecte a l API REST PHP et aux donnees MySQL.';
 }

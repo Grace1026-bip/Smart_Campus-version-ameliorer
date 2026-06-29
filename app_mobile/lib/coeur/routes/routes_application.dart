@@ -20,6 +20,7 @@ import '../../fonctionnalites/projets/presentation/ecran_projets.dart';
 import '../../fonctionnalites/chef_promotion/presentation/ecran_tableau_bord_chef_promotion.dart';
 import '../../fonctionnalites/etudiants_risque/presentation/ecran_etudiants_risque.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_tableau_bord_etudiant.dart';
+import '../../fonctionnalites/enseignant/presentation/ecran_cours_enseignant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_tableau_bord_enseignant.dart';
 
 class AppRoutes {
@@ -31,6 +32,8 @@ class AppRoutes {
   static const apparitorAssistant = '/apparitorat/assistant';
   static const studentDashboard = '/student';
   static const teacherDashboard = '/teacher';
+  static const teacherCourses = '/teacher/courses';
+  static const teacherCourseDetail = '/teacher/courses/detail';
   static const promotionChiefDashboard = '/promotion-chief';
   static const deanDashboard = '/dean';
   static const complaints = '/complaints';
@@ -91,6 +94,16 @@ class AppRoutes {
         return _route(settings, const StudentDashboardScreen());
       case teacherDashboard:
         return _route(settings, const TeacherDashboardScreen());
+      case teacherCourses:
+        return _route(settings, const TeacherCoursesScreen());
+      case teacherCourseDetail:
+        final args = settings.arguments;
+        final courseId = args is int
+            ? args
+            : args is Map<String, dynamic>
+                ? (args['id'] as num?)?.toInt() ?? 0
+                : 0;
+        return _route(settings, TeacherCourseDetailScreen(courseId: courseId));
       case promotionChiefDashboard:
         return _route(settings, const PromotionChiefDashboardScreen());
       case deanDashboard:
@@ -173,10 +186,9 @@ class AppRoutes {
       case UserRole.teacher:
         return const {
           teacherDashboard,
+          teacherCourses,
+          teacherCourseDetail,
           complaints,
-          analytics,
-          projects,
-          internships,
           grades,
           riskStudents,
         }.contains(normalizedRoute);

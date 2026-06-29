@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_enseignant.dart';
+import '../../../donnees/services/service_etudiant.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -18,6 +21,8 @@ class GradesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
+    if (role == UserRole.student) return const _StudentApiGradesScreen();
+    if (role == UserRole.teacher) return const _TeacherApiGradesScreen();
 
     return SmartFacultyShell(
       role: role,
@@ -48,6 +53,583 @@ class GradesScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _StudentApiGradesScreen extends StatelessWidget {
+  const _StudentApiGradesScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFacultyShell(
+      role: UserRole.student,
+      selectedRoute: AppRoutes.grades,
+      title: 'Mes notes et resultats',
+      subtitle: 'Notes publiees uniquement depuis la base de donnees.',
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: EtudiantDataSource.service.notes(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(ApiConfig.serverUnavailableMessage),
+            );
+          }
+
+          final data = snapshot.data ?? {};
+          final notes = data['notes'] as List<dynamic>? ?? [];
+          final resume = data['resume'] as Map<String, dynamic>? ?? {};
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ResponsiveGrid(
+                children: [
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Moyenne generale',
+                      value: _formatApiNumber(resume['moyenne_generale']),
+                      trend: '/20',
+                      description: 'ponderee par credits',
+                    ),
+                    icon: Icons.grade_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Credits valides',
+                      value: '${resume['credits_valides'] ?? 0}',
+                      trend: '${resume['credits_restants'] ?? 0} restants',
+                      description: 'notes publiees',
+                    ),
+                    icon: Icons.workspace_premium_rounded,
+                    color: AppColors.success,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Notes publiees',
+                      value: '${resume['notes_publiees'] ?? 0}',
+                      trend: 'visibles',
+                      description: 'brouillons masques',
+                    ),
+                    icon: Icons.fact_check_rounded,
+                    color: AppColors.cyan,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Cours echoues',
+                      value: '${resume['cours_echoues'] ?? 0}',
+                      trend: 'a suivre',
+                      description: 'moyenne finale < 10',
+                    ),
+                    icon: Icons.warning_amber_rounded,
+                    color: AppColors.warning,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              SmartTable(
+                title: 'Notes publiees',
+                subtitle: '${notes.length} ligne(s) visible(s).',
+                columns: const [
+                  DataColumn(label: Text('Cours')),
+                  DataColumn(label: Text('Type')),
+                  DataColumn(label: Text('Note')),
+                  DataColumn(label: Text('Credits')),
+                  DataColumn(label: Text('Resultat')),
+                  DataColumn(label: Text('Publication')),
+                ],
+                rows: [
+                  for (final note in notes)
+                    DataRow(
+                      cells: [
+                        DataCell(Text('${note['cours'] ?? '-'}')),
+                        DataCell(Text('${note['type_note'] ?? '-'}')),
+                        DataCell(Text(_formatApiNumber(note['valeur']))),
+                        DataCell(Text('${note['credits'] ?? 0}')),
+                        DataCell(Text('${note['resultat'] ?? '-'}')),
+                        DataCell(Text('${note['date_publication'] ?? '-'}')),
+                      ],
+                    ),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TeacherApiGradesScreen extends StatefulWidget {
+  const _TeacherApiGradesScreen();
+
+  @override
+  State<_TeacherApiGradesScreen> createState() => _TeacherApiGradesScreenState();
+}
+
+class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
+  int? _selectedCourseId;
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFacultyShell(
+      role: UserRole.teacher,
+      selectedRoute: AppRoutes.grades,
+      title: 'Publication des notes',
+      subtitle: 'Cours attribues et etat de publication depuis MySQL.',
+      body: FutureBuilder<List<dynamic>>(
+        future: EnseignantDataSource.service.cours(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(ApiConfig.serverUnavailableMessage),
+            );
+          }
+
+          final courses = snapshot.data ?? [];
+          _selectedCourseId ??=
+              courses.isEmpty ? null : _asInt(courses.first['id']);
+          final matchingCourses = courses
+              .where((course) => _asInt(course['id']) == _selectedCourseId)
+              .toList();
+          final selectedCourse = matchingCourses.isNotEmpty
+              ? matchingCourses.first
+              : courses.isEmpty
+                  ? null
+                  : courses.first;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionPanel(
+                title: 'Cours a encoder',
+                subtitle: 'Vous ne voyez que les cours qui vous sont attribues.',
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    SizedBox(
+                      width: 360,
+                      child: DropdownButtonFormField<int>(
+                        initialValue: _selectedCourseId,
+                        decoration: const InputDecoration(labelText: 'Cours'),
+                        items: [
+                          for (final course in courses)
+                            DropdownMenuItem<int>(
+                              value: _asInt(course['id']),
+                              child: Text('${course['code']} - ${course['nom']}'),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _selectedCourseId = value),
+                      ),
+                    ),
+                    if (selectedCourse != null)
+                      StatusBadge(
+                        label: '${selectedCourse['statut_notes'] ?? '-'}',
+                        color: selectedCourse['statut_notes'] == 'publiees'
+                            ? AppColors.success
+                            : AppColors.warning,
+                      ),
+                    if (selectedCourse != null)
+                      StatusBadge(
+                        label: '${selectedCourse['nombre_etudiants'] ?? 0} etudiants',
+                        color: AppColors.primary,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              if (_selectedCourseId == null)
+                const SectionPanel(
+                  title: 'Aucun cours',
+                  child: Text('Aucun cours attribue a ce compte enseignant.'),
+                )
+              else
+                _TeacherCourseGradesEditor(courseId: _selectedCourseId!),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TeacherCourseGradesEditor extends StatelessWidget {
+  const _TeacherCourseGradesEditor({required this.courseId});
+
+  final int courseId;
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<_TeacherGradeData>(
+      future: _load(courseId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return SectionPanel(
+            title: 'Connexion API impossible',
+            subtitle: snapshot.error.toString(),
+            child: const Text(
+              ApiConfig.serverUnavailableMessage,
+            ),
+          );
+        }
+
+        return _TeacherGradeEditor(
+          key: ValueKey(courseId),
+          courseId: courseId,
+          data: snapshot.data ?? const _TeacherGradeData(),
+        );
+      },
+    );
+  }
+
+  Future<_TeacherGradeData> _load(int courseId) async {
+    final results = await Future.wait([
+      EnseignantDataSource.service.etudiantsCours(courseId),
+      EnseignantDataSource.service.notesCours(courseId),
+    ]);
+
+    final notesPayload = results[1] as Map<String, dynamic>;
+
+    return _TeacherGradeData(
+      students: results[0] as List<dynamic>,
+      notes: notesPayload['notes'] as List<dynamic>? ?? const [],
+      stats: notesPayload['statistiques'] as Map<String, dynamic>? ?? const {},
+    );
+  }
+}
+
+class _TeacherGradeEditor extends StatefulWidget {
+  const _TeacherGradeEditor({
+    super.key,
+    required this.courseId,
+    required this.data,
+  });
+
+  final int courseId;
+  final _TeacherGradeData data;
+
+  @override
+  State<_TeacherGradeEditor> createState() => _TeacherGradeEditorState();
+}
+
+class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
+  final Map<int, TextEditingController> _interrogations = {};
+  final Map<int, TextEditingController> _tps = {};
+  final Map<int, TextEditingController> _examens = {};
+  String _query = '';
+  bool _onlyIncomplete = false;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initControllers();
+  }
+
+  @override
+  void dispose() {
+    for (final controller in [
+      ..._interrogations.values,
+      ..._tps.values,
+      ..._examens.values,
+    ]) {
+      controller.dispose();
+    }
+    super.dispose();
+  }
+
+  void _initControllers() {
+    final values = <int, Map<String, dynamic>>{};
+    for (final note in widget.data.notes) {
+      final studentId = _asInt(note['etudiant_id']);
+      final type = '${note['type_code'] ?? ''}';
+      values.putIfAbsent(studentId, () => {})[type] = note['valeur'];
+    }
+
+    for (final student in widget.data.students) {
+      final id = _asInt(student['id']);
+      _interrogations[id] =
+          TextEditingController(text: _formatEditable(values[id]?['interrogation']));
+      _tps[id] = TextEditingController(
+          text: _formatEditable(values[id]?['travail_pratique']));
+      _examens[id] =
+          TextEditingController(text: _formatEditable(values[id]?['examen']));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = widget.data.stats;
+    final filteredStudents = widget.data.students.where((student) {
+      final haystack = [
+        student['nom_complet'],
+        student['matricule'],
+        student['promotion'],
+        student['email'],
+      ].join(' ').toLowerCase();
+      final queryOk = _query.trim().isEmpty ||
+          haystack.contains(_query.trim().toLowerCase());
+      final incompleteOk = !_onlyIncomplete || _missingValues(student);
+
+      return queryOk && incompleteOk;
+    }).toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ResponsiveGrid(
+          children: [
+            StatCard(
+              metric: KpiMetric(
+                title: 'Moyenne',
+                value: _formatApiNumber(stats['moyenne_cours']),
+                trend: '/20',
+                description: 'notes publiees',
+              ),
+              icon: Icons.analytics_rounded,
+              color: AppColors.primary,
+            ),
+            StatCard(
+              metric: KpiMetric(
+                title: 'Brouillons',
+                value: '${stats['notes_brouillon'] ?? 0}',
+                trend: 'non visibles',
+                description: 'cote etudiant',
+              ),
+              icon: Icons.edit_note_rounded,
+              color: AppColors.warning,
+            ),
+            StatCard(
+              metric: KpiMetric(
+                title: 'Publiees',
+                value: '${stats['moyennes_publiees'] ?? 0}',
+                trend: 'visibles',
+                description: 'moyennes finales',
+              ),
+              icon: Icons.fact_check_rounded,
+              color: AppColors.success,
+            ),
+            StatCard(
+              metric: KpiMetric(
+                title: 'A risque',
+                value: '${stats['etudiants_a_risque'] ?? 0}',
+                trend: '< 12/20',
+                description: 'suivi conseille',
+              ),
+              icon: Icons.health_and_safety_rounded,
+              color: AppColors.danger,
+            ),
+          ],
+        ),
+        const SizedBox(height: 22),
+        SectionPanel(
+          title: 'Pilotage de l encodage',
+          subtitle: '${filteredStudents.length} etudiant(s) affiche(s) sur ${widget.data.students.length}.',
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(
+                width: 360,
+                child: TextField(
+                  decoration: const InputDecoration(
+                    labelText: 'Rechercher un etudiant',
+                    prefixIcon: Icon(Icons.search_rounded),
+                  ),
+                  onChanged: (value) => setState(() => _query = value),
+                ),
+              ),
+              FilterChip(
+                selected: _onlyIncomplete,
+                avatar: const Icon(Icons.rule_rounded),
+                label: const Text('Lignes incompletes'),
+                onSelected: (value) => setState(() => _onlyIncomplete = value),
+              ),
+              StatusBadge(
+                label: '${_missingCount()} incomplet(s)',
+                color: _missingCount() == 0
+                    ? AppColors.success
+                    : AppColors.warning,
+                icon: Icons.pending_actions_rounded,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 22),
+        SmartTable(
+          title: 'Encodage des notes',
+          subtitle: 'Moyenne finale = interrogation 20% + TP 30% + examen 50%.',
+          trailing: Wrap(
+            spacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed: _saving || widget.data.students.isEmpty
+                    ? null
+                    : _saveDraft,
+                icon: const Icon(Icons.save_rounded),
+                label: const Text('Enregistrer'),
+              ),
+              ElevatedButton.icon(
+                onPressed: _saving || widget.data.students.isEmpty
+                    ? null
+                    : _publish,
+                icon: const Icon(Icons.publish_rounded),
+                label: const Text('Publier'),
+              ),
+            ],
+          ),
+          columns: const [
+            DataColumn(label: Text('Etudiant')),
+            DataColumn(label: Text('Matricule')),
+            DataColumn(label: Text('Interro')),
+            DataColumn(label: Text('TP')),
+            DataColumn(label: Text('Examen')),
+            DataColumn(label: Text('Moyenne')),
+          ],
+          rows: [
+            for (final student in filteredStudents)
+              DataRow(cells: [
+                DataCell(Text('${student['nom_complet'] ?? '-'}')),
+                DataCell(Text('${student['matricule'] ?? '-'}')),
+                DataCell(_noteField(_interrogations[_asInt(student['id'])]!)),
+                DataCell(_noteField(_tps[_asInt(student['id'])]!)),
+                DataCell(_noteField(_examens[_asInt(student['id'])]!)),
+                DataCell(Text(_formatApiNumber(student['moyenne']))),
+              ]),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _noteField(TextEditingController controller) {
+    return SizedBox(
+      width: 82,
+      child: TextField(
+        controller: controller,
+        enabled: !_saving,
+        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        decoration: const InputDecoration(
+          isDense: true,
+          suffixText: '/20',
+        ),
+      ),
+    );
+  }
+
+  bool _missingValues(dynamic student) {
+    final id = _asInt(student['id']);
+
+    return _interrogations[id]!.text.trim().isEmpty ||
+        _tps[id]!.text.trim().isEmpty ||
+        _examens[id]!.text.trim().isEmpty;
+  }
+
+  int _missingCount() {
+    return widget.data.students.where(_missingValues).length;
+  }
+
+  Future<void> _saveDraft() async {
+    setState(() => _saving = true);
+    try {
+      await EnseignantDataSource.service.enregistrerBrouillon(
+        coursId: widget.courseId,
+        notes: _payload(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notes enregistrees en brouillon.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _publish() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Publier les notes ?'),
+        content: const Text(
+          'Apres publication, les notes deviennent visibles par les etudiants et sont verrouillees.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Publier'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    setState(() => _saving = true);
+    try {
+      await EnseignantDataSource.service.enregistrerBrouillon(
+        coursId: widget.courseId,
+        notes: _payload(),
+      );
+      await EnseignantDataSource.service.publierNotes(widget.courseId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Notes publiees et valve mise a jour.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  List<Map<String, dynamic>> _payload() {
+    return [
+      for (final student in widget.data.students)
+        {
+          'etudiant_id': _asInt(student['id']),
+          'interrogation': _parseNote(_interrogations[_asInt(student['id'])]!.text),
+          'travail_pratique': _parseNote(_tps[_asInt(student['id'])]!.text),
+          'examen': _parseNote(_examens[_asInt(student['id'])]!.text),
+        },
+    ];
+  }
+}
+
+class _TeacherGradeData {
+  const _TeacherGradeData({
+    this.students = const [],
+    this.notes = const [],
+    this.stats = const {},
+  });
+
+  final List<dynamic> students;
+  final List<dynamic> notes;
+  final Map<String, dynamic> stats;
 }
 
 class _PublishGradesPanel extends StatelessWidget {
@@ -669,4 +1251,28 @@ List<CourseGrade> _gradesForRole(UserRole role) {
     case UserRole.dean:
       return MockFacultyData.grades;
   }
+}
+
+String _formatApiNumber(dynamic value) {
+  if (value == null) return '-';
+  if (value is num) return value.toStringAsFixed(2);
+  return value.toString();
+}
+
+String _formatEditable(dynamic value) {
+  if (value == null) return '';
+  if (value is num) return value.toStringAsFixed(2);
+  return value.toString();
+}
+
+double? _parseNote(String value) {
+  final normalized = value.trim().replaceAll(',', '.');
+  if (normalized.isEmpty) return null;
+  return double.tryParse(normalized);
+}
+
+int _asInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse('${value ?? 0}') ?? 0;
 }

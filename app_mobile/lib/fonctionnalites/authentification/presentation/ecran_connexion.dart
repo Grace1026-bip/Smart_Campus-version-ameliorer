@@ -16,9 +16,20 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  final _identifierController = TextEditingController(
+    text: 'admin@smartfaculty.test',
+  );
+  final _passwordController = TextEditingController(text: 'Admin@123456');
   UserRole _selectedRole = UserRole.administrator;
   bool _passwordHidden = true;
   bool _loading = false;
+
+  @override
+  void dispose() {
+    _identifierController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,10 +63,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: _LoginForm(
                             formKey: _formKey,
                             selectedRole: _selectedRole,
+                            identifierController: _identifierController,
+                            passwordController: _passwordController,
                             passwordHidden: _passwordHidden,
                             loading: _loading,
-                            onRoleChanged: (role) =>
-                                setState(() => _selectedRole = role),
+                            onRoleChanged: _changeRole,
                             onTogglePassword: () => setState(
                               () => _passwordHidden = !_passwordHidden,
                             ),
@@ -77,15 +89,48 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     setState(() => _loading = true);
-    await AuthDataSource.service.login(
-      identifier: AppConstants.demoEmail,
-      password: 'password',
-      role: _selectedRole,
-    );
-    if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushReplacementNamed(AppRoutes.dashboardForRole(_selectedRole));
+    try {
+      final user = await AuthDataSource.service.login(
+        identifier: _identifierController.text.trim(),
+        password: _passwordController.text,
+        role: _selectedRole,
+      );
+      if (!mounted) return;
+      Navigator.of(
+        context,
+      ).pushReplacementNamed(AppRoutes.dashboardForRole(user.role));
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _changeRole(UserRole role) {
+    setState(() => _selectedRole = role);
+    final defaults = _defaultCredentials(role);
+    _identifierController.text = defaults[0];
+    _passwordController.text = defaults[1];
+  }
+
+  List<String> _defaultCredentials(UserRole role) {
+    switch (role) {
+      case UserRole.student:
+        return ['etudiant@smartfaculty.test', 'Etudiant@123456'];
+      case UserRole.teacher:
+        return ['enseignant@smartfaculty.test', 'password123'];
+      case UserRole.administrator:
+        return ['admin@smartfaculty.test', 'Admin@123456'];
+      case UserRole.apparitor:
+        return ['paritaire@smartfaculty.test', 'Paritaire@123456'];
+      case UserRole.promotionChief:
+        return ['icp@smartfaculty.test', 'Icp@123456'];
+      case UserRole.dean:
+        return ['doyen@smartfaculty.test', 'Doyen@123456'];
+    }
   }
 }
 
@@ -284,6 +329,8 @@ class _LoginForm extends StatelessWidget {
   const _LoginForm({
     required this.formKey,
     required this.selectedRole,
+    required this.identifierController,
+    required this.passwordController,
     required this.passwordHidden,
     required this.loading,
     required this.onRoleChanged,
@@ -293,6 +340,8 @@ class _LoginForm extends StatelessWidget {
 
   final GlobalKey<FormState> formKey;
   final UserRole selectedRole;
+  final TextEditingController identifierController;
+  final TextEditingController passwordController;
   final bool passwordHidden;
   final bool loading;
   final ValueChanged<UserRole> onRoleChanged;
@@ -355,7 +404,7 @@ class _LoginForm extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              initialValue: AppConstants.demoEmail,
+              controller: identifierController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
                 labelText: 'Email ou matricule',
@@ -370,7 +419,7 @@ class _LoginForm extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             TextFormField(
-              initialValue: 'password',
+              controller: passwordController,
               obscureText: passwordHidden,
               decoration: InputDecoration(
                 labelText: 'Mot de passe',

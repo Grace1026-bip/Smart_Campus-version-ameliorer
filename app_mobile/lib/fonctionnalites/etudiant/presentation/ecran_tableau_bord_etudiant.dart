@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
-import '../../../donnees/services/service_session.dart';
+import '../../../donnees/services/service_etudiant.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/tuile_fonctionnalite.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -12,137 +11,193 @@ import '../../../commun/composants/panneau_section.dart';
 import '../../../commun/composants/tableau_intelligent.dart';
 import '../../../commun/composants/carte_statistique.dart';
 import '../../../commun/composants/badge_statut.dart';
+import '../../../core/config/api_config.dart';
 
 class StudentDashboardScreen extends StatelessWidget {
   const StudentDashboardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final user = SessionService.currentUser;
-
     return SmartFacultyShell(
       role: UserRole.student,
       selectedRoute: AppRoutes.studentDashboard,
       title: 'Dashboard etudiant',
-      subtitle: 'Notes, cours, projets, stages et reclamations personnelles.',
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SectionPanel(
-            title: 'Bonjour ${user.name}',
-            subtitle: user.department,
-            trailing: const StatusBadge(
-              label: 'Regulier',
-              color: AppColors.success,
-              icon: Icons.verified_rounded,
-            ),
-            child: Wrap(
-              spacing: 16,
-              runSpacing: 14,
-              children: [
-                _ProfileInfo(label: 'Matricule', value: user.matricule),
-                _ProfileInfo(label: 'Email', value: user.email),
-                const _ProfileInfo(label: 'Semestre', value: 'S6 en cours'),
-                const _ProfileInfo(
-                    label: 'Resultat', value: 'Admis provisoire'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          ResponsiveGrid(
+      subtitle: 'Cours, valve, notes, alertes et reclamations depuis la base.',
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: EtudiantDataSource.service.tableauDeBord(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return _ErrorPanel(message: snapshot.error.toString());
+          }
+
+          final data = snapshot.data ?? {};
+          final profil = data['profil'] as Map<String, dynamic>? ?? {};
+          final annonces = data['dernieres_annonces'] as List<dynamic>? ?? [];
+          final alertes = data['alertes'] as List<dynamic>? ?? [];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (var i = 0; i < MockFacultyData.studentKpis.length; i++)
-                StatCard(
-                  metric: MockFacultyData.studentKpis[i],
-                  icon: [
-                    Icons.grade_rounded,
-                    Icons.workspace_premium_rounded,
-                    Icons.menu_book_rounded,
-                    Icons.mark_email_unread_rounded,
-                  ][i],
-                  color: [
-                    AppColors.primary,
-                    AppColors.success,
-                    AppColors.cyan,
-                    AppColors.warning,
-                  ][i],
-                ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          ResponsiveGrid(
-            minItemWidth: 250,
-            maxColumns: 4,
-            children: [
-              FeatureTile(
-                icon: Icons.fact_check_rounded,
-                title: 'Mes notes',
-                subtitle: 'Consulter les resultats par cours.',
-                onTap: () => Navigator.of(context).pushNamed(AppRoutes.grades),
-              ),
-              FeatureTile(
-                icon: Icons.workspaces_rounded,
-                title: 'Mes projets',
-                subtitle: 'Avancement, membres et livrables.',
-                color: AppColors.violet,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.projects),
-              ),
-              FeatureTile(
-                icon: Icons.business_center_rounded,
-                title: 'Mes stages',
-                subtitle: 'Offres, candidatures et suivi.',
-                color: AppColors.success,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.internships),
-              ),
-              FeatureTile(
-                icon: Icons.add_comment_rounded,
-                title: 'Reclamation',
-                subtitle: 'Soumettre une demande academique.',
-                color: AppColors.warning,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.complaints),
-              ),
-            ],
-          ),
-          const SizedBox(height: 22),
-          ResponsiveGrid(
-            minItemWidth: 360,
-            maxColumns: 2,
-            children: [
-              SmartTable(
-                title: 'Mes dernieres notes',
-                subtitle: 'Cours publies pour le semestre actuel.',
-                columns: const [
-                  DataColumn(label: Text('Cours')),
-                  DataColumn(label: Text('Note')),
-                  DataColumn(label: Text('Resultat')),
-                ],
-                rows: [
-                  for (final grade in MockFacultyData.grades.take(4))
-                    DataRow(
-                      cells: [
-                        DataCell(Text(grade.course)),
-                        DataCell(Text(grade.grade.toStringAsFixed(1))),
-                        DataCell(Text(grade.result)),
-                      ],
-                    ),
-                ],
-              ),
               SectionPanel(
-                title: 'Notifications',
-                subtitle: 'Messages importants pour votre parcours.',
-                child: Column(
+                title: 'Bonjour ${profil['nom_complet'] ?? ''}',
+                subtitle:
+                    '${profil['promotion'] ?? ''} - ${profil['annee_academique'] ?? ''}',
+                trailing: const StatusBadge(
+                  label: 'Compte approuve',
+                  color: AppColors.success,
+                  icon: Icons.verified_rounded,
+                ),
+                child: Wrap(
+                  spacing: 16,
+                  runSpacing: 14,
                   children: [
-                    for (final item in MockFacultyData.notifications.take(3))
-                      _NotificationLine(item: item),
+                    _ProfileInfo(
+                      label: 'Matricule',
+                      value: '${profil['matricule'] ?? '-'}',
+                    ),
+                    _ProfileInfo(
+                      label: 'Email',
+                      value: '${profil['email'] ?? '-'}',
+                    ),
+                    _ProfileInfo(
+                      label: 'Promotion',
+                      value: '${profil['promotion'] ?? '-'}',
+                    ),
+                    _ProfileInfo(
+                      label: 'Statut',
+                      value: '${profil['statut'] ?? '-'}',
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(height: 22),
+              ResponsiveGrid(
+                children: [
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Cours suivis',
+                      value: '${data['nombre_cours'] ?? 0}',
+                      trend: 'promotion',
+                      description: '${profil['promotion'] ?? ''}',
+                    ),
+                    icon: Icons.menu_book_rounded,
+                    color: AppColors.cyan,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Moyenne generale',
+                      value: _formatNumber(data['moyenne_generale']),
+                      trend: '/20',
+                      description: 'notes publiees',
+                    ),
+                    icon: Icons.grade_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Credits valides',
+                      value: '${data['credits_valides'] ?? 0}',
+                      trend: '${data['credits_restants'] ?? 0} restants',
+                      description: 'calcul automatique',
+                    ),
+                    icon: Icons.workspace_premium_rounded,
+                    color: AppColors.success,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Reclamations',
+                      value: '${data['reclamations_en_cours'] ?? 0}',
+                      trend: 'en cours',
+                      description: 'suivi personnel',
+                    ),
+                    icon: Icons.mark_email_unread_rounded,
+                    color: AppColors.warning,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              ResponsiveGrid(
+                minItemWidth: 250,
+                maxColumns: 4,
+                children: [
+                  FeatureTile(
+                    icon: Icons.fact_check_rounded,
+                    title: 'Mes notes',
+                    subtitle: 'Notes publiees uniquement.',
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.grades),
+                  ),
+                  FeatureTile(
+                    icon: Icons.campaign_rounded,
+                    title: 'Valve',
+                    subtitle: 'Publications de vos cours.',
+                    color: AppColors.cyan,
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.notifications),
+                  ),
+                  FeatureTile(
+                    icon: Icons.warning_amber_rounded,
+                    title: 'Alertes',
+                    subtitle: 'Risques et progression.',
+                    color: AppColors.warning,
+                    onTap: () => Navigator.of(context)
+                        .pushNamed(AppRoutes.notifications),
+                  ),
+                  FeatureTile(
+                    icon: Icons.add_comment_rounded,
+                    title: 'Reclamation',
+                    subtitle: 'Signaler une note ou un cours.',
+                    color: AppColors.success,
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.complaints),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              ResponsiveGrid(
+                minItemWidth: 360,
+                maxColumns: 2,
+                children: [
+                  SmartTable(
+                    title: 'Dernieres annonces',
+                    subtitle: 'Publications recentes de vos cours.',
+                    columns: const [
+                      DataColumn(label: Text('Cours')),
+                      DataColumn(label: Text('Titre')),
+                      DataColumn(label: Text('Type')),
+                    ],
+                    rows: [
+                      for (final item in annonces.take(5))
+                        DataRow(
+                          cells: [
+                            DataCell(Text('${item['code_cours'] ?? '-'}')),
+                            DataCell(Text('${item['titre'] ?? '-'}')),
+                            DataCell(
+                                Text('${item['type_publication'] ?? '-'}')),
+                          ],
+                        ),
+                    ],
+                  ),
+                  SectionPanel(
+                    title: 'Alertes academiques',
+                    subtitle: 'Generees a partir des notes publiees.',
+                    child: Column(
+                      children: [
+                        if (alertes.isEmpty)
+                          const Text('Aucune alerte academique active.'),
+                        for (final item in alertes.take(5))
+                          _AlertLine(item: item as Map<String, dynamic>),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ],
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -185,10 +240,10 @@ class _ProfileInfo extends StatelessWidget {
   }
 }
 
-class _NotificationLine extends StatelessWidget {
-  const _NotificationLine({required this.item});
+class _AlertLine extends StatelessWidget {
+  const _AlertLine({required this.item});
 
-  final FacultyNotification item;
+  final Map<String, dynamic> item;
 
   @override
   Widget build(BuildContext context) {
@@ -197,14 +252,14 @@ class _NotificationLine extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.notifications_rounded, color: AppColors.primary),
+          const Icon(Icons.notifications_rounded, color: AppColors.warning),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  item.title,
+                  '${item['titre'] ?? '-'}',
                   style: const TextStyle(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w900,
@@ -212,7 +267,7 @@ class _NotificationLine extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  item.message,
+                  '${item['message'] ?? ''}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
@@ -221,16 +276,29 @@ class _NotificationLine extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            item.timeLabel,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
         ],
       ),
     );
   }
+}
+
+class _ErrorPanel extends StatelessWidget {
+  const _ErrorPanel({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      title: 'Connexion API impossible',
+      subtitle: message,
+      child: const Text(ApiConfig.serverUnavailableMessage),
+    );
+  }
+}
+
+String _formatNumber(dynamic value) {
+  if (value == null) return '-';
+  if (value is num) return value.toStringAsFixed(2);
+  return value.toString();
 }

@@ -13,6 +13,7 @@ class SessionService
         self::$configuration = $configuration;
 
         if (session_status() === PHP_SESSION_NONE) {
+            self::configurerStockageSessions((string) ($configuration['chemin_sessions'] ?? ''));
             session_name((string) $configuration['nom_session']);
             session_set_cookie_params([
                 'lifetime' => 0,
@@ -22,6 +23,21 @@ class SessionService
                 'samesite' => (string) $configuration['session_same_site'],
             ]);
         }
+    }
+
+    private static function configurerStockageSessions(string $chemin): void
+    {
+        if ($chemin === '') {
+            return;
+        }
+
+        $cheminAbsolu = self::cheminAbsolu($chemin);
+
+        if (!is_dir($cheminAbsolu)) {
+            mkdir($cheminAbsolu, 0775, true);
+        }
+
+        session_save_path($cheminAbsolu);
     }
 
     public static function demarrer(): void
@@ -106,5 +122,14 @@ class SessionService
         ]);
 
         session_destroy();
+    }
+
+    private static function cheminAbsolu(string $chemin): string
+    {
+        if (preg_match('/^[A-Z]:\\\\/i', $chemin) === 1 || str_starts_with($chemin, DIRECTORY_SEPARATOR)) {
+            return $chemin;
+        }
+
+        return chemin_base($chemin);
     }
 }

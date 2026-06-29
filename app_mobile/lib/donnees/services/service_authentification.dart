@@ -1,4 +1,5 @@
 import '../modeles/modeles_faculte.dart';
+import 'service_api.dart';
 import 'service_session.dart';
 
 abstract class AuthService {
@@ -11,8 +12,8 @@ abstract class AuthService {
   Future<void> logout();
 }
 
-class MockAuthService implements AuthService {
-  const MockAuthService();
+class ApiAuthService implements AuthService {
+  const ApiAuthService();
 
   @override
   Future<FacultyUser> login({
@@ -20,16 +21,80 @@ class MockAuthService implements AuthService {
     required String password,
     required UserRole role,
   }) async {
-    SessionService.connectAs(role);
-    return SessionService.currentUser;
+    final data = await ApiDataSource.client.post(
+      '/api/connexion',
+      body: {
+        'email': identifier,
+        'mot_de_passe': password,
+        'se_souvenir_de_moi': true,
+      },
+    );
+
+    final userJson = data['utilisateur'] as Map<String, dynamic>;
+    final roles = (data['roles'] as List<dynamic>? ?? const [])
+        .map((item) => item.toString())
+        .toList();
+    final resolvedRole = _roleFromApi(roles, fallback: role);
+    final user = _userFromApi(userJson, resolvedRole);
+
+    SessionService.connectWithUser(user);
+    return user;
   }
 
   @override
   Future<void> logout() async {
-    SessionService.connectAs(UserRole.administrator);
+    try {
+      await ApiDataSource.client.post('/api/deconnexion');
+    } finally {
+      SessionService.clear();
+    }
+  }
+
+  FacultyUser _userFromApi(Map<String, dynamic> json, UserRole role) {
+    final fullName = [
+      json['nom'],
+      json['postnom'],
+      json['prenom'],
+    ]
+        .where((part) => part != null && part.toString().trim().isNotEmpty)
+        .join(' ');
+
+    return FacultyUser(
+      name: fullName.isEmpty ? 'Utilisateur Smart Faculty' : fullName,
+      email: json['email']?.toString() ?? '',
+      role: role,
+      department: role == UserRole.student
+          ? 'Espace etudiant'
+          : role == UserRole.teacher
+              ? 'Departement informatique'
+              : role.workspaceLabel,
+      avatarText: _avatar(fullName),
+      matricule: '',
+      promotion: '',
+      phone: '',
+      location: 'Campus',
+    );
+  }
+
+  String _avatar(String name) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    if (parts.isEmpty || parts.first.isEmpty) return 'SF';
+    return parts.take(2).map((part) => part[0].toUpperCase()).join();
+  }
+
+  UserRole _roleFromApi(List<String> roles, {required UserRole fallback}) {
+    if (roles.contains('etudiant')) return UserRole.student;
+    if (roles.contains('enseignant')) return UserRole.teacher;
+    if (roles.contains('chef_promotion')) return UserRole.promotionChief;
+    if (roles.contains('appariteur')) return UserRole.apparitor;
+    if (roles.contains('doyen') || roles.contains('vice_doyen')) {
+      return UserRole.dean;
+    }
+    if (roles.contains('administrateur')) return UserRole.administrator;
+    return fallback;
   }
 }
 
 class AuthDataSource {
-  static AuthService service = const MockAuthService();
+  static AuthService service = const ApiAuthService();
 }

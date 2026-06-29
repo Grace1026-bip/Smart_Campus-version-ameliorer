@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -17,6 +19,8 @@ class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
+    if (role == UserRole.teacher) return const _TeacherValveScreen();
+
     const notifications = MockFacultyData.notifications;
 
     return SmartFacultyShell(
@@ -86,6 +90,620 @@ class NotificationsScreen extends StatelessWidget {
       ),
     );
   }
+}
+
+class _TeacherValveScreen extends StatefulWidget {
+  const _TeacherValveScreen();
+
+  @override
+  State<_TeacherValveScreen> createState() => _TeacherValveScreenState();
+}
+
+class _TeacherValveScreenState extends State<_TeacherValveScreen> {
+  late Future<_ValveData> _future = _load();
+  int? _courseFilter;
+  String? _typeFilter;
+
+  Future<_ValveData> _load() async {
+    final results = await Future.wait([
+      EnseignantDataSource.service.cours(),
+      EnseignantDataSource.service.valve(),
+    ]);
+
+    return _ValveData(
+      courses: results[0] as List<dynamic>,
+      publications: results[1] as List<dynamic>,
+    );
+  }
+
+  void _refresh() {
+    setState(() => _future = _load());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFacultyShell(
+      role: UserRole.teacher,
+      selectedRoute: AppRoutes.notifications,
+      title: 'Valve enseignant',
+      subtitle: 'Publications reelles liees uniquement a vos cours.',
+      body: FutureBuilder<_ValveData>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(
+                ApiConfig.serverUnavailableMessage,
+              ),
+            );
+          }
+
+          final data = snapshot.data ?? const _ValveData();
+          final publications = data.publications.where((publication) {
+            final courseOk = _courseFilter == null ||
+                publication['cours_id'].toString() == _courseFilter.toString();
+            final typeOk = _typeFilter == null ||
+                publication['type_publication'] == _typeFilter;
+            return courseOk && typeOk;
+          }).toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ResponsiveGrid(
+                children: [
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Publications',
+                      value: '${data.publications.length}',
+                      trend: 'total',
+                      description: 'dans vos cours',
+                    ),
+                    icon: Icons.campaign_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Importantes',
+                      value:
+                          '${data.publications.where((p) => p['est_important'] == true).length}',
+                      trend: 'prioritaires',
+                      description: 'marquees importantes',
+                    ),
+                    icon: Icons.priority_high_rounded,
+                    color: AppColors.danger,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Verrouillees',
+                      value:
+                          '${data.publications.where((p) => p['est_verrouille'] == true).length}',
+                      trend: 'non modifiables',
+                      description: 'notes ou annonces sensibles',
+                    ),
+                    icon: Icons.lock_rounded,
+                    color: AppColors.warning,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Cours',
+                      value: '${data.courses.length}',
+                      trend: 'attribues',
+                      description: 'perimetre visible',
+                    ),
+                    icon: Icons.menu_book_rounded,
+                    color: AppColors.success,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              _PublicationForm(courses: data.courses, onSaved: _refresh),
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Filtres',
+                subtitle: 'Filtrer les publications par cours ou type.',
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: 280,
+                      child: DropdownButtonFormField<int?>(
+                        initialValue: _courseFilter,
+                        decoration: const InputDecoration(labelText: 'Cours'),
+                        items: [
+                          const DropdownMenuItem<int?>(
+                            value: null,
+                            child: Text('Tous les cours'),
+                          ),
+                          for (final course in data.courses)
+                            DropdownMenuItem<int?>(
+                              value: _asInt(course['id']),
+                              child: Text('${course['code']} - ${course['nom']}'),
+                            ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _courseFilter = value),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 240,
+                      child: DropdownButtonFormField<String?>(
+                        initialValue: _typeFilter,
+                        decoration: const InputDecoration(labelText: 'Type'),
+                        items: const [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Tous les types'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'annonce',
+                            child: Text('Annonce'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'communique',
+                            child: Text('Communique'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'devoir',
+                            child: Text('Devoir'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'support_de_cours',
+                            child: Text('Support'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'publication_notes',
+                            child: Text('Notes'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'changement_horaire',
+                            child: Text('Horaire'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'consigne_examen',
+                            child: Text('Consigne'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'rappel',
+                            child: Text('Rappel'),
+                          ),
+                        ],
+                        onChanged: (value) =>
+                            setState(() => _typeFilter = value),
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () => setState(() {
+                        _courseFilter = null;
+                        _typeFilter = null;
+                      }),
+                      icon: const Icon(Icons.filter_alt_off_rounded),
+                      label: const Text('Reinitialiser'),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Publications',
+                subtitle: '${publications.length} publication(s) affichee(s).',
+                child: Column(
+                  children: [
+                    if (publications.isEmpty)
+                      const Text('Aucune publication dans ce filtre.'),
+                    for (final publication in publications)
+                      _TeacherPublicationCard(
+                        publication: publication,
+                        onChanged: _refresh,
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _PublicationForm extends StatefulWidget {
+  const _PublicationForm({required this.courses, required this.onSaved});
+
+  final List<dynamic> courses;
+  final VoidCallback onSaved;
+
+  @override
+  State<_PublicationForm> createState() => _PublicationFormState();
+}
+
+class _PublicationFormState extends State<_PublicationForm> {
+  final _titleController = TextEditingController();
+  final _contentController = TextEditingController();
+  final _attachmentController = TextEditingController();
+  int? _courseId;
+  String _type = 'annonce';
+  bool _important = false;
+  bool _saving = false;
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _contentController.dispose();
+    _attachmentController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _courseId ??= widget.courses.isEmpty ? null : _asInt(widget.courses.first['id']);
+
+    if (widget.courses.isEmpty) {
+      return const SectionPanel(
+        title: 'Nouvelle publication',
+        subtitle: 'Aucun cours attribue a ce compte.',
+        child: Text('La valve sera disponible des qu un cours vous sera attribue.'),
+      );
+    }
+
+    return SectionPanel(
+      title: 'Nouvelle publication',
+      subtitle: 'La publication sera associee a un de vos cours.',
+      child: Column(
+        children: [
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            children: [
+              SizedBox(
+                width: 300,
+                child: DropdownButtonFormField<int>(
+                  initialValue: _courseId,
+                  decoration: const InputDecoration(labelText: 'Cours'),
+                  items: [
+                    for (final course in widget.courses)
+                      DropdownMenuItem<int>(
+                        value: _asInt(course['id']),
+                        child: Text('${course['code']} - ${course['nom']}'),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _courseId = value),
+                ),
+              ),
+              SizedBox(
+                width: 240,
+                child: DropdownButtonFormField<String>(
+                  initialValue: _type,
+                  decoration: const InputDecoration(labelText: 'Type'),
+                  items: const [
+                    DropdownMenuItem(value: 'annonce', child: Text('Annonce')),
+                    DropdownMenuItem(value: 'communique', child: Text('Communique')),
+                    DropdownMenuItem(value: 'devoir', child: Text('Devoir')),
+                    DropdownMenuItem(value: 'support_de_cours', child: Text('Support')),
+                    DropdownMenuItem(value: 'changement_horaire', child: Text('Changement horaire')),
+                    DropdownMenuItem(value: 'consigne_examen', child: Text('Consigne examen')),
+                    DropdownMenuItem(value: 'rappel', child: Text('Rappel')),
+                  ],
+                  onChanged: (value) => setState(() => _type = value ?? _type),
+                ),
+              ),
+              SizedBox(
+                width: 220,
+                child: SwitchListTile(
+                  value: _important,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Important'),
+                  onChanged: (value) => setState(() => _important = value),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _titleController,
+            decoration: const InputDecoration(labelText: 'Titre'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _contentController,
+            minLines: 3,
+            maxLines: 5,
+            decoration: const InputDecoration(labelText: 'Contenu'),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _attachmentController,
+            decoration: const InputDecoration(labelText: 'Piece jointe URL'),
+          ),
+          const SizedBox(height: 14),
+          Align(
+            alignment: Alignment.centerRight,
+            child: ElevatedButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.publish_rounded),
+              label: Text(_saving ? 'Publication...' : 'Publier'),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _submit() async {
+    if (_courseId == null ||
+        _titleController.text.trim().isEmpty ||
+        _contentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Cours, titre et contenu obligatoires.')),
+      );
+      return;
+    }
+
+    setState(() => _saving = true);
+    try {
+      await EnseignantDataSource.service.creerPublication(
+        coursId: _courseId!,
+        typePublication: _type,
+        titre: _titleController.text.trim(),
+        contenu: _contentController.text.trim(),
+        pieceJointeUrl: _attachmentController.text.trim().isEmpty
+            ? null
+            : _attachmentController.text.trim(),
+        estImportant: _important,
+      );
+      if (!mounted) return;
+      _titleController.clear();
+      _contentController.clear();
+      _attachmentController.clear();
+      setState(() => _important = false);
+      widget.onSaved();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Publication ajoutee dans la valve.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+}
+
+class _TeacherPublicationCard extends StatelessWidget {
+  const _TeacherPublicationCard({
+    required this.publication,
+    required this.onChanged,
+  });
+
+  final dynamic publication;
+  final VoidCallback onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final locked = publication['est_verrouille'] == true;
+    final color = publication['est_important'] == true
+        ? AppColors.danger
+        : AppColors.primary;
+    final type = '${publication['type_publication'] ?? '-'}';
+    final attachment = '${publication['piece_jointe_url'] ?? ''}'.trim();
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(_publicationTypeIcon(type), color: color),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${publication['titre'] ?? '-'}',
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${publication['auteur'] ?? '-'} - ${publication['date_publication'] ?? '-'}',
+                      style: const TextStyle(
+                        color: AppColors.textSecondary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              StatusBadge(
+                label:
+                    locked ? 'Verrouillee' : '${publication['statut'] ?? '-'}',
+                color: locked ? AppColors.primary : color,
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              StatusBadge(
+                label:
+                    '${publication['code_cours'] ?? ''} ${publication['cours'] ?? '-'}'
+                        .trim(),
+                color: AppColors.primary,
+                icon: Icons.menu_book_rounded,
+              ),
+              StatusBadge(
+                label: _publicationTypeLabel(type),
+                color: color,
+                icon: _publicationTypeIcon(type),
+              ),
+              if (publication['est_important'] == true)
+                const StatusBadge(
+                  label: 'Important',
+                  color: AppColors.danger,
+                  icon: Icons.priority_high_rounded,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '${publication['contenu'] ?? ''}',
+            style: const TextStyle(
+              color: AppColors.textSecondary,
+              height: 1.35,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          if (attachment.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () {},
+              icon: const Icon(Icons.attach_file_rounded),
+              label: Text(attachment),
+            ),
+          ],
+          if (!locked) ...[
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () => _edit(context),
+                  icon: const Icon(Icons.edit_rounded),
+                  label: const Text('Modifier'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _delete(context),
+                  icon: const Icon(Icons.delete_outline_rounded),
+                  label: const Text('Supprimer'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Future<void> _edit(BuildContext context) async {
+    final controller = TextEditingController(
+      text: '${publication['contenu'] ?? ''}',
+    );
+    final content = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Modifier la publication'),
+        content: TextField(
+          controller: controller,
+          minLines: 4,
+          maxLines: 6,
+          decoration: const InputDecoration(labelText: 'Contenu'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(controller.text.trim()),
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (content == null || content.isEmpty) return;
+
+    try {
+      await EnseignantDataSource.service.modifierPublication(
+        publicationId: _asInt(publication['id']),
+        contenu: content,
+      );
+      onChanged();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer la publication ?'),
+        content: const Text(
+          'Cette action est impossible si la publication est verrouillee.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await EnseignantDataSource.service
+          .supprimerPublication(_asInt(publication['id']));
+      onChanged();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+}
+
+class _ValveData {
+  const _ValveData({
+    this.courses = const [],
+    this.publications = const [],
+  });
+
+  final List<dynamic> courses;
+  final List<dynamic> publications;
 }
 
 class _NotificationCard extends StatelessWidget {
@@ -166,6 +784,51 @@ class _NotificationCard extends StatelessWidget {
   }
 }
 
+String _publicationTypeLabel(String type) {
+  switch (type) {
+    case 'annonce':
+      return 'Annonce';
+    case 'communique':
+      return 'Communique';
+    case 'devoir':
+      return 'Devoir';
+    case 'support_de_cours':
+      return 'Document';
+    case 'changement_horaire':
+      return 'Horaire';
+    case 'consigne_examen':
+      return 'Consigne';
+    case 'publication_notes':
+      return 'Notes';
+    case 'rappel':
+      return 'Rappel';
+    default:
+      return type;
+  }
+}
+
+IconData _publicationTypeIcon(String type) {
+  switch (type) {
+    case 'devoir':
+      return Icons.assignment_rounded;
+    case 'support_de_cours':
+      return Icons.attach_file_rounded;
+    case 'changement_horaire':
+      return Icons.event_repeat_rounded;
+    case 'consigne_examen':
+      return Icons.rule_rounded;
+    case 'publication_notes':
+      return Icons.fact_check_rounded;
+    case 'rappel':
+      return Icons.alarm_rounded;
+    case 'communique':
+      return Icons.record_voice_over_rounded;
+    case 'annonce':
+    default:
+      return Icons.campaign_rounded;
+  }
+}
+
 Color _toneColor(NotificationTone tone) {
   switch (tone) {
     case NotificationTone.info:
@@ -190,4 +853,10 @@ IconData _toneIcon(NotificationTone tone) {
     case NotificationTone.danger:
       return Icons.priority_high_rounded;
   }
+}
+
+int _asInt(dynamic value) {
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse('${value ?? 0}') ?? 0;
 }

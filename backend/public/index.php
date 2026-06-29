@@ -45,7 +45,7 @@ date_default_timezone_set((string) $configuration['fuseau_horaire']);
 appliquer_cors($configuration);
 
 if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
-    http_response_code(204);
+    Reponse::succes([], 'Preflight CORS OK.');
     exit;
 }
 
@@ -90,7 +90,92 @@ $routeur->get('/api/etudiant/tableau-de-bord', [EtudiantControleur::class, 'tabl
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
 ]);
+$routeur->get('/api/etudiant/cours', [EtudiantControleur::class, 'cours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/cours/{id}', [EtudiantControleur::class, 'detailCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/valve', [EtudiantControleur::class, 'valve'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/valve/cours/{id}', [EtudiantControleur::class, 'valveCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/notes', [EtudiantControleur::class, 'notes'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/alertes', [EtudiantControleur::class, 'alertes'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->post('/api/etudiant/reclamations', [EtudiantControleur::class, 'creerReclamation'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+
 $routeur->get('/api/enseignant/tableau-de-bord', [EnseignantControleur::class, 'tableauDeBord'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/cours', [EnseignantControleur::class, 'cours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/cours/{id}', [EnseignantControleur::class, 'detailCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/valve', [EnseignantControleur::class, 'valve'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->post('/api/enseignant/valve/publication', [EnseignantControleur::class, 'creerPublication'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->put('/api/enseignant/valve/publication/{id}', [EnseignantControleur::class, 'modifierPublication'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->delete('/api/enseignant/valve/publication/{id}', [EnseignantControleur::class, 'supprimerPublication'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/cours/{id}/etudiants', [EnseignantControleur::class, 'etudiantsCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/cours/{id}/notes', [EnseignantControleur::class, 'notesCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->post('/api/enseignant/cours/{id}/notes/brouillon', [EnseignantControleur::class, 'enregistrerBrouillon'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->post('/api/enseignant/cours/{id}/notes/publier', [EnseignantControleur::class, 'publierNotes'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/cours/{id}/etudiants-a-risque', [EnseignantControleur::class, 'etudiantsRisque'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/reclamations', [EnseignantControleur::class, 'reclamations'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->get('/api/enseignant/reclamations/{id}', [EnseignantControleur::class, 'detailReclamation'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
+]);
+$routeur->post('/api/enseignant/reclamations/{id}/repondre', [EnseignantControleur::class, 'repondreReclamation'], [
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser(['enseignant', 'doyen', 'vice_doyen', 'administrateur']),
 ]);
@@ -154,8 +239,9 @@ function appliquer_cors(array $configuration): void
 
     header('Access-Control-Allow-Origin: ' . $origine);
     header('Access-Control-Allow-Credentials: true');
-    header('Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With');
-    header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
+    header('Access-Control-Allow-Headers: Content-Type, Accept, X-Requested-With, Authorization');
+    header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS');
+    header('Access-Control-Max-Age: 86400');
 
     if ($origine !== '*') {
         header('Vary: Origin');

@@ -18,6 +18,16 @@ class Routeur
         $this->ajouter('POST', $uri, $action, $middlewares);
     }
 
+    public function put(string $uri, callable|array $action, array $middlewares = []): void
+    {
+        $this->ajouter('PUT', $uri, $action, $middlewares);
+    }
+
+    public function delete(string $uri, callable|array $action, array $middlewares = []): void
+    {
+        $this->ajouter('DELETE', $uri, $action, $middlewares);
+    }
+
     public function ajouter(string $methode, string $uri, callable|array $action, array $middlewares = []): void
     {
         $this->routes[] = [

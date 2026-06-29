@@ -9,6 +9,7 @@ return [
     'fuseau_horaire' => env_fr('APP_TIMEZONE', 'Africa/Kinshasa'),
 
     'nom_session' => env_fr('SESSION_NAME', 'SMART_FACULTY_SESSION'),
+    'chemin_sessions' => env_fr('SESSION_SAVE_PATH', 'stockage/sessions'),
     'session_secure' => (bool) env_fr('SESSION_SECURE', false),
     'session_same_site' => env_fr('SESSION_SAME_SITE', 'Lax'),
 
