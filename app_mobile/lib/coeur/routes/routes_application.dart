@@ -65,6 +65,11 @@ class AppRoutes {
 
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final requestedRoute = settings.name ?? login;
+
+    if (!_isPublicRoute(requestedRoute) && !SessionService.isAuthenticated) {
+      return _route(const RouteSettings(name: login), const LoginScreen());
+    }
+
     if (!_isPublicRoute(requestedRoute) &&
         !_isRouteAllowed(SessionService.currentRole, requestedRoute)) {
       final fallbackRoute = dashboardForRole(SessionService.currentRole);

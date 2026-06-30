@@ -83,15 +83,37 @@ class ApiAuthService implements AuthService {
   }
 
   UserRole _roleFromApi(List<String> roles, {required UserRole fallback}) {
-    if (roles.contains('etudiant')) return UserRole.student;
-    if (roles.contains('enseignant')) return UserRole.teacher;
-    if (roles.contains('chef_promotion')) return UserRole.promotionChief;
-    if (roles.contains('appariteur')) return UserRole.apparitor;
+    if (roles.contains(_apiRoleFor(fallback))) return fallback;
+    if (roles.contains('administrateur')) return UserRole.administrator;
     if (roles.contains('doyen') || roles.contains('vice_doyen')) {
       return UserRole.dean;
     }
-    if (roles.contains('administrateur')) return UserRole.administrator;
+    if (roles.contains('appariteur') || roles.contains('paritaire')) {
+      return UserRole.apparitor;
+    }
+    if (roles.contains('chef_promotion') || roles.contains('icp')) {
+      return UserRole.promotionChief;
+    }
+    if (roles.contains('etudiant')) return UserRole.student;
+    if (roles.contains('enseignant')) return UserRole.teacher;
     return fallback;
+  }
+
+  String _apiRoleFor(UserRole role) {
+    switch (role) {
+      case UserRole.administrator:
+        return 'administrateur';
+      case UserRole.apparitor:
+        return 'appariteur';
+      case UserRole.student:
+        return 'etudiant';
+      case UserRole.teacher:
+        return 'enseignant';
+      case UserRole.promotionChief:
+        return 'chef_promotion';
+      case UserRole.dean:
+        return 'doyen';
+    }
   }
 }
 

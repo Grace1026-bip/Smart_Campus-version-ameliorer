@@ -101,13 +101,8 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.grades,
           ),
           SmartNavItem(
-            label: 'Mes cours',
-            icon: Icons.menu_book_rounded,
-            route: AppRoutes.teacherCourses,
-          ),
-          SmartNavItem(
-            label: 'Valve',
-            icon: Icons.campaign_rounded,
+            label: 'Notifications',
+            icon: Icons.notifications_rounded,
             route: AppRoutes.notifications,
           ),
           SmartNavItem(
@@ -119,11 +114,6 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Risque',
             icon: Icons.health_and_safety_rounded,
             route: AppRoutes.riskStudents,
-          ),
-          SmartNavItem(
-            label: 'Notifications',
-            icon: Icons.notifications_rounded,
-            route: AppRoutes.notifications,
           ),
           SmartNavItem(
             label: 'Profil',
@@ -474,9 +464,12 @@ class _Sidebar extends StatelessWidget {
                   route: AppRoutes.login,
                 ),
                 selected: false,
-                onTap: () => Navigator.of(
-                  context,
-                ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false),
+                onTap: () {
+                  SessionService.clear();
+                  Navigator.of(
+                    context,
+                  ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);
+                },
               ),
             ],
           ),

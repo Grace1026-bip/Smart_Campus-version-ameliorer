@@ -101,6 +101,9 @@ class ValveService
             throw new ExceptionHttp('Titre et contenu obligatoires.', 422);
         }
 
+        $pieceJointeUrl = self::pieceJointeDepuisDonnees($donnees)
+            ?? (nettoyer_chaine($donnees['piece_jointe_url'] ?? '') ?: null);
+
         $requete = BaseDeDonnees::connexion()->prepare(
             'INSERT INTO publications_valve (
                 cours_id, enseignant_id, type_publication, titre, contenu, piece_jointe_url, statut, visibilite, est_important
@@ -114,7 +117,7 @@ class ValveService
             'type_publication' => $type,
             'titre' => $titre,
             'contenu' => $contenu,
-            'piece_jointe_url' => nettoyer_chaine($donnees['piece_jointe_url'] ?? '') ?: null,
+            'piece_jointe_url' => $pieceJointeUrl,
             'statut' => $statut,
             'visibilite' => $visibilite,
             'est_important' => normaliser_booleen($donnees['est_important'] ?? $donnees['important'] ?? false) ? 1 : 0,
@@ -141,6 +144,11 @@ class ValveService
         $visibilite = $donnees['visibilite'] ?? null;
         self::validerStatutEtVisibilite($statut, $visibilite);
 
+        $pieceJointeUrl = self::pieceJointeDepuisDonnees($donnees);
+        if ($pieceJointeUrl === null && isset($donnees['piece_jointe_url'])) {
+            $pieceJointeUrl = nettoyer_chaine($donnees['piece_jointe_url']);
+        }
+
         $requete = BaseDeDonnees::connexion()->prepare(
             'UPDATE publications_valve
              SET titre = COALESCE(:titre, titre),
@@ -162,7 +170,7 @@ class ValveService
             'est_important' => array_key_exists('est_important', $donnees)
                 ? (normaliser_booleen($donnees['est_important']) ? 1 : 0)
                 : null,
-            'piece_jointe_url' => isset($donnees['piece_jointe_url']) ? nettoyer_chaine($donnees['piece_jointe_url']) : null,
+            'piece_jointe_url' => $pieceJointeUrl,
         ]);
 
         return self::publication($publicationId);
@@ -261,6 +269,55 @@ class ValveService
         $publication['fichier'] = $publication['piece_jointe_url'];
 
         return $publication;
+    }
+
+    private static function pieceJointeDepuisDonnees(array $donnees): ?string
+    {
+        $base64 = nettoyer_chaine($donnees['piece_jointe_base64'] ?? '');
+        if ($base64 === '') {
+            return null;
+        }
+
+        if (str_contains($base64, ',')) {
+            $base64 = substr($base64, strpos($base64, ',') + 1);
+        }
+
+        $nomOriginal = nettoyer_chaine($donnees['piece_jointe_nom'] ?? 'document');
+        $extension = strtolower(pathinfo($nomOriginal, PATHINFO_EXTENSION));
+        $extensionsAutorisees = ['pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'png', 'jpg', 'jpeg', 'txt', 'zip'];
+
+        if (!in_array($extension, $extensionsAutorisees, true)) {
+            throw new ExceptionHttp('Type de fichier non autorise.', 422);
+        }
+
+        $contenu = base64_decode($base64, true);
+        if ($contenu === false) {
+            throw new ExceptionHttp('Fichier joint invalide.', 422);
+        }
+
+        if (strlen($contenu) > 10 * 1024 * 1024) {
+            throw new ExceptionHttp('Fichier trop volumineux. Taille maximale: 10 Mo.', 422);
+        }
+
+        $dossier = chemin_base('public' . DIRECTORY_SEPARATOR . 'fichiers' . DIRECTORY_SEPARATOR . 'valve');
+        if (!is_dir($dossier) && !mkdir($dossier, 0775, true) && !is_dir($dossier)) {
+            throw new ExceptionHttp('Impossible de preparer le stockage du fichier.', 500);
+        }
+
+        $nomBase = pathinfo($nomOriginal, PATHINFO_FILENAME) ?: 'document';
+        $nomBase = trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $nomBase), '-');
+        if ($nomBase === '') {
+            $nomBase = 'document';
+        }
+
+        $nomFichier = date('YmdHis') . '-' . bin2hex(random_bytes(6)) . '-' . $nomBase . '.' . $extension;
+        $chemin = $dossier . DIRECTORY_SEPARATOR . $nomFichier;
+
+        if (file_put_contents($chemin, $contenu) === false) {
+            throw new ExceptionHttp('Impossible d enregistrer le fichier joint.', 500);
+        }
+
+        return '/fichiers/valve/' . $nomFichier;
     }
 
     private static function validerStatutEtVisibilite(mixed $statut, mixed $visibilite): void

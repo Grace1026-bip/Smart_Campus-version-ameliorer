@@ -5,6 +5,8 @@ import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/fichier_valve_picker.dart';
+import '../../../donnees/services/lien_externe.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
@@ -103,6 +105,7 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
   late Future<_ValveData> _future = _load();
   int? _courseFilter;
   String? _typeFilter;
+  final Set<int> _removedPublicationIds = {};
 
   Future<_ValveData> _load() async {
     final results = await Future.wait([
@@ -116,8 +119,13 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
     );
   }
 
-  void _refresh() {
-    setState(() => _future = _load());
+  void _refresh({int? removedPublicationId}) {
+    setState(() {
+      if (removedPublicationId != null) {
+        _removedPublicationIds.add(removedPublicationId);
+      }
+      _future = _load();
+    });
   }
 
   @override
@@ -144,7 +152,10 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
           }
 
           final data = snapshot.data ?? const _ValveData();
-          final publications = data.publications.where((publication) {
+          final activePublications = data.publications.where((publication) {
+            return !_removedPublicationIds.contains(_asInt(publication['id']));
+          }).toList();
+          final publications = activePublications.where((publication) {
             final courseOk = _courseFilter == null ||
                 publication['cours_id'].toString() == _courseFilter.toString();
             final typeOk = _typeFilter == null ||
@@ -160,7 +171,7 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                   StatCard(
                     metric: KpiMetric(
                       title: 'Publications',
-                      value: '${data.publications.length}',
+                      value: '${activePublications.length}',
                       trend: 'total',
                       description: 'dans vos cours',
                     ),
@@ -171,7 +182,7 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                     metric: KpiMetric(
                       title: 'Importantes',
                       value:
-                          '${data.publications.where((p) => p['est_important'] == true).length}',
+                          '${activePublications.where((p) => p['est_important'] == true).length}',
                       trend: 'prioritaires',
                       description: 'marquees importantes',
                     ),
@@ -182,7 +193,7 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                     metric: KpiMetric(
                       title: 'Verrouillees',
                       value:
-                          '${data.publications.where((p) => p['est_verrouille'] == true).length}',
+                          '${activePublications.where((p) => p['est_verrouille'] == true).length}',
                       trend: 'non modifiables',
                       description: 'notes ou annonces sensibles',
                     ),
@@ -202,7 +213,7 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                 ],
               ),
               const SizedBox(height: 22),
-              _PublicationForm(courses: data.courses, onSaved: _refresh),
+              _PublicationForm(courses: data.courses, onSaved: () => _refresh()),
               const SizedBox(height: 22),
               SectionPanel(
                 title: 'Filtres',
@@ -300,7 +311,8 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                     for (final publication in publications)
                       _TeacherPublicationCard(
                         publication: publication,
-                        onChanged: _refresh,
+                        onChanged: () => _refresh(),
+                        onDeleted: (id) => _refresh(removedPublicationId: id),
                       ),
                   ],
                 ),
@@ -329,7 +341,11 @@ class _PublicationFormState extends State<_PublicationForm> {
   final _attachmentController = TextEditingController();
   int? _courseId;
   String _type = 'annonce';
+  String? _pickedFileName;
+  String? _pickedFileBase64;
+  int? _pickedFileSize;
   bool _important = false;
+  bool _pickingFile = false;
   bool _saving = false;
 
   @override
@@ -386,6 +402,7 @@ class _PublicationFormState extends State<_PublicationForm> {
                     DropdownMenuItem(value: 'communique', child: Text('Communique')),
                     DropdownMenuItem(value: 'devoir', child: Text('Devoir')),
                     DropdownMenuItem(value: 'support_de_cours', child: Text('Support')),
+                    DropdownMenuItem(value: 'publication_notes', child: Text('Notes')),
                     DropdownMenuItem(value: 'changement_horaire', child: Text('Changement horaire')),
                     DropdownMenuItem(value: 'consigne_examen', child: Text('Consigne examen')),
                     DropdownMenuItem(value: 'rappel', child: Text('Rappel')),
@@ -417,10 +434,23 @@ class _PublicationFormState extends State<_PublicationForm> {
             decoration: const InputDecoration(labelText: 'Contenu'),
           ),
           const SizedBox(height: 12),
-          TextField(
+          _AttachmentInput(
             controller: _attachmentController,
-            decoration: const InputDecoration(labelText: 'Piece jointe URL'),
+            pickedFileName: _pickedFileName,
+            pickedFileSize: _pickedFileSize,
+            pickingFile: _pickingFile,
+            onPickFile: supportsValveFilePicker ? _pickFile : null,
+            onClearFile: _clearPickedFile,
+            onUrlChanged: (value) {
+              if (value.trim().isNotEmpty && _pickedFileName != null) {
+                _clearPickedFile();
+              }
+            },
           ),
+          if (_type == 'publication_notes') ...[
+            const SizedBox(height: 12),
+            const _NotesPublicationHint(),
+          ],
           const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerRight,
@@ -458,16 +488,22 @@ class _PublicationFormState extends State<_PublicationForm> {
         typePublication: _type,
         titre: _titleController.text.trim(),
         contenu: _contentController.text.trim(),
-        pieceJointeUrl: _attachmentController.text.trim().isEmpty
-            ? null
-            : _attachmentController.text.trim(),
+        pieceJointeUrl: _pickedFileBase64 == null &&
+                _attachmentController.text.trim().isNotEmpty
+            ? _attachmentController.text.trim()
+            : null,
+        pieceJointeNom: _pickedFileName,
+        pieceJointeBase64: _pickedFileBase64,
         estImportant: _important,
       );
       if (!mounted) return;
       _titleController.clear();
       _contentController.clear();
       _attachmentController.clear();
-      setState(() => _important = false);
+      setState(() {
+        _important = false;
+        _clearPickedFile(setStateNeeded: false);
+      });
       widget.onSaved();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Publication ajoutee dans la valve.')),
@@ -481,16 +517,168 @@ class _PublicationFormState extends State<_PublicationForm> {
       if (mounted) setState(() => _saving = false);
     }
   }
+
+  Future<void> _pickFile() async {
+    setState(() => _pickingFile = true);
+    try {
+      final file = await choisirFichierValve();
+      if (!mounted || file == null) return;
+
+      if (file.size > 10 * 1024 * 1024) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Fichier trop volumineux: 10 Mo max.')),
+        );
+        return;
+      }
+
+      setState(() {
+        _pickedFileName = file.fileName;
+        _pickedFileBase64 = file.base64Content;
+        _pickedFileSize = file.size;
+        _attachmentController.clear();
+      });
+    } finally {
+      if (mounted) setState(() => _pickingFile = false);
+    }
+  }
+
+  void _clearPickedFile({bool setStateNeeded = true}) {
+    void clear() {
+      _pickedFileName = null;
+      _pickedFileBase64 = null;
+      _pickedFileSize = null;
+    }
+
+    if (setStateNeeded) {
+      setState(clear);
+    } else {
+      clear();
+    }
+  }
+}
+
+class _AttachmentInput extends StatelessWidget {
+  const _AttachmentInput({
+    required this.controller,
+    required this.pickedFileName,
+    required this.pickedFileSize,
+    required this.pickingFile,
+    required this.onClearFile,
+    required this.onUrlChanged,
+    this.onPickFile,
+  });
+
+  final TextEditingController controller;
+  final String? pickedFileName;
+  final int? pickedFileSize;
+  final bool pickingFile;
+  final Future<void> Function()? onPickFile;
+  final VoidCallback onClearFile;
+  final ValueChanged<String> onUrlChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            SizedBox(
+              width: 420,
+              child: TextField(
+                controller: controller,
+                onChanged: onUrlChanged,
+                decoration: const InputDecoration(
+                  labelText: 'Piece jointe ou lien du fichier',
+                  prefixIcon: Icon(Icons.attach_file_rounded),
+                ),
+              ),
+            ),
+            OutlinedButton.icon(
+              onPressed: onPickFile == null || pickingFile
+                  ? null
+                  : () {
+                      onPickFile!();
+                    },
+              icon: pickingFile
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.upload_file_rounded),
+              label: Text(pickingFile ? 'Selection...' : 'Choisir un fichier'),
+            ),
+          ],
+        ),
+        if (pickedFileName != null) ...[
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              StatusBadge(
+                label: '${_shortAttachmentLabel(pickedFileName!)}'
+                    ' - ${_formatFileSize(pickedFileSize ?? 0)}',
+                color: AppColors.cyan,
+                icon: Icons.attach_file_rounded,
+              ),
+              IconButton(
+                tooltip: 'Retirer le fichier',
+                onPressed: onClearFile,
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _NotesPublicationHint extends StatelessWidget {
+  const _NotesPublicationHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.fact_check_rounded, color: AppColors.primary),
+        const SizedBox(width: 10),
+        const Expanded(
+          child: Text(
+            'Les cotes officielles se publient depuis le module Notes.',
+            style: TextStyle(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        OutlinedButton.icon(
+          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.grades),
+          icon: const Icon(Icons.open_in_new_rounded),
+          label: const Text('Ouvrir Notes'),
+        ),
+      ],
+    );
+  }
 }
 
 class _TeacherPublicationCard extends StatelessWidget {
   const _TeacherPublicationCard({
     required this.publication,
     required this.onChanged,
+    required this.onDeleted,
   });
 
   final dynamic publication;
   final VoidCallback onChanged;
+  final ValueChanged<int> onDeleted;
 
   @override
   Widget build(BuildContext context) {
@@ -592,9 +780,9 @@ class _TeacherPublicationCard extends StatelessWidget {
           if (attachment.isNotEmpty) ...[
             const SizedBox(height: 10),
             OutlinedButton.icon(
-              onPressed: () {},
+              onPressed: () => _openAttachment(context, attachment),
               icon: const Icon(Icons.attach_file_rounded),
-              label: Text(attachment),
+              label: Text(_shortAttachmentLabel(attachment)),
             ),
           ],
           if (!locked) ...[
@@ -685,9 +873,10 @@ class _TeacherPublicationCard extends StatelessWidget {
     if (confirmed != true) return;
 
     try {
+      final publicationId = _asInt(publication['id']);
       await EnseignantDataSource.service
-          .supprimerPublication(_asInt(publication['id']));
-      onChanged();
+          .supprimerPublication(publicationId);
+      onDeleted(publicationId);
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context)
@@ -827,6 +1016,41 @@ IconData _publicationTypeIcon(String type) {
     default:
       return Icons.campaign_rounded;
   }
+}
+
+String _shortAttachmentLabel(String value) {
+  if (value.length <= 42) return value;
+  return '${value.substring(0, 18)}...${value.substring(value.length - 18)}';
+}
+
+String _formatFileSize(int size) {
+  if (size <= 0) return 'taille inconnue';
+  if (size < 1024) return '$size o';
+  final ko = size / 1024;
+  if (ko < 1024) return '${ko.toStringAsFixed(1)} Ko';
+  final mo = ko / 1024;
+  return '${mo.toStringAsFixed(1)} Mo';
+}
+
+void _openAttachment(BuildContext context, String attachment) {
+  final url = _attachmentUrl(attachment);
+  if (ouvrirLienExterne(url)) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(url)),
+  );
+}
+
+String _attachmentUrl(String attachment) {
+  if (attachment.startsWith('http://') || attachment.startsWith('https://')) {
+    return attachment;
+  }
+
+  if (attachment.startsWith('/')) {
+    return '${ApiConfig.baseUrl}$attachment';
+  }
+
+  return attachment;
 }
 
 Color _toneColor(NotificationTone tone) {

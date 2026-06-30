@@ -30,6 +30,8 @@ class EnseignantApiService {
     required String titre,
     required String contenu,
     String? pieceJointeUrl,
+    String? pieceJointeNom,
+    String? pieceJointeBase64,
     bool estImportant = false,
   }) async {
     return ApiDataSource.client.post(
@@ -40,6 +42,8 @@ class EnseignantApiService {
         'titre': titre,
         'contenu': contenu,
         'piece_jointe_url': pieceJointeUrl,
+        'piece_jointe_nom': pieceJointeNom,
+        'piece_jointe_base64': pieceJointeBase64,
         'est_important': estImportant,
       },
     );

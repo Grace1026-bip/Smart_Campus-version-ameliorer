@@ -19,6 +19,15 @@ use Application\Services\SessionService;
 require_once dirname(__DIR__) . '/application/aides/securite.php';
 require_once dirname(__DIR__) . '/application/aides/validation.php';
 
+if (PHP_SAPI === 'cli-server' && ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET') {
+    $cheminStatique = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    $fichierStatique = __DIR__ . DIRECTORY_SEPARATOR . ltrim(str_replace('\\', '/', $cheminStatique), '/');
+
+    if (is_file($fichierStatique)) {
+        return false;
+    }
+}
+
 charger_env(dirname(chemin_base()) . DIRECTORY_SEPARATOR . '.env');
 charger_env(chemin_base('.env'));
 

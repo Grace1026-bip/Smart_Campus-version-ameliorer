@@ -5,6 +5,8 @@ class SessionService {
   static UserRole currentRole = UserRole.administrator;
   static FacultyUser? _currentUser;
 
+  static bool get isAuthenticated => _currentUser != null;
+
   static FacultyUser get currentUser =>
       _currentUser ??
       MockFacultyData.users[currentRole] ??
