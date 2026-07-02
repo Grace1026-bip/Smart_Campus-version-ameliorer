@@ -346,3 +346,45 @@ CREATE TABLE IF NOT EXISTS alertes_academiques (
         FOREIGN KEY (cours_id) REFERENCES cours(id)
         ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS projets_academiques (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    promotion_id INT UNSIGNED NULL,
+    encadreur_id INT UNSIGNED NULL,
+    titre VARCHAR(180) NOT NULL,
+    description TEXT NULL,
+    groupe VARCHAR(120) NULL,
+    progression DECIMAL(5,2) NOT NULL DEFAULT 0.00,
+    livrable_attendu VARCHAR(180) NULL,
+    statut ENUM('planifie', 'en_cours', 'en_retard', 'valide', 'termine') NOT NULL DEFAULT 'en_cours',
+    date_echeance DATE NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_projets_promotion (promotion_id),
+    INDEX idx_projets_statut (statut),
+    CONSTRAINT fk_projets_promotion
+        FOREIGN KEY (promotion_id) REFERENCES promotions(id)
+        ON DELETE SET NULL,
+    CONSTRAINT fk_projets_encadreur
+        FOREIGN KEY (encadreur_id) REFERENCES enseignants(id)
+        ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS stages (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    etudiant_id INT UNSIGNED NOT NULL,
+    entreprise VARCHAR(180) NOT NULL,
+    maitre_stage VARCHAR(180) NULL,
+    sujet VARCHAR(180) NULL,
+    rapport_url VARCHAR(255) NULL,
+    statut ENUM('planifie', 'en_cours', 'en_retard', 'valide', 'termine') NOT NULL DEFAULT 'en_cours',
+    date_debut DATE NULL,
+    date_fin DATE NULL,
+    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    date_modification TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_stages_etudiant (etudiant_id),
+    INDEX idx_stages_statut (statut),
+    CONSTRAINT fk_stages_etudiant
+        FOREIGN KEY (etudiant_id) REFERENCES etudiants(id)
+        ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

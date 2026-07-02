@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_appariteur.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
 import '../../../commun/composants/panneau_section.dart';
@@ -18,63 +19,58 @@ class ApparitorAssistantScreen extends StatelessWidget {
       role: UserRole.apparitor,
       selectedRoute: AppRoutes.apparitorAssistant,
       title: 'Assistant Appariteur',
-      subtitle: 'Resume quotidien simule des priorites academiques.',
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ResponsiveGrid(
-            minItemWidth: 260,
-            maxColumns: 4,
+      subtitle: 'Centre automatique de supervision academique.',
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: AppariteurDataSource.service.assistant(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(ApiConfig.serverUnavailableMessage),
+            );
+          }
+
+          final data = snapshot.data ?? {};
+          final priorities = data['priorites'] as List<dynamic>? ?? const [];
+          final actions = data['actions'] as List<dynamic>? ?? const [];
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              for (final insight in MockFacultyData.apparitorInsights)
-                _InsightCard(insight: insight),
+              ResponsiveGrid(
+                minItemWidth: 260,
+                maxColumns: 4,
+                children: [
+                  for (final insight in priorities)
+                    _InsightCard(insight: insight as Map<String, dynamic>),
+                ],
+              ),
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Suggestions d actions',
+                subtitle: 'Priorites calculees depuis les donnees MySQL.',
+                child: Column(
+                  children: [
+                    if (actions.isEmpty)
+                      const _ActionLine(
+                        icon: Icons.verified_rounded,
+                        text: 'Aucune action urgente detectee.',
+                      ),
+                    for (final action in actions)
+                      _ActionLine(
+                        icon: Icons.call_made_rounded,
+                        text: '$action',
+                      ),
+                  ],
+                ),
+              ),
             ],
-          ),
-          const SizedBox(height: 22),
-          const SectionPanel(
-            title: 'Suggestions d actions',
-            subtitle: 'Assistant simule avec donnees fictives.',
-            child: Column(
-              children: [
-                _ActionLine(
-                  icon: Icons.call_made_rounded,
-                  text: 'Relancer Pr. David Mutombo pour Programmation Web L2.',
-                ),
-                _ActionLine(
-                  icon: Icons.mark_email_unread_rounded,
-                  text: 'Assigner les reclamations en attente a l apparitorat.',
-                ),
-                _ActionLine(
-                  icon: Icons.health_and_safety_rounded,
-                  text: 'Generer la liste des etudiants L1 a risque eleve.',
-                ),
-                _ActionLine(
-                  icon: Icons.workspaces_rounded,
-                  text: 'Verifier les livrables de projets L3 non deposes.',
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          const SectionPanel(
-            title: 'Resume par promotion',
-            subtitle: 'Vue rapide pour preparer le suivi quotidien.',
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                StatusBadge(
-                    label: 'L1: 5 risques eleves', color: AppColors.danger),
-                StatusBadge(
-                    label: 'L2: notes Web attendues', color: AppColors.warning),
-                StatusBadge(
-                    label: 'L3: 3 livrables manquants', color: AppColors.info),
-                StatusBadge(
-                    label: 'M2: stages actifs', color: AppColors.success),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -83,11 +79,11 @@ class ApparitorAssistantScreen extends StatelessWidget {
 class _InsightCard extends StatelessWidget {
   const _InsightCard({required this.insight});
 
-  final ApparitorInsight insight;
+  final Map<String, dynamic> insight;
 
   @override
   Widget build(BuildContext context) {
-    final color = _toneColor(insight.tone);
+    final color = _toneColor('${insight['niveau'] ?? 'info'}');
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -111,7 +107,7 @@ class _InsightCard extends StatelessWidget {
               Icon(Icons.auto_awesome_rounded, color: color),
               const Spacer(),
               Text(
-                insight.metric,
+                '${insight['valeur'] ?? 0}',
                 style: TextStyle(
                   color: color,
                   fontSize: 24,
@@ -122,7 +118,7 @@ class _InsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            insight.title,
+            '${insight['titre'] ?? '-'}',
             style: const TextStyle(
               color: AppColors.textPrimary,
               fontWeight: FontWeight.w900,
@@ -130,7 +126,7 @@ class _InsightCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            insight.detail,
+            '${insight['detail'] ?? '-'}',
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w600,
@@ -172,15 +168,17 @@ class _ActionLine extends StatelessWidget {
   }
 }
 
-Color _toneColor(NotificationTone tone) {
+Color _toneColor(String tone) {
   switch (tone) {
-    case NotificationTone.info:
+    case 'info':
       return AppColors.primary;
-    case NotificationTone.success:
+    case 'success':
       return AppColors.success;
-    case NotificationTone.warning:
+    case 'attention':
+    case 'warning':
       return AppColors.warning;
-    case NotificationTone.danger:
+    case 'danger':
       return AppColors.danger;
   }
+  return AppColors.primary;
 }

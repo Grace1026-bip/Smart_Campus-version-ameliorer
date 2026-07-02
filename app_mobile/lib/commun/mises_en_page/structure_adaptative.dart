@@ -129,39 +129,54 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.apparitorDashboard,
           ),
           SmartNavItem(
+            label: 'Etudiants',
+            icon: Icons.groups_rounded,
+            route: AppRoutes.apparitorStudents,
+          ),
+          SmartNavItem(
+            label: 'Enseignants',
+            icon: Icons.school_rounded,
+            route: AppRoutes.apparitorTeachers,
+          ),
+          SmartNavItem(
+            label: 'Promotions',
+            icon: Icons.account_tree_rounded,
+            route: AppRoutes.apparitorPromotions,
+          ),
+          SmartNavItem(
+            label: 'Cours',
+            icon: Icons.menu_book_rounded,
+            route: AppRoutes.apparitorCourses,
+          ),
+          SmartNavItem(
+            label: 'Reclamations',
+            icon: Icons.mark_email_unread_rounded,
+            route: AppRoutes.apparitorComplaints,
+          ),
+          SmartNavItem(
+            label: 'A risque',
+            icon: Icons.health_and_safety_rounded,
+            route: AppRoutes.apparitorRisks,
+          ),
+          SmartNavItem(
+            label: 'Projets',
+            icon: Icons.workspaces_rounded,
+            route: AppRoutes.apparitorProjects,
+          ),
+          SmartNavItem(
+            label: 'Stages',
+            icon: Icons.business_center_rounded,
+            route: AppRoutes.apparitorInternships,
+          ),
+          SmartNavItem(
             label: 'Assistant',
             icon: Icons.auto_awesome_rounded,
             route: AppRoutes.apparitorAssistant,
           ),
           SmartNavItem(
-            label: 'Notes',
-            icon: Icons.fact_check_rounded,
-            route: AppRoutes.grades,
-          ),
-          SmartNavItem(
-            label: 'Risque',
-            icon: Icons.health_and_safety_rounded,
-            route: AppRoutes.riskStudents,
-          ),
-          SmartNavItem(
-            label: 'Projets',
-            icon: Icons.workspaces_rounded,
-            route: AppRoutes.projects,
-          ),
-          SmartNavItem(
-            label: 'Stages',
-            icon: Icons.business_center_rounded,
-            route: AppRoutes.internships,
-          ),
-          SmartNavItem(
-            label: 'Reclamations',
-            icon: Icons.mark_email_unread_rounded,
-            route: AppRoutes.complaints,
-          ),
-          SmartNavItem(
-            label: 'Analytics',
+            label: 'Rapports',
             icon: Icons.insights_rounded,
-            route: AppRoutes.analytics,
+            route: AppRoutes.apparitorReports,
           ),
           SmartNavItem(
             label: 'Profil',
@@ -177,34 +192,29 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.studentDashboard,
           ),
           SmartNavItem(
+            label: 'Mes cours',
+            icon: Icons.menu_book_rounded,
+            route: AppRoutes.studentCourses,
+          ),
+          SmartNavItem(
+            label: 'Valve',
+            icon: Icons.campaign_rounded,
+            route: AppRoutes.studentValve,
+          ),
+          SmartNavItem(
             label: 'Notes',
             icon: Icons.fact_check_rounded,
             route: AppRoutes.grades,
           ),
           SmartNavItem(
-            label: 'Projets',
-            icon: Icons.workspaces_rounded,
-            route: AppRoutes.projects,
-          ),
-          SmartNavItem(
-            label: 'Stages',
-            icon: Icons.business_center_rounded,
-            route: AppRoutes.internships,
+            label: 'Alertes',
+            icon: Icons.warning_amber_rounded,
+            route: AppRoutes.studentAlerts,
           ),
           SmartNavItem(
             label: 'Reclamations',
             icon: Icons.mark_email_unread_rounded,
             route: AppRoutes.complaints,
-          ),
-          SmartNavItem(
-            label: 'Analytics',
-            icon: Icons.insights_rounded,
-            route: AppRoutes.analytics,
-          ),
-          SmartNavItem(
-            label: 'Notifications',
-            icon: Icons.notifications_rounded,
-            route: AppRoutes.notifications,
           ),
           SmartNavItem(
             label: 'Profil',
@@ -650,14 +660,31 @@ List<Widget> _topActions(
   UserRole role,
 ) {
   final teacher = role == UserRole.teacher;
+  final student = role == UserRole.student;
+  final apparitor = role == UserRole.apparitor;
 
   return [
     ...actions,
     IconButton(
-      tooltip: teacher ? 'Valve' : 'Notifications',
-      onPressed: () => _goTo(context, AppRoutes.notifications),
+      tooltip: teacher || student
+          ? 'Valve'
+          : apparitor
+              ? 'Assistant'
+              : 'Notifications',
+      onPressed: () => _goTo(
+        context,
+        student
+            ? AppRoutes.studentValve
+            : apparitor
+                ? AppRoutes.apparitorAssistant
+                : AppRoutes.notifications,
+      ),
       icon: Icon(
-        teacher ? Icons.campaign_rounded : Icons.notifications_rounded,
+        teacher || student
+            ? Icons.campaign_rounded
+            : apparitor
+                ? Icons.auto_awesome_rounded
+                : Icons.notifications_rounded,
       ),
     ),
     IconButton(
@@ -681,6 +708,22 @@ bool _matchesRoute(String itemRoute, String selectedRoute) {
       itemRoute == AppRoutes.complaints) {
     return true;
   }
+  if (selectedRoute == AppRoutes.studentCourseDetail &&
+      itemRoute == AppRoutes.studentCourses) {
+    return true;
+  }
+  if (selectedRoute == AppRoutes.studentValveCourse &&
+      itemRoute == AppRoutes.studentValve) {
+    return true;
+  }
+  if (selectedRoute == AppRoutes.apparitorPromotionDetail &&
+      itemRoute == AppRoutes.apparitorPromotions) {
+    return true;
+  }
+  if (selectedRoute == AppRoutes.apparitorCourseDetail &&
+      itemRoute == AppRoutes.apparitorCourses) {
+    return true;
+  }
   return false;
 }
 
@@ -700,6 +743,10 @@ String _mobileLabel(String label) {
       return 'Doyen';
     case 'Dashboard':
       return 'Accueil';
+    case 'Promotions':
+      return 'Promo.';
+    case 'Enseignants':
+      return 'Ens.';
     default:
       return label;
   }
@@ -712,6 +759,10 @@ String _sidebarNote(UserRole role) {
 
   if (role == UserRole.student) {
     return 'Vos donnees academiques proviennent des publications et notes officielles.';
+  }
+
+  if (role == UserRole.apparitor) {
+    return 'Supervision academique : etudiants, enseignants, promotions, cours, reclamations et risques.';
   }
 
   return 'Espace academique connecte a l API REST PHP et aux donnees MySQL.';

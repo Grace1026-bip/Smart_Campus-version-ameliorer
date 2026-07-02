@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Application\Controleurs\AuthentificationControleur;
+use Application\Controleurs\AppariteurControleur;
 use Application\Controleurs\EnseignantControleur;
 use Application\Controleurs\EtudiantControleur;
 use Application\Controleurs\InscriptionControleur;
@@ -67,6 +68,7 @@ $routeur = new Routeur();
 $auth = [[AuthentificationMiddleware::class, 'gerer']];
 $approbateurs = ['icp', 'paritaire', 'doyen', 'vice_doyen', 'administrateur'];
 $gestionnaires = ['administrateur', 'doyen', 'vice_doyen'];
+$appariteurs = ['appariteur', 'paritaire', 'administrateur', 'doyen', 'vice_doyen'];
 
 $routeur->get('/api/status', static function (Requete $requete): void {
     Reponse::succes([
@@ -93,6 +95,67 @@ $routeur->post('/api/demandes-inscription/{id}/approuver', [InscriptionControleu
 $routeur->post('/api/demandes-inscription/{id}/rejeter', [InscriptionControleur::class, 'rejeter'], [
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser($approbateurs),
+]);
+
+$routeur->get('/api/appariteur/tableau-de-bord', [AppariteurControleur::class, 'tableauDeBord'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/etudiants', [AppariteurControleur::class, 'etudiants'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/enseignants', [AppariteurControleur::class, 'enseignants'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/promotions', [AppariteurControleur::class, 'promotions'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/promotions/{id}', [AppariteurControleur::class, 'detailPromotion'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/cours', [AppariteurControleur::class, 'cours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/cours/{id}', [AppariteurControleur::class, 'detailCours'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/reclamations', [AppariteurControleur::class, 'reclamations'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/reclamations/{id}', [AppariteurControleur::class, 'detailReclamation'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->put('/api/appariteur/reclamations/{id}/statut', [AppariteurControleur::class, 'changerStatutReclamation'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/risques', [AppariteurControleur::class, 'risques'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/projets', [AppariteurControleur::class, 'projets'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/stages', [AppariteurControleur::class, 'stages'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/assistant', [AppariteurControleur::class, 'assistant'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/appariteur/rapports', [AppariteurControleur::class, 'rapports'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
 ]);
 
 $routeur->get('/api/etudiant/tableau-de-bord', [EtudiantControleur::class, 'tableauDeBord'], [
@@ -123,7 +186,19 @@ $routeur->get('/api/etudiant/alertes', [EtudiantControleur::class, 'alertes'], [
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
 ]);
+$routeur->get('/api/etudiant/reclamations', [EtudiantControleur::class, 'reclamations'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
 $routeur->post('/api/etudiant/reclamations', [EtudiantControleur::class, 'creerReclamation'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->get('/api/etudiant/profil', [EtudiantControleur::class, 'profil'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
+]);
+$routeur->put('/api/etudiant/profil', [EtudiantControleur::class, 'modifierProfil'], [
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser(['etudiant', 'chef_promotion', 'administrateur']),
 ]);

@@ -9,6 +9,8 @@ abstract class AuthService {
     required UserRole role,
   });
 
+  Future<FacultyUser?> restoreSession();
+
   Future<void> logout();
 }
 
@@ -39,6 +41,28 @@ class ApiAuthService implements AuthService {
 
     SessionService.connectWithUser(user);
     return user;
+  }
+
+  @override
+  Future<FacultyUser?> restoreSession() async {
+    try {
+      final data = await ApiDataSource.client.get('/api/utilisateur/connecte');
+      final userJson = data['utilisateur'] as Map<String, dynamic>;
+      final roles = (data['roles'] as List<dynamic>? ?? const [])
+          .map((item) => item.toString())
+          .toList();
+      final resolvedRole = _roleFromApi(
+        roles,
+        fallback: _defaultRoleFromApi(roles),
+      );
+      final user = _userFromApi(userJson, resolvedRole);
+
+      SessionService.connectWithUser(user);
+      return user;
+    } catch (_) {
+      SessionService.clear();
+      return null;
+    }
   }
 
   @override
@@ -114,6 +138,22 @@ class ApiAuthService implements AuthService {
       case UserRole.dean:
         return 'doyen';
     }
+  }
+
+  UserRole _defaultRoleFromApi(List<String> roles) {
+    if (roles.contains('administrateur')) return UserRole.administrator;
+    if (roles.contains('doyen') || roles.contains('vice_doyen')) {
+      return UserRole.dean;
+    }
+    if (roles.contains('appariteur') || roles.contains('paritaire')) {
+      return UserRole.apparitor;
+    }
+    if (roles.contains('chef_promotion') || roles.contains('icp')) {
+      return UserRole.promotionChief;
+    }
+    if (roles.contains('enseignant')) return UserRole.teacher;
+    if (roles.contains('etudiant')) return UserRole.student;
+    return UserRole.administrator;
   }
 }
 

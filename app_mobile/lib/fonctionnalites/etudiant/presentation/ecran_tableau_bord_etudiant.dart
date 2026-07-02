@@ -36,6 +36,7 @@ class StudentDashboardScreen extends StatelessWidget {
           final data = snapshot.data ?? {};
           final profil = data['profil'] as Map<String, dynamic>? ?? {};
           final annonces = data['dernieres_annonces'] as List<dynamic>? ?? [];
+          final notes = data['dernieres_notes'] as List<dynamic>? ?? [];
           final alertes = data['alertes'] as List<dynamic>? ?? [];
 
           return Column(
@@ -50,25 +51,34 @@ class StudentDashboardScreen extends StatelessWidget {
                   color: AppColors.success,
                   icon: Icons.verified_rounded,
                 ),
-                child: Wrap(
-                  spacing: 16,
-                  runSpacing: 14,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _ProfileInfo(
-                      label: 'Matricule',
-                      value: '${profil['matricule'] ?? '-'}',
-                    ),
-                    _ProfileInfo(
-                      label: 'Email',
-                      value: '${profil['email'] ?? '-'}',
-                    ),
-                    _ProfileInfo(
-                      label: 'Promotion',
-                      value: '${profil['promotion'] ?? '-'}',
-                    ),
-                    _ProfileInfo(
-                      label: 'Statut',
-                      value: '${profil['statut'] ?? '-'}',
+                    _ProfileAvatar(profil: profil),
+                    const SizedBox(width: 18),
+                    Expanded(
+                      child: Wrap(
+                        spacing: 16,
+                        runSpacing: 14,
+                        children: [
+                          _ProfileInfo(
+                            label: 'Matricule',
+                            value: '${profil['matricule'] ?? '-'}',
+                          ),
+                          _ProfileInfo(
+                            label: 'Email',
+                            value: '${profil['email'] ?? '-'}',
+                          ),
+                          _ProfileInfo(
+                            label: 'Promotion',
+                            value: '${profil['promotion'] ?? '-'}',
+                          ),
+                          _ProfileInfo(
+                            label: 'Statut',
+                            value: '${profil['statut'] ?? '-'}',
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -108,6 +118,16 @@ class StudentDashboardScreen extends StatelessWidget {
                   ),
                   StatCard(
                     metric: KpiMetric(
+                      title: 'Notes publiees',
+                      value: '${data['notes_publiees'] ?? 0}',
+                      trend: 'visibles',
+                      description: 'brouillons masques',
+                    ),
+                    icon: Icons.fact_check_rounded,
+                    color: AppColors.cyan,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
                       title: 'Reclamations',
                       value: '${data['reclamations_en_cours'] ?? 0}',
                       trend: 'en cours',
@@ -116,6 +136,26 @@ class StudentDashboardScreen extends StatelessWidget {
                     icon: Icons.mark_email_unread_rounded,
                     color: AppColors.warning,
                   ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Publications',
+                      value: '${data['nombre_publications'] ?? annonces.length}',
+                      trend: 'valve',
+                      description: 'valve academique',
+                    ),
+                    icon: Icons.campaign_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Alertes',
+                      value: '${data['nombre_alertes'] ?? alertes.length}',
+                      trend: 'academiques',
+                      description: 'risques et suivi',
+                    ),
+                    icon: Icons.warning_amber_rounded,
+                    color: AppColors.danger,
+                  ),
                 ],
               ),
               const SizedBox(height: 22),
@@ -123,6 +163,13 @@ class StudentDashboardScreen extends StatelessWidget {
                 minItemWidth: 250,
                 maxColumns: 4,
                 children: [
+                  FeatureTile(
+                    icon: Icons.menu_book_rounded,
+                    title: 'Mes cours',
+                    subtitle: 'Cours de votre promotion.',
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.studentCourses),
+                  ),
                   FeatureTile(
                     icon: Icons.fact_check_rounded,
                     title: 'Mes notes',
@@ -135,16 +182,16 @@ class StudentDashboardScreen extends StatelessWidget {
                     title: 'Valve',
                     subtitle: 'Publications de vos cours.',
                     color: AppColors.cyan,
-                    onTap: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.notifications),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.studentValve),
                   ),
                   FeatureTile(
                     icon: Icons.warning_amber_rounded,
                     title: 'Alertes',
                     subtitle: 'Risques et progression.',
                     color: AppColors.warning,
-                    onTap: () => Navigator.of(context)
-                        .pushNamed(AppRoutes.notifications),
+                    onTap: () =>
+                        Navigator.of(context).pushNamed(AppRoutes.studentAlerts),
                   ),
                   FeatureTile(
                     icon: Icons.add_comment_rounded,
@@ -177,6 +224,25 @@ class StudentDashboardScreen extends StatelessWidget {
                             DataCell(Text('${item['titre'] ?? '-'}')),
                             DataCell(
                                 Text('${item['type_publication'] ?? '-'}')),
+                          ],
+                        ),
+                    ],
+                  ),
+                  SmartTable(
+                    title: 'Notes recentes',
+                    subtitle: 'Resultats publies par vos enseignants.',
+                    columns: const [
+                      DataColumn(label: Text('Cours')),
+                      DataColumn(label: Text('Type')),
+                      DataColumn(label: Text('Note')),
+                    ],
+                    rows: [
+                      for (final item in notes.take(5))
+                        DataRow(
+                          cells: [
+                            DataCell(Text('${item['code_cours'] ?? '-'}')),
+                            DataCell(Text('${item['type_note'] ?? '-'}')),
+                            DataCell(Text(_formatNumber(item['valeur']))),
                           ],
                         ),
                     ],
@@ -236,6 +302,43 @@ class _ProfileInfo extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProfileAvatar extends StatelessWidget {
+  const _ProfileAvatar({required this.profil});
+
+  final Map<String, dynamic> profil;
+
+  @override
+  Widget build(BuildContext context) {
+    final photoUrl = '${profil['photo_url'] ?? ''}'.trim();
+    final name = '${profil['nom_complet'] ?? ''}'.trim();
+    final initials = name.isEmpty
+        ? 'ET'
+        : name
+            .split(RegExp(r'\s+'))
+            .where((part) => part.isNotEmpty)
+            .take(2)
+            .map((part) => part[0].toUpperCase())
+            .join();
+
+    return CircleAvatar(
+      radius: 36,
+      backgroundColor: AppColors.primaryDark,
+      backgroundImage:
+          photoUrl.isEmpty ? null : NetworkImage(_absoluteUrl(photoUrl)),
+      child: photoUrl.isEmpty
+          ? Text(
+              initials,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 22,
+              ),
+            )
+          : null,
     );
   }
 }
@@ -301,4 +404,13 @@ String _formatNumber(dynamic value) {
   if (value == null) return '-';
   if (value is num) return value.toStringAsFixed(2);
   return value.toString();
+}
+
+String _absoluteUrl(String value) {
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+
+  final path = value.startsWith('/') ? value : '/$value';
+  return '${ApiConfig.baseUrl}$path';
 }

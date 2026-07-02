@@ -143,6 +143,13 @@ class CoursService
             : NoteService::notesCours($coursId);
         $detail['statistiques'] = NoteService::statistiquesCours($coursId);
 
+        if ($etudiantId !== null) {
+            $detail['reclamations'] = array_values(array_filter(
+                ReclamationService::reclamationsEtudiant($etudiantId),
+                static fn (array $reclamation): bool => (int) ($reclamation['cours_id'] ?? 0) === $coursId
+            ));
+        }
+
         if ($enseignantId !== null) {
             $detail['etudiants'] = self::etudiantsCours($enseignantId, $coursId);
             $detail['reclamations'] = ReclamationService::reclamationsCours($enseignantId, $coursId);

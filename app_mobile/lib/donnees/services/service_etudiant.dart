@@ -37,12 +37,33 @@ class EtudiantApiService {
     return data['alertes'] as List<dynamic>? ?? const [];
   }
 
+  Future<List<dynamic>> reclamations() async {
+    final data = await ApiDataSource.client.get('/api/etudiant/reclamations');
+    return data['reclamations'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> profil() async {
+    final data = await ApiDataSource.client.get('/api/etudiant/profil');
+    return data['profil'] as Map<String, dynamic>? ?? const {};
+  }
+
+  Future<Map<String, dynamic>> modifierProfil(
+    Map<String, dynamic> donnees,
+  ) async {
+    final data = await ApiDataSource.client.put(
+      '/api/etudiant/profil',
+      body: donnees,
+    );
+    return data['profil'] as Map<String, dynamic>? ?? const {};
+  }
+
   Future<Map<String, dynamic>> creerReclamation({
     required int coursId,
     int? noteId,
     required String titre,
     required String description,
     String type = 'note',
+    String priorite = 'normale',
   }) async {
     return ApiDataSource.client.post(
       '/api/etudiant/reclamations',
@@ -52,6 +73,7 @@ class EtudiantApiService {
         'titre': titre,
         'description': description,
         'type_reclamation': type,
+        'priorite': priorite,
       },
     );
   }

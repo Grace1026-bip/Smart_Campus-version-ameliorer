@@ -10,20 +10,45 @@ use Application\Noyau\ExceptionHttp;
 class ReclamationService
 {
     private const STATUTS_ENSEIGNANT = ['en_attente', 'en_cours', 'resolue', 'transmise_apparitorat'];
+    private const TYPES = ['note', 'cours', 'horaire', 'document', 'autre'];
+    private const PRIORITES = ['faible', 'normale', 'haute'];
 
     public static function creer(int $etudiantId, array $donnees): array
     {
-        $coursId = isset($donnees['cours_id']) ? (int) $donnees['cours_id'] : null;
-        $noteId = isset($donnees['note_id']) ? (int) $donnees['note_id'] : null;
+        $coursId = !empty($donnees['cours_id']) ? (int) $donnees['cours_id'] : null;
+        $noteId = !empty($donnees['note_id']) ? (int) $donnees['note_id'] : null;
         $titre = nettoyer_chaine($donnees['titre'] ?? '');
         $description = nettoyer_chaine($donnees['description'] ?? '');
+        $type = (string) ($donnees['type_reclamation'] ?? $donnees['type'] ?? 'note');
+        $priorite = (string) ($donnees['priorite'] ?? 'normale');
 
         if ($titre === '' || $description === '') {
             throw new ExceptionHttp('Titre et description obligatoires.', 422);
         }
 
+        if ($coursId === null && $noteId === null) {
+            throw new ExceptionHttp('Cours ou note concernee obligatoire.', 422);
+        }
+
+        if (!in_array($type, self::TYPES, true)) {
+            throw new ExceptionHttp('Type de reclamation invalide.', 422);
+        }
+
+        if (!in_array($priorite, self::PRIORITES, true)) {
+            throw new ExceptionHttp('Priorite de reclamation invalide.', 422);
+        }
+
         if ($coursId !== null) {
             CoursService::verifierCoursEtudiant($etudiantId, $coursId);
+        }
+
+        if ($noteId !== null) {
+            $note = self::noteEtudiant($etudiantId, $noteId);
+            if ($coursId !== null && (int) $note['cours_id'] !== $coursId) {
+                throw new ExceptionHttp('La note selectionnee ne correspond pas au cours choisi.', 422);
+            }
+
+            $coursId = (int) $note['cours_id'];
         }
 
         $requete = BaseDeDonnees::connexion()->prepare(
@@ -35,9 +60,9 @@ class ReclamationService
             'cours_id' => $coursId,
             'note_id' => $noteId,
             'titre' => $titre,
-            'type_reclamation' => $donnees['type_reclamation'] ?? $donnees['type'] ?? 'note',
+            'type_reclamation' => $type,
             'description' => $description,
-            'priorite' => $donnees['priorite'] ?? 'normale',
+            'priorite' => $priorite,
         ]);
 
         return self::reclamation((int) BaseDeDonnees::connexion()->lastInsertId());
@@ -152,6 +177,26 @@ class ReclamationService
         $requete->execute(['reclamation_id' => $reclamationId]);
 
         return $requete->fetchAll();
+    }
+
+    private static function noteEtudiant(int $etudiantId, int $noteId): array
+    {
+        $requete = BaseDeDonnees::connexion()->prepare(
+            'SELECT id, cours_id
+             FROM notes
+             WHERE id = :id
+               AND etudiant_id = :etudiant_id
+               AND statut = "publie"
+             LIMIT 1'
+        );
+        $requete->execute(['id' => $noteId, 'etudiant_id' => $etudiantId]);
+        $note = $requete->fetch();
+
+        if (!$note) {
+            throw new ExceptionHttp('Note publiee introuvable pour cet etudiant.', 404);
+        }
+
+        return $note;
     }
 
     private static function baseSql(): string

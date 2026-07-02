@@ -83,6 +83,15 @@ class EtudiantControleur
         }, 'Alertes academiques recuperees.');
     }
 
+    public function reclamations(Requete $requete): void
+    {
+        $this->executer(function (): array {
+            $etudiantId = CoursService::etudiantId((int) AuthentificationService::idUtilisateur());
+
+            return ['reclamations' => ReclamationService::reclamationsEtudiant($etudiantId)];
+        }, 'Reclamations etudiantes recuperees.');
+    }
+
     public function creerReclamation(Requete $requete): void
     {
         $this->executer(function () use ($requete): array {
@@ -90,6 +99,24 @@ class EtudiantControleur
 
             return ['reclamation' => ReclamationService::creer($etudiantId, $requete->donnees())];
         }, 'Reclamation creee.', 201);
+    }
+
+    public function profil(Requete $requete): void
+    {
+        $this->executer(function (): array {
+            $etudiantId = CoursService::etudiantId((int) AuthentificationService::idUtilisateur());
+
+            return ['profil' => EtudiantService::profil($etudiantId)];
+        }, 'Profil etudiant recupere.');
+    }
+
+    public function modifierProfil(Requete $requete): void
+    {
+        $this->executer(function () use ($requete): array {
+            $etudiantId = CoursService::etudiantId((int) AuthentificationService::idUtilisateur());
+
+            return ['profil' => EtudiantService::modifierProfil($etudiantId, $requete->donnees())];
+        }, 'Profil etudiant mis a jour.');
     }
 
     private function executer(callable $action, string $message, int $statut = 200): void
