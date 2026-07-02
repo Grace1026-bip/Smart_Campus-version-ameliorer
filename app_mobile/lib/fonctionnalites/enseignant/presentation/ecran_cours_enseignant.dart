@@ -269,8 +269,11 @@ class TeacherCourseDetailScreen extends StatelessWidget {
                     children: [
                       _OverviewTab(course: course),
                       _StudentsTab(students: students),
-                      _NotesTab(notes: notes),
-                      _PublicationsTab(publications: publications),
+                      _NotesTab(courseId: courseId, notes: notes),
+                      _PublicationsTab(
+                        courseId: courseId,
+                        publications: publications,
+                      ),
                       _ComplaintsTab(complaints: complaints),
                       _StatsTab(stats: stats),
                     ],
@@ -338,15 +341,23 @@ class _CourseCard extends StatelessWidget {
                 label: const Text('Ouvrir'),
               ),
               OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).pushNamed(AppRoutes.grades),
+                onPressed: () => Navigator.of(context).pushNamed(
+                  AppRoutes.grades,
+                  arguments: {'cours_id': _asInt(course['id'])},
+                ),
                 icon: const Icon(Icons.edit_note_rounded),
-                label: const Text('Notes'),
+                label: const Text('Noter'),
               ),
               OutlinedButton.icon(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.notifications),
-                icon: const Icon(Icons.campaign_rounded),
-                label: const Text('Valve'),
+                onPressed: () => Navigator.of(context).pushNamed(
+                  AppRoutes.notifications,
+                  arguments: {
+                    'cours_id': _asInt(course['id']),
+                    'type_publication': 'support_de_cours',
+                  },
+                ),
+                icon: const Icon(Icons.attach_file_rounded),
+                label: const Text('Support'),
               ),
             ],
           ),
@@ -493,8 +504,9 @@ class _StudentsTabState extends State<_StudentsTab> {
 }
 
 class _NotesTab extends StatelessWidget {
-  const _NotesTab({required this.notes});
+  const _NotesTab({required this.courseId, required this.notes});
 
+  final int courseId;
   final List<dynamic> notes;
 
   @override
@@ -503,9 +515,12 @@ class _NotesTab extends StatelessWidget {
       title: 'Notes du cours',
       subtitle: '${notes.length} note(s).',
       trailing: ElevatedButton.icon(
-        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.grades),
+        onPressed: () => Navigator.of(context).pushNamed(
+          AppRoutes.grades,
+          arguments: {'cours_id': courseId},
+        ),
         icon: const Icon(Icons.edit_note_rounded),
-        label: const Text('Encoder'),
+        label: const Text('Noter les etudiants'),
       ),
       columns: const [
         DataColumn(label: Text('Etudiant')),
@@ -529,8 +544,12 @@ class _NotesTab extends StatelessWidget {
 }
 
 class _PublicationsTab extends StatelessWidget {
-  const _PublicationsTab({required this.publications});
+  const _PublicationsTab({
+    required this.courseId,
+    required this.publications,
+  });
 
+  final int courseId;
   final List<dynamic> publications;
 
   @override
@@ -538,10 +557,29 @@ class _PublicationsTab extends StatelessWidget {
     return SmartTable(
       title: 'Valve du cours',
       subtitle: '${publications.length} publication(s).',
-      trailing: ElevatedButton.icon(
-        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.notifications),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Publier'),
+      trailing: Wrap(
+        spacing: 8,
+        children: [
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).pushNamed(
+              AppRoutes.notifications,
+              arguments: {
+                'cours_id': courseId,
+                'type_publication': 'support_de_cours',
+              },
+            ),
+            icon: const Icon(Icons.attach_file_rounded),
+            label: const Text('Support'),
+          ),
+          ElevatedButton.icon(
+            onPressed: () => Navigator.of(context).pushNamed(
+              AppRoutes.notifications,
+              arguments: {'cours_id': courseId},
+            ),
+            icon: const Icon(Icons.add_rounded),
+            label: const Text('Publier'),
+          ),
+        ],
       ),
       columns: const [
         DataColumn(label: Text('Titre')),

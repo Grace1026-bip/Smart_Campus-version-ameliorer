@@ -16,12 +16,24 @@ import '../../../commun/composants/carte_statistique.dart';
 import '../../../commun/composants/badge_statut.dart';
 
 class NotificationsScreen extends StatelessWidget {
-  const NotificationsScreen({super.key});
+  const NotificationsScreen({
+    super.key,
+    this.initialCourseId,
+    this.initialType,
+  });
+
+  final int? initialCourseId;
+  final String? initialType;
 
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
-    if (role == UserRole.teacher) return const _TeacherValveScreen();
+    if (role == UserRole.teacher) {
+      return _TeacherValveScreen(
+        initialCourseId: initialCourseId,
+        initialType: initialType,
+      );
+    }
 
     const notifications = MockFacultyData.notifications;
 
@@ -95,7 +107,10 @@ class NotificationsScreen extends StatelessWidget {
 }
 
 class _TeacherValveScreen extends StatefulWidget {
-  const _TeacherValveScreen();
+  const _TeacherValveScreen({this.initialCourseId, this.initialType});
+
+  final int? initialCourseId;
+  final String? initialType;
 
   @override
   State<_TeacherValveScreen> createState() => _TeacherValveScreenState();
@@ -106,6 +121,13 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
   int? _courseFilter;
   String? _typeFilter;
   final Set<int> _removedPublicationIds = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _courseFilter = widget.initialCourseId;
+    _typeFilter = widget.initialType;
+  }
 
   Future<_ValveData> _load() async {
     final results = await Future.wait([
@@ -213,7 +235,12 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                 ],
               ),
               const SizedBox(height: 22),
-              _PublicationForm(courses: data.courses, onSaved: () => _refresh()),
+              _PublicationForm(
+                courses: data.courses,
+                initialCourseId: widget.initialCourseId,
+                initialType: widget.initialType,
+                onSaved: () => _refresh(),
+              ),
               const SizedBox(height: 22),
               SectionPanel(
                 title: 'Filtres',
@@ -326,10 +353,17 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
 }
 
 class _PublicationForm extends StatefulWidget {
-  const _PublicationForm({required this.courses, required this.onSaved});
+  const _PublicationForm({
+    required this.courses,
+    required this.onSaved,
+    this.initialCourseId,
+    this.initialType,
+  });
 
   final List<dynamic> courses;
   final VoidCallback onSaved;
+  final int? initialCourseId;
+  final String? initialType;
 
   @override
   State<_PublicationForm> createState() => _PublicationFormState();
@@ -340,13 +374,20 @@ class _PublicationFormState extends State<_PublicationForm> {
   final _contentController = TextEditingController();
   final _attachmentController = TextEditingController();
   int? _courseId;
-  String _type = 'annonce';
+  late String _type;
   String? _pickedFileName;
   String? _pickedFileBase64;
   int? _pickedFileSize;
   bool _important = false;
   bool _pickingFile = false;
   bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _courseId = widget.initialCourseId;
+    _type = widget.initialType ?? 'annonce';
+  }
 
   @override
   void dispose() {
@@ -358,7 +399,12 @@ class _PublicationFormState extends State<_PublicationForm> {
 
   @override
   Widget build(BuildContext context) {
-    _courseId ??= widget.courses.isEmpty ? null : _asInt(widget.courses.first['id']);
+    final hasSelectedCourse = widget.courses.any(
+      (course) => _asInt(course['id']) == _courseId,
+    );
+    if (!hasSelectedCourse) {
+      _courseId = widget.courses.isEmpty ? null : _asInt(widget.courses.first['id']);
+    }
 
     if (widget.courses.isEmpty) {
       return const SectionPanel(
@@ -477,6 +523,15 @@ class _PublicationFormState extends State<_PublicationForm> {
         _contentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Cours, titre et contenu obligatoires.')),
+      );
+      return;
+    }
+
+    if (_type == 'support_de_cours' &&
+        _pickedFileBase64 == null &&
+        _attachmentController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Ajoutez un fichier ou un lien pour le support.')),
       );
       return;
     }

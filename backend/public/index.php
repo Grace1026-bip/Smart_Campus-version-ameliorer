@@ -7,6 +7,9 @@ use Application\Controleurs\AppariteurControleur;
 use Application\Controleurs\EnseignantControleur;
 use Application\Controleurs\EtudiantControleur;
 use Application\Controleurs\InscriptionControleur;
+use Application\Controleurs\PromotionControleur;
+use Application\Controleurs\RapportControleur;
+use Application\Controleurs\RisqueControleur;
 use Application\Controleurs\UtilisateurControleur;
 use Application\Middlewares\AuthentificationMiddleware;
 use Application\Middlewares\RoleMiddleware;
@@ -154,6 +157,22 @@ $routeur->get('/api/appariteur/assistant', [AppariteurControleur::class, 'assist
     RoleMiddleware::autoriser($appariteurs),
 ]);
 $routeur->get('/api/appariteur/rapports', [AppariteurControleur::class, 'rapports'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/promotions/supervision', [PromotionControleur::class, 'index'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/promotions/supervision/{id}', [PromotionControleur::class, 'detail'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/risques-academiques', [RisqueControleur::class, 'index'], [
+    [AuthentificationMiddleware::class, 'gerer'],
+    RoleMiddleware::autoriser($appariteurs),
+]);
+$routeur->get('/api/rapports/apparitorat', [RapportControleur::class, 'apparitorat'], [
     [AuthentificationMiddleware::class, 'gerer'],
     RoleMiddleware::autoriser($appariteurs),
 ]);

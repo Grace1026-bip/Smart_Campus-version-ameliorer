@@ -16,13 +16,17 @@ import '../../../commun/composants/carte_statistique.dart';
 import '../../../commun/composants/badge_statut.dart';
 
 class GradesScreen extends StatelessWidget {
-  const GradesScreen({super.key});
+  const GradesScreen({super.key, this.initialCourseId});
+
+  final int? initialCourseId;
 
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
     if (role == UserRole.student) return const _StudentApiGradesScreen();
-    if (role == UserRole.teacher) return const _TeacherApiGradesScreen();
+    if (role == UserRole.teacher) {
+      return _TeacherApiGradesScreen(initialCourseId: initialCourseId);
+    }
 
     return SmartFacultyShell(
       role: role,
@@ -165,7 +169,9 @@ class _StudentApiGradesScreen extends StatelessWidget {
 }
 
 class _TeacherApiGradesScreen extends StatefulWidget {
-  const _TeacherApiGradesScreen();
+  const _TeacherApiGradesScreen({this.initialCourseId});
+
+  final int? initialCourseId;
 
   @override
   State<_TeacherApiGradesScreen> createState() => _TeacherApiGradesScreenState();
@@ -173,6 +179,12 @@ class _TeacherApiGradesScreen extends StatefulWidget {
 
 class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
   int? _selectedCourseId;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedCourseId = widget.initialCourseId;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -196,8 +208,13 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
           }
 
           final courses = snapshot.data ?? [];
-          _selectedCourseId ??=
-              courses.isEmpty ? null : _asInt(courses.first['id']);
+          final hasSelectedCourse = courses.any(
+            (course) => _asInt(course['id']) == _selectedCourseId,
+          );
+          if (!hasSelectedCourse) {
+            _selectedCourseId =
+                courses.isEmpty ? null : _asInt(courses.first['id']);
+          }
           final matchingCourses = courses
               .where((course) => _asInt(course['id']) == _selectedCourseId)
               .toList();

@@ -7,6 +7,7 @@ namespace Application\Services;
 use Application\Modeles\PublicationValve;
 use Application\Noyau\BaseDeDonnees;
 use Application\Noyau\ExceptionHttp;
+use PDO;
 
 class ValveService
 {
@@ -104,26 +105,45 @@ class ValveService
         $pieceJointeUrl = self::pieceJointeDepuisDonnees($donnees)
             ?? (nettoyer_chaine($donnees['piece_jointe_url'] ?? '') ?: null);
 
-        $requete = BaseDeDonnees::connexion()->prepare(
-            'INSERT INTO publications_valve (
-                cours_id, enseignant_id, type_publication, titre, contenu, piece_jointe_url, statut, visibilite, est_important
-             ) VALUES (
-                :cours_id, :enseignant_id, :type_publication, :titre, :contenu, :piece_jointe_url, :statut, :visibilite, :est_important
-             )'
-        );
-        $requete->execute([
-            'cours_id' => $coursId,
-            'enseignant_id' => $enseignantId,
-            'type_publication' => $type,
-            'titre' => $titre,
-            'contenu' => $contenu,
-            'piece_jointe_url' => $pieceJointeUrl,
-            'statut' => $statut,
-            'visibilite' => $visibilite,
-            'est_important' => normaliser_booleen($donnees['est_important'] ?? $donnees['important'] ?? false) ? 1 : 0,
-        ]);
+        if ($type === 'support_de_cours' && $pieceJointeUrl === null) {
+            throw new ExceptionHttp('Un support de cours doit avoir un fichier ou un lien.', 422);
+        }
 
-        return self::publication((int) BaseDeDonnees::connexion()->lastInsertId());
+        return BaseDeDonnees::transaction(function (PDO $pdo) use (
+            $coursId,
+            $enseignantId,
+            $type,
+            $titre,
+            $contenu,
+            $pieceJointeUrl,
+            $statut,
+            $visibilite,
+            $donnees
+        ): array {
+            $requete = $pdo->prepare(
+                'INSERT INTO publications_valve (
+                    cours_id, enseignant_id, type_publication, titre, contenu, piece_jointe_url, statut, visibilite, est_important
+                 ) VALUES (
+                    :cours_id, :enseignant_id, :type_publication, :titre, :contenu, :piece_jointe_url, :statut, :visibilite, :est_important
+                 )'
+            );
+            $requete->execute([
+                'cours_id' => $coursId,
+                'enseignant_id' => $enseignantId,
+                'type_publication' => $type,
+                'titre' => $titre,
+                'contenu' => $contenu,
+                'piece_jointe_url' => $pieceJointeUrl,
+                'statut' => $statut,
+                'visibilite' => $visibilite,
+                'est_important' => normaliser_booleen($donnees['est_important'] ?? $donnees['important'] ?? false) ? 1 : 0,
+            ]);
+
+            $publication = self::publication((int) $pdo->lastInsertId());
+            self::synchroniserDocumentCours($pdo, $publication);
+
+            return $publication;
+        });
     }
 
     public static function modifierPublication(int $enseignantId, int $publicationId, array $donnees): array
@@ -149,31 +169,43 @@ class ValveService
             $pieceJointeUrl = nettoyer_chaine($donnees['piece_jointe_url']);
         }
 
-        $requete = BaseDeDonnees::connexion()->prepare(
-            'UPDATE publications_valve
-             SET titre = COALESCE(:titre, titre),
-                 contenu = COALESCE(:contenu, contenu),
-                 type_publication = COALESCE(:type_publication, type_publication),
-                 statut = COALESCE(:statut, statut),
-                 visibilite = COALESCE(:visibilite, visibilite),
-                 est_important = COALESCE(:est_important, est_important),
-                 piece_jointe_url = COALESCE(:piece_jointe_url, piece_jointe_url)
-             WHERE id = :id'
-        );
-        $requete->execute([
-            'id' => $publicationId,
-            'titre' => isset($donnees['titre']) ? nettoyer_chaine($donnees['titre']) : null,
-            'contenu' => isset($donnees['contenu']) ? nettoyer_chaine($donnees['contenu']) : null,
-            'type_publication' => $typePublication === null ? null : (string) $typePublication,
-            'statut' => $statut,
-            'visibilite' => $visibilite,
-            'est_important' => array_key_exists('est_important', $donnees)
-                ? (normaliser_booleen($donnees['est_important']) ? 1 : 0)
-                : null,
-            'piece_jointe_url' => $pieceJointeUrl,
-        ]);
+        return BaseDeDonnees::transaction(function (PDO $pdo) use (
+            $publicationId,
+            $donnees,
+            $typePublication,
+            $statut,
+            $visibilite,
+            $pieceJointeUrl
+        ): array {
+            $requete = $pdo->prepare(
+                'UPDATE publications_valve
+                 SET titre = COALESCE(:titre, titre),
+                     contenu = COALESCE(:contenu, contenu),
+                     type_publication = COALESCE(:type_publication, type_publication),
+                     statut = COALESCE(:statut, statut),
+                     visibilite = COALESCE(:visibilite, visibilite),
+                     est_important = COALESCE(:est_important, est_important),
+                     piece_jointe_url = COALESCE(:piece_jointe_url, piece_jointe_url)
+                 WHERE id = :id'
+            );
+            $requete->execute([
+                'id' => $publicationId,
+                'titre' => isset($donnees['titre']) ? nettoyer_chaine($donnees['titre']) : null,
+                'contenu' => isset($donnees['contenu']) ? nettoyer_chaine($donnees['contenu']) : null,
+                'type_publication' => $typePublication === null ? null : (string) $typePublication,
+                'statut' => $statut,
+                'visibilite' => $visibilite,
+                'est_important' => array_key_exists('est_important', $donnees)
+                    ? (normaliser_booleen($donnees['est_important']) ? 1 : 0)
+                    : null,
+                'piece_jointe_url' => $pieceJointeUrl,
+            ]);
 
-        return self::publication($publicationId);
+            $publication = self::publication($publicationId);
+            self::synchroniserDocumentCours($pdo, $publication);
+
+            return $publication;
+        });
     }
 
     public static function supprimerPublication(int $enseignantId, int $publicationId): void
@@ -185,10 +217,13 @@ class ValveService
             throw new ExceptionHttp('Cette publication est verrouillee.', 409);
         }
 
-        $requete = BaseDeDonnees::connexion()->prepare(
-            'DELETE FROM publications_valve WHERE id = :id'
-        );
-        $requete->execute(['id' => $publicationId]);
+        BaseDeDonnees::transaction(static function (PDO $pdo) use ($publicationId): void {
+            $documents = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :id');
+            $documents->execute(['id' => $publicationId]);
+
+            $requete = $pdo->prepare('DELETE FROM publications_valve WHERE id = :id');
+            $requete->execute(['id' => $publicationId]);
+        });
     }
 
     public static function creerPublicationAutomatiqueNotes(int $enseignantId, int $coursId): void
@@ -269,6 +304,53 @@ class ValveService
         $publication['fichier'] = $publication['piece_jointe_url'];
 
         return $publication;
+    }
+
+    private static function synchroniserDocumentCours(PDO $pdo, array $publication): void
+    {
+        $publicationId = (int) $publication['id'];
+        $coursId = (int) $publication['cours_id'];
+        $type = (string) $publication['type_publication'];
+        $url = nettoyer_chaine($publication['piece_jointe_url'] ?? '');
+
+        if ($type === 'support_de_cours' && $url === '') {
+            throw new ExceptionHttp('Un support de cours doit avoir un fichier ou un lien.', 422);
+        }
+
+        if ($type !== 'support_de_cours') {
+            $suppression = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :publication_id');
+            $suppression->execute(['publication_id' => $publicationId]);
+
+            return;
+        }
+
+        $titre = nettoyer_chaine($publication['titre'] ?? 'Support de cours');
+        if ($titre === '') {
+            $titre = 'Support de cours';
+        }
+
+        $requete = $pdo->prepare(
+            'INSERT INTO documents_cours (cours_id, publication_id, titre, url_document, type_document)
+             VALUES (:cours_id, :publication_id, :titre, :url_document, :type_document)
+             ON DUPLICATE KEY UPDATE
+                publication_id = VALUES(publication_id),
+                url_document = VALUES(url_document),
+                type_document = VALUES(type_document)'
+        );
+        $requete->execute([
+            'cours_id' => $coursId,
+            'publication_id' => $publicationId,
+            'titre' => $titre,
+            'url_document' => $url,
+            'type_document' => self::typeDocumentDepuisUrl($url),
+        ]);
+    }
+
+    private static function typeDocumentDepuisUrl(string $url): string
+    {
+        $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?: $url, PATHINFO_EXTENSION));
+
+        return $extension !== '' ? $extension : 'lien';
     }
 
     private static function pieceJointeDepuisDonnees(array $donnees): ?string

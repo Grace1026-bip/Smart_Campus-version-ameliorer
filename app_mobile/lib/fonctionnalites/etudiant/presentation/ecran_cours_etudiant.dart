@@ -4,6 +4,7 @@ import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/lien_externe.dart';
 import '../../../donnees/services/service_etudiant.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -518,22 +519,36 @@ class _DocumentsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (documents.isEmpty) {
+      return const _EmptyState(
+        icon: Icons.folder_open_rounded,
+        title: 'Aucun support disponible',
+        message: 'Les supports publies par l enseignant apparaitront ici.',
+      );
+    }
+
     return SmartTable(
       title: 'Documents du cours',
       subtitle: '${documents.length} document(s).',
       columns: const [
         DataColumn(label: Text('Titre')),
         DataColumn(label: Text('Type')),
-        DataColumn(label: Text('Lien')),
         DataColumn(label: Text('Date')),
+        DataColumn(label: Text('Action')),
       ],
       rows: [
         for (final item in documents)
           DataRow(cells: [
             DataCell(Text('${item['titre'] ?? '-'}')),
             DataCell(Text('${item['type_document'] ?? '-'}')),
-            DataCell(SelectableText('${item['url_document'] ?? '-'}')),
             DataCell(Text('${item['date_creation'] ?? '-'}')),
+            DataCell(
+              OutlinedButton.icon(
+                onPressed: () => _openDocument(context, '${item['url_document'] ?? ''}'),
+                icon: const Icon(Icons.open_in_new_rounded, size: 18),
+                label: const Text('Ouvrir'),
+              ),
+            ),
           ]),
       ],
     );
@@ -912,6 +927,34 @@ String _statusLabel(String status) {
     default:
       return status;
   }
+}
+
+void _openDocument(BuildContext context, String value) {
+  final url = _documentUrl(value.trim());
+  if (url.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Document indisponible.')),
+    );
+    return;
+  }
+
+  if (ouvrirLienExterne(url)) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(content: Text(url)),
+  );
+}
+
+String _documentUrl(String value) {
+  if (value.isEmpty) return '';
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value;
+  }
+  if (value.startsWith('/')) {
+    return '${ApiConfig.baseUrl}$value';
+  }
+
+  return value;
 }
 
 String _typeLabel(String type) {

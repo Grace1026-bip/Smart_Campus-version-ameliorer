@@ -210,7 +210,14 @@ class AppRoutes {
       case internships:
         return _route(settings, const InternshipsScreen());
       case grades:
-        return _route(settings, const GradesScreen());
+        final args = settings.arguments;
+        final courseId = args is int
+            ? args
+            : args is Map<String, dynamic>
+                ? (args['cours_id'] as num?)?.toInt() ??
+                    (args['course_id'] as num?)?.toInt()
+                : null;
+        return _route(settings, GradesScreen(initialCourseId: courseId));
       case riskStudents:
         return _route(settings, const RiskStudentsScreen());
       case notifications:
@@ -220,7 +227,20 @@ class AppRoutes {
             const StudentValveScreen(),
           );
         }
-        return _route(settings, const NotificationsScreen());
+        final args = settings.arguments;
+        final courseId = args is int
+            ? args
+            : args is Map<String, dynamic>
+                ? (args['cours_id'] as num?)?.toInt() ??
+                    (args['course_id'] as num?)?.toInt()
+                : null;
+        final type = args is Map<String, dynamic>
+            ? (args['type_publication'] ?? args['type'])?.toString()
+            : null;
+        return _route(
+          settings,
+          NotificationsScreen(initialCourseId: courseId, initialType: type),
+        );
       case profile:
         return _route(settings, const ProfileScreen());
       default:
