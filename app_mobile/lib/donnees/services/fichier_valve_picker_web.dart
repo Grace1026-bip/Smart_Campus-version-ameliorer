@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:html' as html;
-import 'dart:typed_data';
 
 class ValveAttachmentFile {
   const ValveAttachmentFile({
@@ -22,10 +20,13 @@ Future<ValveAttachmentFile?> choisirFichierValve() {
   final input = html.FileUploadInputElement()
     ..accept = '.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.png,.jpg,.jpeg,.txt,.zip'
     ..multiple = false;
+  input.style.display = 'none';
+  html.document.body?.append(input);
 
   input.onChange.first.then((_) {
     final files = input.files;
     if (files == null || files.isEmpty) {
+      input.remove();
       if (!completer.isCompleted) completer.complete(null);
       return;
     }
@@ -34,35 +35,40 @@ Future<ValveAttachmentFile?> choisirFichierValve() {
     final reader = html.FileReader();
 
     reader.onError.first.then((_) {
+      input.remove();
       if (!completer.isCompleted) completer.complete(null);
     });
 
     reader.onLoad.first.then((_) {
       final result = reader.result;
-      if (result is! ByteBuffer) {
+      if (result is! String || result.trim().isEmpty) {
+        input.remove();
         if (!completer.isCompleted) completer.complete(null);
         return;
       }
 
-      final bytes = Uint8List.view(result);
+      input.remove();
       if (!completer.isCompleted) {
         completer.complete(
           ValveAttachmentFile(
             fileName: file.name,
-            base64Content: base64Encode(bytes),
+            base64Content: result,
             size: file.size,
           ),
         );
       }
     });
 
-    reader.readAsArrayBuffer(file);
+    reader.readAsDataUrl(file);
   });
 
   input.click();
 
   return completer.future.timeout(
     const Duration(minutes: 2),
-    onTimeout: () => null,
+    onTimeout: () {
+      input.remove();
+      return null;
+    },
   );
 }

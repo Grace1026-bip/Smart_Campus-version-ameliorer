@@ -231,18 +231,55 @@ class _StudentComplaintsScreenState extends State<_StudentComplaintsScreen> {
   int? _courseFilter;
 
   Future<_StudentComplaintData> _load() async {
-    final results = await Future.wait<dynamic>([
+    final warnings = <String>[];
+    final complaints = await _safeList(
       EtudiantDataSource.service.reclamations(),
+      'Les reclamations n ont pas pu etre chargees.',
+      warnings,
+    );
+    final courses = await _safeList(
       EtudiantDataSource.service.cours(),
+      'Les cours n ont pas pu etre charges.',
+      warnings,
+    );
+    final notesPayload = await _safeMap(
       EtudiantDataSource.service.notes(),
-    ]);
-    final notesPayload = results[2] as Map<String, dynamic>;
+      'Les notes n ont pas pu etre chargees.',
+      warnings,
+    );
 
     return _StudentComplaintData(
-      complaints: results[0] as List<dynamic>,
-      courses: results[1] as List<dynamic>,
+      complaints: complaints,
+      courses: courses,
       notes: notesPayload['notes'] as List<dynamic>? ?? const [],
+      warnings: warnings,
     );
+  }
+
+  Future<List<dynamic>> _safeList(
+    Future<List<dynamic>> future,
+    String message,
+    List<String> warnings,
+  ) async {
+    try {
+      return await future;
+    } catch (error) {
+      warnings.add('$message ${error.toString()}');
+      return const [];
+    }
+  }
+
+  Future<Map<String, dynamic>> _safeMap(
+    Future<Map<String, dynamic>> future,
+    String message,
+    List<String> warnings,
+  ) async {
+    try {
+      return await future;
+    } catch (error) {
+      warnings.add('$message ${error.toString()}');
+      return const {};
+    }
   }
 
   void _refresh() {
@@ -282,6 +319,7 @@ class _StudentComplaintsScreenState extends State<_StudentComplaintsScreen> {
                 complaints: [],
                 courses: [],
                 notes: [],
+                warnings: [],
               );
           final complaints = data.complaints.where((item) {
             final statusOk =
@@ -295,6 +333,10 @@ class _StudentComplaintsScreenState extends State<_StudentComplaintsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               ResponsiveGrid(children: _studentComplaintStats(data.complaints)),
+              if (data.warnings.isNotEmpty) ...[
+                const SizedBox(height: 22),
+                _LoadWarningPanel(messages: data.warnings),
+              ],
               const SizedBox(height: 22),
               SectionPanel(
                 title: 'Nouvelle reclamation',
@@ -610,11 +652,44 @@ class _StudentComplaintData {
     required this.complaints,
     required this.courses,
     required this.notes,
+    required this.warnings,
   });
 
   final List<dynamic> complaints;
   final List<dynamic> courses;
   final List<dynamic> notes;
+  final List<String> warnings;
+}
+
+class _LoadWarningPanel extends StatelessWidget {
+  const _LoadWarningPanel({required this.messages});
+
+  final List<String> messages;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      title: 'Chargement partiel',
+      subtitle: 'La page reste disponible, mais certaines donnees secondaires manquent.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final message in messages)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(message)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 List<Widget> _studentComplaintStats(List<dynamic> complaints) {

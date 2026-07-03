@@ -130,15 +130,36 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
   }
 
   Future<_ValveData> _load() async {
-    final results = await Future.wait([
+    final warnings = <String>[];
+    final courses = await _safeList(
       EnseignantDataSource.service.cours(),
+      'Les cours enseignant n ont pas pu etre charges.',
+      warnings,
+    );
+    final publications = await _safeList(
       EnseignantDataSource.service.valve(),
-    ]);
+      'Les publications de la valve n ont pas pu etre chargees.',
+      warnings,
+    );
 
     return _ValveData(
-      courses: results[0] as List<dynamic>,
-      publications: results[1] as List<dynamic>,
+      courses: courses,
+      publications: publications,
+      warnings: warnings,
     );
+  }
+
+  Future<List<dynamic>> _safeList(
+    Future<List<dynamic>> future,
+    String message,
+    List<String> warnings,
+  ) async {
+    try {
+      return await future;
+    } catch (error) {
+      warnings.add('$message ${error.toString()}');
+      return const [];
+    }
   }
 
   void _refresh({int? removedPublicationId}) {
@@ -235,6 +256,10 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                 ],
               ),
               const SizedBox(height: 22),
+              if (data.warnings.isNotEmpty) ...[
+                _LoadWarningPanel(messages: data.warnings),
+                const SizedBox(height: 22),
+              ],
               _PublicationForm(
                 courses: data.courses,
                 initialCourseId: widget.initialCourseId,
@@ -386,7 +411,9 @@ class _PublicationFormState extends State<_PublicationForm> {
   void initState() {
     super.initState();
     _courseId = widget.initialCourseId;
-    _type = widget.initialType ?? 'annonce';
+    _type = _publicationTypes.contains(widget.initialType)
+        ? widget.initialType!
+        : 'annonce';
   }
 
   @override
@@ -944,10 +971,43 @@ class _ValveData {
   const _ValveData({
     this.courses = const [],
     this.publications = const [],
+    this.warnings = const [],
   });
 
   final List<dynamic> courses;
   final List<dynamic> publications;
+  final List<String> warnings;
+}
+
+class _LoadWarningPanel extends StatelessWidget {
+  const _LoadWarningPanel({required this.messages});
+
+  final List<String> messages;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      title: 'Chargement partiel',
+      subtitle: 'La page reste ouverte pendant que les donnees API sont corrigees.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final message in messages)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(message)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _NotificationCard extends StatelessWidget {
@@ -1027,6 +1087,17 @@ class _NotificationCard extends StatelessWidget {
     );
   }
 }
+
+const _publicationTypes = [
+  'annonce',
+  'communique',
+  'devoir',
+  'support_de_cours',
+  'publication_notes',
+  'changement_horaire',
+  'consigne_examen',
+  'rappel',
+];
 
 String _publicationTypeLabel(String type) {
   switch (type) {

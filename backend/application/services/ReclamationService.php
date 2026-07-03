@@ -6,6 +6,7 @@ namespace Application\Services;
 
 use Application\Noyau\BaseDeDonnees;
 use Application\Noyau\ExceptionHttp;
+use PDO;
 
 class ReclamationService
 {
@@ -130,20 +131,24 @@ class ReclamationService
             throw new ExceptionHttp('Statut de reclamation invalide.', 422);
         }
 
-        $requete = BaseDeDonnees::connexion()->prepare(
-            'INSERT INTO reponses_reclamations (reclamation_id, utilisateur_id, message)
-             VALUES (:reclamation_id, :utilisateur_id, :message)'
-        );
-        $requete->execute([
-            'reclamation_id' => $reclamationId,
-            'utilisateur_id' => $utilisateurId,
-            'message' => $message,
-        ]);
+        BaseDeDonnees::transaction(function (PDO $pdo) use ($reclamation, $reclamationId, $utilisateurId, $message, $statut): void {
+            $requete = $pdo->prepare(
+                'INSERT INTO reponses_reclamations (reclamation_id, utilisateur_id, message)
+                 VALUES (:reclamation_id, :utilisateur_id, :message)'
+            );
+            $requete->execute([
+                'reclamation_id' => $reclamationId,
+                'utilisateur_id' => $utilisateurId,
+                'message' => $message,
+            ]);
 
-        $miseAJour = BaseDeDonnees::connexion()->prepare(
-            'UPDATE reclamations SET statut = :statut WHERE id = :id'
-        );
-        $miseAJour->execute(['statut' => $statut, 'id' => $reclamationId]);
+            $miseAJour = $pdo->prepare(
+                'UPDATE reclamations SET statut = :statut WHERE id = :id'
+            );
+            $miseAJour->execute(['statut' => $statut, 'id' => $reclamationId]);
+
+            self::notifierEtudiantReponse($pdo, $reclamation, $message, $statut);
+        });
 
         return self::reclamation($reclamationId);
     }
@@ -177,6 +182,43 @@ class ReclamationService
         $requete->execute(['reclamation_id' => $reclamationId]);
 
         return $requete->fetchAll();
+    }
+
+    private static function notifierEtudiantReponse(PDO $pdo, array $reclamation, string $message, string $statut): void
+    {
+        $titre = 'Reponse a votre reclamation';
+        $cours = trim((string) ($reclamation['code_cours'] ?? ''));
+        $objet = trim((string) ($reclamation['titre'] ?? 'votre demande'));
+        $statutLisible = self::libelleStatut($statut);
+        $messageCourt = strlen($message) > 180 ? substr($message, 0, 177) . '...' : $message;
+        $notification = trim(
+            'Votre reclamation "' . $objet . '"'
+            . ($cours !== '' ? ' pour ' . $cours : '')
+            . ' a recu une reponse. Statut: ' . $statutLisible . '. '
+            . $messageCourt
+        );
+
+        $requete = $pdo->prepare(
+            'INSERT INTO alertes_academiques (etudiant_id, cours_id, titre, message, niveau, lue)
+             VALUES (:etudiant_id, :cours_id, :titre, :message, "info", 0)'
+        );
+        $requete->execute([
+            'etudiant_id' => (int) $reclamation['etudiant_id'],
+            'cours_id' => $reclamation['cours_id'] === null ? null : (int) $reclamation['cours_id'],
+            'titre' => $titre,
+            'message' => $notification,
+        ]);
+    }
+
+    private static function libelleStatut(string $statut): string
+    {
+        return match ($statut) {
+            'en_attente' => 'en attente',
+            'en_cours' => 'en cours',
+            'resolue' => 'resolue',
+            'transmise_apparitorat' => 'transmise a l apparitorat',
+            default => $statut,
+        };
     }
 
     private static function noteEtudiant(int $etudiantId, int $noteId): array

@@ -31,8 +31,8 @@ class _StudentAlertsScreenState extends State<StudentAlertsScreen> {
     return SmartFacultyShell(
       role: UserRole.student,
       selectedRoute: AppRoutes.studentAlerts,
-      title: 'Alertes academiques',
-      subtitle: 'Risques et signaux generes depuis vos notes publiees.',
+      title: 'Alertes et notifications',
+      subtitle: 'Risques, reponses aux reclamations et signaux academiques.',
       actions: [
         IconButton(
           tooltip: 'Actualiser',

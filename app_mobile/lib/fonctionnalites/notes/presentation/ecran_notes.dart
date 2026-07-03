@@ -315,18 +315,50 @@ class _TeacherCourseGradesEditor extends StatelessWidget {
   }
 
   Future<_TeacherGradeData> _load(int courseId) async {
-    final results = await Future.wait([
+    final warnings = <String>[];
+    final students = await _safeList(
       EnseignantDataSource.service.etudiantsCours(courseId),
+      'La liste des etudiants n a pas pu etre chargee.',
+      warnings,
+    );
+    final notesPayload = await _safeMap(
       EnseignantDataSource.service.notesCours(courseId),
-    ]);
-
-    final notesPayload = results[1] as Map<String, dynamic>;
+      'Les notes existantes n ont pas pu etre chargees.',
+      warnings,
+    );
 
     return _TeacherGradeData(
-      students: results[0] as List<dynamic>,
+      students: students,
       notes: notesPayload['notes'] as List<dynamic>? ?? const [],
       stats: notesPayload['statistiques'] as Map<String, dynamic>? ?? const {},
+      warnings: warnings,
     );
+  }
+
+  Future<List<dynamic>> _safeList(
+    Future<List<dynamic>> future,
+    String message,
+    List<String> warnings,
+  ) async {
+    try {
+      return await future;
+    } catch (error) {
+      warnings.add('$message ${error.toString()}');
+      return const [];
+    }
+  }
+
+  Future<Map<String, dynamic>> _safeMap(
+    Future<Map<String, dynamic>> future,
+    String message,
+    List<String> warnings,
+  ) async {
+    try {
+      return await future;
+    } catch (error) {
+      warnings.add('$message ${error.toString()}');
+      return const {};
+    }
   }
 }
 
@@ -453,6 +485,10 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
             ),
           ],
         ),
+        if (widget.data.warnings.isNotEmpty) ...[
+          const SizedBox(height: 22),
+          _LoadWarningPanel(messages: widget.data.warnings),
+        ],
         const SizedBox(height: 22),
         SectionPanel(
           title: 'Pilotage de l encodage',
@@ -642,11 +678,44 @@ class _TeacherGradeData {
     this.students = const [],
     this.notes = const [],
     this.stats = const {},
+    this.warnings = const [],
   });
 
   final List<dynamic> students;
   final List<dynamic> notes;
   final Map<String, dynamic> stats;
+  final List<String> warnings;
+}
+
+class _LoadWarningPanel extends StatelessWidget {
+  const _LoadWarningPanel({required this.messages});
+
+  final List<String> messages;
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      title: 'Chargement partiel',
+      subtitle: 'L encodage reste accessible, certaines donnees seront rechargees ensuite.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (final message in messages)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(message)),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
 
 class _PublishGradesPanel extends StatelessWidget {

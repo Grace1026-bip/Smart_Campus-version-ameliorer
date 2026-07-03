@@ -169,7 +169,9 @@ class ValveService
             $pieceJointeUrl = nettoyer_chaine($donnees['piece_jointe_url']);
         }
 
-        return BaseDeDonnees::transaction(function (PDO $pdo) use (
+        $anciennePieceJointe = nettoyer_chaine($publication['piece_jointe_url'] ?? '');
+
+        $publicationModifiee = BaseDeDonnees::transaction(function (PDO $pdo) use (
             $publicationId,
             $donnees,
             $typePublication,
@@ -206,6 +208,12 @@ class ValveService
 
             return $publication;
         });
+
+        if ($pieceJointeUrl !== null && $anciennePieceJointe !== '' && $anciennePieceJointe !== $pieceJointeUrl) {
+            self::supprimerFichierPublic($anciennePieceJointe);
+        }
+
+        return $publicationModifiee;
     }
 
     public static function supprimerPublication(int $enseignantId, int $publicationId): void
@@ -217,6 +225,8 @@ class ValveService
             throw new ExceptionHttp('Cette publication est verrouillee.', 409);
         }
 
+        $pieceJointe = nettoyer_chaine($publication['piece_jointe_url'] ?? '');
+
         BaseDeDonnees::transaction(static function (PDO $pdo) use ($publicationId): void {
             $documents = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :id');
             $documents->execute(['id' => $publicationId]);
@@ -224,6 +234,8 @@ class ValveService
             $requete = $pdo->prepare('DELETE FROM publications_valve WHERE id = :id');
             $requete->execute(['id' => $publicationId]);
         });
+
+        self::supprimerFichierPublic($pieceJointe);
     }
 
     public static function creerPublicationAutomatiqueNotes(int $enseignantId, int $coursId): void
@@ -329,6 +341,9 @@ class ValveService
             $titre = 'Support de cours';
         }
 
+        $nettoyage = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :publication_id');
+        $nettoyage->execute(['publication_id' => $publicationId]);
+
         $requete = $pdo->prepare(
             'INSERT INTO documents_cours (cours_id, publication_id, titre, url_document, type_document)
              VALUES (:cours_id, :publication_id, :titre, :url_document, :type_document)
@@ -400,6 +415,33 @@ class ValveService
         }
 
         return '/fichiers/valve/' . $nomFichier;
+    }
+
+    private static function supprimerFichierPublic(string $url): void
+    {
+        $cheminUrl = parse_url($url, PHP_URL_PATH);
+        if (!is_string($cheminUrl) || !str_starts_with($cheminUrl, '/fichiers/')) {
+            return;
+        }
+
+        $racinePublique = realpath(chemin_base('public'));
+        if ($racinePublique === false) {
+            return;
+        }
+
+        $relatif = ltrim(str_replace('/', DIRECTORY_SEPARATOR, $cheminUrl), DIRECTORY_SEPARATOR);
+        $chemin = $racinePublique . DIRECTORY_SEPARATOR . $relatif;
+        $cheminReel = realpath($chemin);
+
+        if (
+            $cheminReel === false
+            || !is_file($cheminReel)
+            || !str_starts_with($cheminReel, $racinePublique . DIRECTORY_SEPARATOR . 'fichiers' . DIRECTORY_SEPARATOR)
+        ) {
+            return;
+        }
+
+        @unlink($cheminReel);
     }
 
     private static function validerStatutEtVisibilite(mixed $statut, mixed $visibilite): void

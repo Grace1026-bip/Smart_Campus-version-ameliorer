@@ -19,6 +19,11 @@ class BaseDeDonnees
             return self::$connexion;
         }
 
+        if (function_exists('charger_env') && function_exists('chemin_base')) {
+            charger_env(dirname(chemin_base()) . DIRECTORY_SEPARATOR . '.env');
+            charger_env(chemin_base('.env'));
+        }
+
         $configuration = require chemin_base('configuration/base_de_donnees.php');
         $ports = self::portsConnexion($configuration);
         $dernierEchec = null;
