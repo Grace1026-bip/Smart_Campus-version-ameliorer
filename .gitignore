@@ -1,2 +1,11 @@
 app_mobile/.codex_logs/
 backend/public/fichiers/
+backend/sauvegardes/
+.env
+*.env
+!*.env.example
+.venv/
+backend/.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/

@@ -1,0 +1,1 @@
+"""Dependances FastAPI reutilisables."""

@@ -255,11 +255,6 @@ JOIN utilisateurs u ON u.id = e.utilisateur_id
 WHERE (c.code IN ('WEB2', 'GL2') AND u.email = 'assistant1@smartfaculty.test')
    OR (c.code IN ('ALGO2', 'BDD2', 'IA1', 'ARCH3') AND u.email = 'assistant2@smartfaculty.test');
 
-INSERT IGNORE INTO cours_assistants (cours_id, enseignant_id)
-SELECT cours_id, enseignant_id
-FROM cours_enseignants
-WHERE role_enseignement = 'assistant';
-
 INSERT IGNORE INTO inscriptions_cours (etudiant_id, cours_id)
 SELECT e.id, c.id
 FROM etudiants e
@@ -343,9 +338,33 @@ JOIN cours_enseignants ce ON ce.cours_id = c.id AND ce.role_enseignement = 'prin
 WHERE c.code IN ('ALGO2', 'BDD2', 'WEB2', 'IA1')
 ON DUPLICATE KEY UPDATE contenu = VALUES(contenu), est_important = VALUES(est_important), verrouille = VALUES(verrouille);
 
-INSERT IGNORE INTO documents_cours (cours_id, publication_id, titre, url_document, type_document)
-SELECT c.id, NULL, CONCAT('Plan du cours ', c.code), CONCAT('/documents/', LOWER(c.code), '-plan.pdf'), 'pdf'
-FROM cours c;
+INSERT INTO publications_valve (
+    cours_id,
+    enseignant_id,
+    type_publication,
+    titre,
+    contenu,
+    piece_jointe_url,
+    statut,
+    visibilite,
+    date_publication
+)
+SELECT c.id,
+       ce.enseignant_id,
+       'support_de_cours',
+       CONCAT('Plan du cours ', c.code),
+       CONCAT('Support officiel du cours ', c.nom, '.'),
+       CONCAT('/documents/', LOWER(c.code), '-plan.pdf'),
+       'publie',
+       'etudiants',
+       NOW() - INTERVAL MOD(c.id, 3) DAY
+FROM cours c
+JOIN cours_enseignants ce ON ce.cours_id = c.id AND ce.role_enseignement = 'principal'
+ON DUPLICATE KEY UPDATE
+    contenu = VALUES(contenu),
+    piece_jointe_url = VALUES(piece_jointe_url),
+    statut = VALUES(statut),
+    visibilite = VALUES(visibilite);
 
 INSERT INTO alertes_academiques (etudiant_id, cours_id, titre, message, niveau)
 SELECT n.etudiant_id,

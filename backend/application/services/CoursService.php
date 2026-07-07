@@ -162,11 +162,7 @@ class CoursService
     public static function documentsCours(int $coursId): array
     {
         $requete = BaseDeDonnees::connexion()->prepare(
-            'SELECT id, cours_id, publication_id, titre, url_document, type_document, date_creation
-             FROM documents_cours
-             WHERE cours_id = :cours_id_documents
-             UNION ALL
-             SELECT 0 AS id,
+            'SELECT pv.id,
                     pv.cours_id,
                     pv.id AS publication_id,
                     pv.titre,
@@ -177,20 +173,15 @@ class CoursService
                     END AS type_document,
                     pv.date_publication AS date_creation
              FROM publications_valve pv
-             LEFT JOIN documents_cours dc ON dc.publication_id = pv.id
-             WHERE pv.cours_id = :cours_id_publications
+             WHERE pv.cours_id = :cours_id
                AND pv.type_publication = "support_de_cours"
                AND pv.piece_jointe_url IS NOT NULL
                AND pv.piece_jointe_url <> ""
                AND pv.statut IN ("publie", "verrouille")
                AND pv.visibilite IN ("etudiants", "tous")
-               AND dc.id IS NULL
              ORDER BY date_creation DESC'
         );
-        $requete->execute([
-            'cours_id_documents' => $coursId,
-            'cours_id_publications' => $coursId,
-        ]);
+        $requete->execute(['cours_id' => $coursId]);
 
         return array_map(static function (array $document): array {
             $document['id'] = (int) $document['id'];

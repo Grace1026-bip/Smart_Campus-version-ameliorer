@@ -140,7 +140,6 @@ class ValveService
             ]);
 
             $publication = self::publication((int) $pdo->lastInsertId());
-            self::synchroniserDocumentCours($pdo, $publication);
 
             return $publication;
         });
@@ -204,7 +203,7 @@ class ValveService
             ]);
 
             $publication = self::publication($publicationId);
-            self::synchroniserDocumentCours($pdo, $publication);
+            self::validerPublicationSupport($publication);
 
             return $publication;
         });
@@ -228,9 +227,6 @@ class ValveService
         $pieceJointe = nettoyer_chaine($publication['piece_jointe_url'] ?? '');
 
         BaseDeDonnees::transaction(static function (PDO $pdo) use ($publicationId): void {
-            $documents = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :id');
-            $documents->execute(['id' => $publicationId]);
-
             $requete = $pdo->prepare('DELETE FROM publications_valve WHERE id = :id');
             $requete->execute(['id' => $publicationId]);
         });
@@ -318,54 +314,14 @@ class ValveService
         return $publication;
     }
 
-    private static function synchroniserDocumentCours(PDO $pdo, array $publication): void
+    private static function validerPublicationSupport(array $publication): void
     {
-        $publicationId = (int) $publication['id'];
-        $coursId = (int) $publication['cours_id'];
         $type = (string) $publication['type_publication'];
         $url = nettoyer_chaine($publication['piece_jointe_url'] ?? '');
 
         if ($type === 'support_de_cours' && $url === '') {
             throw new ExceptionHttp('Un support de cours doit avoir un fichier ou un lien.', 422);
         }
-
-        if ($type !== 'support_de_cours') {
-            $suppression = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :publication_id');
-            $suppression->execute(['publication_id' => $publicationId]);
-
-            return;
-        }
-
-        $titre = nettoyer_chaine($publication['titre'] ?? 'Support de cours');
-        if ($titre === '') {
-            $titre = 'Support de cours';
-        }
-
-        $nettoyage = $pdo->prepare('DELETE FROM documents_cours WHERE publication_id = :publication_id');
-        $nettoyage->execute(['publication_id' => $publicationId]);
-
-        $requete = $pdo->prepare(
-            'INSERT INTO documents_cours (cours_id, publication_id, titre, url_document, type_document)
-             VALUES (:cours_id, :publication_id, :titre, :url_document, :type_document)
-             ON DUPLICATE KEY UPDATE
-                publication_id = VALUES(publication_id),
-                url_document = VALUES(url_document),
-                type_document = VALUES(type_document)'
-        );
-        $requete->execute([
-            'cours_id' => $coursId,
-            'publication_id' => $publicationId,
-            'titre' => $titre,
-            'url_document' => $url,
-            'type_document' => self::typeDocumentDepuisUrl($url),
-        ]);
-    }
-
-    private static function typeDocumentDepuisUrl(string $url): string
-    {
-        $extension = strtolower(pathinfo(parse_url($url, PHP_URL_PATH) ?: $url, PATHINFO_EXTENSION));
-
-        return $extension !== '' ? $extension : 'lien';
     }
 
     private static function pieceJointeDepuisDonnees(array $donnees): ?string

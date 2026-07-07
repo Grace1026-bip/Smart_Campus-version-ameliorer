@@ -1,0 +1,50 @@
+"""Modeles SQLAlchemy du MVP Smart Faculty."""
+
+from app.modeles.academique import (
+    AnneeAcademique,
+    Cours,
+    CoursEnseignant,
+    Enseignant,
+    Etudiant,
+    InscriptionCours,
+    Promotion,
+    Semestre,
+)
+from app.modeles.audit import JournalAudit
+from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
+from app.modeles.notifications import Notification
+from app.modeles.reclamations import HistoriqueReclamation, MessageReclamation, Reclamation
+from app.modeles.securite import JetonActualisation, Permission, Role, RolePermission, Utilisateur, UtilisateurRole
+from app.modeles.suivi import EvaluationRisque, Presence
+from app.modeles.valve import LecturePublication, PieceJointePublication, PublicationValve
+
+__all__ = [
+    "AnneeAcademique",
+    "Cours",
+    "CoursEnseignant",
+    "Enseignant",
+    "Etudiant",
+    "Evaluation",
+    "EvaluationRisque",
+    "HistoriqueReclamation",
+    "InscriptionCours",
+    "JetonActualisation",
+    "JournalAudit",
+    "LecturePublication",
+    "MessageReclamation",
+    "Note",
+    "Notification",
+    "Permission",
+    "PieceJointePublication",
+    "Presence",
+    "Promotion",
+    "PublicationValve",
+    "Reclamation",
+    "ResultatCours",
+    "Role",
+    "RolePermission",
+    "Semestre",
+    "TypeEvaluation",
+    "Utilisateur",
+    "UtilisateurRole",
+]

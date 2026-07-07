@@ -180,19 +180,6 @@ CREATE TABLE IF NOT EXISTS cours_enseignants (
         ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS cours_assistants (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cours_id INT UNSIGNED NOT NULL,
-    enseignant_id INT UNSIGNED NOT NULL,
-    UNIQUE KEY uq_cours_assistant (cours_id, enseignant_id),
-    CONSTRAINT fk_cours_assistants_cours
-        FOREIGN KEY (cours_id) REFERENCES cours(id)
-        ON DELETE CASCADE,
-    CONSTRAINT fk_cours_assistants_enseignant
-        FOREIGN KEY (enseignant_id) REFERENCES enseignants(id)
-        ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE IF NOT EXISTS inscriptions_cours (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     etudiant_id INT UNSIGNED NOT NULL,
@@ -273,23 +260,6 @@ CREATE TABLE IF NOT EXISTS publications_valve (
     CONSTRAINT fk_valve_enseignant
         FOREIGN KEY (enseignant_id) REFERENCES enseignants(id)
         ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE IF NOT EXISTS documents_cours (
-    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-    cours_id INT UNSIGNED NOT NULL,
-    publication_id INT UNSIGNED NULL,
-    titre VARCHAR(180) NOT NULL,
-    url_document VARCHAR(255) NOT NULL,
-    type_document VARCHAR(80) NULL,
-    date_creation TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE KEY uq_document_cours_titre (cours_id, titre),
-    CONSTRAINT fk_documents_cours
-        FOREIGN KEY (cours_id) REFERENCES cours(id)
-        ON DELETE CASCADE,
-    CONSTRAINT fk_documents_publication
-        FOREIGN KEY (publication_id) REFERENCES publications_valve(id)
-        ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS reclamations (
