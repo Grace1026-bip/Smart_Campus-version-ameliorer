@@ -24,19 +24,27 @@ class ApiAuthService implements AuthService {
     required UserRole role,
   }) async {
     final data = await ApiDataSource.client.post(
-      '/api/connexion',
+      '/auth/connexion',
       body: {
         'email': identifier,
         'mot_de_passe': password,
-        'se_souvenir_de_moi': true,
+        'role': _apiRoleFor(role),
+        'appareil': 'flutter',
       },
     );
 
+    _configurerJetons(data, role);
+
     final userJson = data['utilisateur'] as Map<String, dynamic>;
-    final roles = (data['roles'] as List<dynamic>? ?? const [])
-        .map((item) => item.toString())
-        .toList();
-    final resolvedRole = _roleFromApi(roles, fallback: role);
+    final roles = _rolesFromUser(userJson);
+    final roleActif = data['role_actif']?.toString();
+    final resolvedRole = _roleFromApi(
+      [
+        if (roleActif != null) roleActif,
+        ...roles,
+      ],
+      fallback: role,
+    );
     final user = _userFromApi(userJson, resolvedRole);
 
     SessionService.connectWithUser(user);
@@ -45,17 +53,22 @@ class ApiAuthService implements AuthService {
 
   @override
   Future<FacultyUser?> restoreSession() async {
+    if (!ApiDataSource.client.estConnecte) {
+      SessionService.clear();
+      return null;
+    }
+
     try {
-      final data = await ApiDataSource.client.get('/api/utilisateur/connecte');
-      final userJson = data['utilisateur'] as Map<String, dynamic>;
-      final roles = (data['roles'] as List<dynamic>? ?? const [])
-          .map((item) => item.toString())
-          .toList();
+      final data = await ApiDataSource.client.get('/auth/moi');
+      final roles = _rolesFromUser(data);
       final resolvedRole = _roleFromApi(
-        roles,
+        [
+          if (data['role_actif'] != null) data['role_actif'].toString(),
+          ...roles,
+        ],
         fallback: _defaultRoleFromApi(roles),
       );
-      final user = _userFromApi(userJson, resolvedRole);
+      final user = _userFromApi(data, resolvedRole);
 
       SessionService.connectWithUser(user);
       return user;
@@ -67,11 +80,34 @@ class ApiAuthService implements AuthService {
 
   @override
   Future<void> logout() async {
+    final refreshToken = ApiDataSource.client.refreshToken;
     try {
-      await ApiDataSource.client.post('/api/deconnexion');
+      if (refreshToken != null) {
+        await ApiDataSource.client.post(
+          '/auth/deconnexion',
+          body: {'refresh_token': refreshToken},
+        );
+      }
     } finally {
       SessionService.clear();
     }
+  }
+
+  void _configurerJetons(Map<String, dynamic> data, UserRole fallbackRole) {
+    final accessToken = data['access_token']?.toString();
+    final refreshToken = data['refresh_token']?.toString();
+    final roleActif =
+        data['role_actif']?.toString() ?? _apiRoleFor(fallbackRole);
+
+    if (accessToken == null || refreshToken == null) {
+      throw ApiException('Jetons de connexion absents dans la reponse API.');
+    }
+
+    ApiDataSource.client.configurerSession(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      roleActif: roleActif,
+    );
   }
 
   FacultyUser _userFromApi(Map<String, dynamic> json, UserRole role) {
@@ -79,25 +115,27 @@ class ApiAuthService implements AuthService {
       json['nom'],
       json['postnom'],
       json['prenom'],
-    ]
-        .where((part) => part != null && part.toString().trim().isNotEmpty)
-        .join(' ');
+    ].where((part) => part != null && part.toString().trim().isNotEmpty).join(
+          ' ',
+        );
 
     return FacultyUser(
       name: fullName.isEmpty ? 'Utilisateur Smart Faculty' : fullName,
       email: json['email']?.toString() ?? '',
       role: role,
-      department: role == UserRole.student
-          ? 'Espace etudiant'
-          : role == UserRole.teacher
-              ? 'Departement informatique'
-              : role.workspaceLabel,
+      department: role.workspaceLabel,
       avatarText: _avatar(fullName),
       matricule: '',
       promotion: '',
-      phone: '',
+      phone: json['telephone']?.toString() ?? '',
       location: 'Campus',
     );
+  }
+
+  List<String> _rolesFromUser(Map<String, dynamic> json) {
+    return (json['roles'] as List<dynamic>? ?? const [])
+        .map((item) => item.toString())
+        .toList();
   }
 
   String _avatar(String name) {

@@ -19,7 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController(
     text: 'admin@smartfaculty.test',
   );
-  final _passwordController = TextEditingController(text: 'Admin@123456');
+  final _passwordController = TextEditingController(text: 'Smart@123456');
   UserRole _selectedRole = UserRole.administrator;
   bool _passwordHidden = true;
   bool _loading = false;
@@ -119,17 +119,17 @@ class _LoginScreenState extends State<LoginScreen> {
   List<String> _defaultCredentials(UserRole role) {
     switch (role) {
       case UserRole.student:
-        return ['etudiant@smartfaculty.test', 'Etudiant@123456'];
+        return ['etudiant@smartfaculty.test', 'Smart@123456'];
       case UserRole.teacher:
-        return ['enseignant@smartfaculty.test', 'password123'];
+        return ['enseignant@smartfaculty.test', 'Smart@123456'];
       case UserRole.administrator:
-        return ['admin@smartfaculty.test', 'Admin@123456'];
+        return ['admin@smartfaculty.test', 'Smart@123456'];
       case UserRole.apparitor:
-        return ['paritaire@smartfaculty.test', 'Paritaire@123456'];
+        return ['appariteur@smartfaculty.test', 'Smart@123456'];
       case UserRole.promotionChief:
-        return ['icp@smartfaculty.test', 'Icp@123456'];
+        return ['etudiant@smartfaculty.test', 'Smart@123456'];
       case UserRole.dean:
-        return ['doyen@smartfaculty.test', 'Doyen@123456'];
+        return ['doyen@smartfaculty.test', 'Smart@123456'];
     }
   }
 }
@@ -177,9 +177,9 @@ class _InstitutionPanel extends StatelessWidget {
             spacing: 10,
             runSpacing: 10,
             children: [
-              _SignalChip(label: 'Mode demo'),
+              _SignalChip(label: 'Donnees MySQL'),
               _SignalChip(label: 'Responsive web/mobile'),
-              _SignalChip(label: 'Pret API REST PHP'),
+              _SignalChip(label: 'API REST FastAPI'),
             ],
           ),
         ],
@@ -407,7 +407,7 @@ class _LoginForm extends StatelessWidget {
               controller: identifierController,
               keyboardType: TextInputType.emailAddress,
               decoration: const InputDecoration(
-                labelText: 'Email ou matricule',
+                labelText: 'Email',
                 prefixIcon: Icon(Icons.alternate_email_rounded),
               ),
               validator: (value) {

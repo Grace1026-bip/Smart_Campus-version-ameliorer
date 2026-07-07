@@ -78,7 +78,7 @@ class ApiFacultyRepository implements FacultyRepository {
 
   Never _notConnectedYet() {
     throw UnimplementedError(
-      'Brancher ici les endpoints REST du futur backend PHP MVC.',
+      'Brancher ici les endpoints REST FastAPI manquants.',
     );
   }
 

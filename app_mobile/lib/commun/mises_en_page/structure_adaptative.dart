@@ -765,5 +765,5 @@ String _sidebarNote(UserRole role) {
     return 'Supervision academique : etudiants, enseignants, promotions, cours, reclamations et risques.';
   }
 
-  return 'Espace academique connecte a l API REST PHP et aux donnees MySQL.';
+  return 'Espace academique connecte a l API REST FastAPI et aux donnees MySQL.';
 }

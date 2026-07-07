@@ -11,7 +11,7 @@ Future<ReponseHttp> envoyerRequeteHttp({
   final request = html.HttpRequest();
   request
     ..open(methode, uri.toString())
-    ..withCredentials = true;
+    ..withCredentials = false;
 
   headers.forEach(request.setRequestHeader);
   request.send(body);

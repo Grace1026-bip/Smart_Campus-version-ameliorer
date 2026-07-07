@@ -8,26 +8,28 @@ class ApiConfig {
 
   static const String webBaseUrl = String.fromEnvironment(
     'API_BASE_URL_WEB',
-    defaultValue: 'http://localhost:8080/smart-faculty/backend/public',
+    defaultValue: 'http://127.0.0.1:8000',
   );
 
   static const String desktopBaseUrl = String.fromEnvironment(
     'API_BASE_URL_DESKTOP',
-    defaultValue: 'http://localhost:8080/smart-faculty/backend/public',
+    defaultValue: 'http://127.0.0.1:8000',
   );
 
   static const String androidEmulatorBaseUrl = String.fromEnvironment(
     'API_BASE_URL_ANDROID',
-    defaultValue: 'http://10.0.2.2:8080/smart-faculty/backend/public',
+    defaultValue: 'http://10.0.2.2:8000',
   );
 
   static const String realDeviceBaseUrl = String.fromEnvironment(
     'API_BASE_URL_DEVICE',
-    defaultValue: 'http://ADRESSE_IP_DU_PC:8080/smart-faculty/backend/public',
+    defaultValue: 'http://ADRESSE_IP_DU_PC:8000',
   );
 
   static const String serverUnavailableMessage =
-      'Serveur indisponible. Vérifiez que le backend PHP est lancé.';
+      'Serveur indisponible. Verifiez que le backend FastAPI est lance.';
+
+  static const String apiPrefix = '/api/v1';
 
   static String get baseUrl {
     if (configuredBaseUrl.trim().isNotEmpty) {
@@ -51,7 +53,10 @@ class ApiConfig {
 
   static Uri endpoint(String path) {
     final normalizedPath = path.startsWith('/') ? path : '/$path';
-    return Uri.parse('$baseUrl$normalizedPath');
+    final apiPath = normalizedPath.startsWith(apiPrefix)
+        ? normalizedPath
+        : '$apiPrefix$normalizedPath';
+    return Uri.parse('$baseUrl$apiPath');
   }
 
   static String _withoutTrailingSlash(String value) {

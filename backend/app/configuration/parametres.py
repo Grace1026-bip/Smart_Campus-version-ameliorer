@@ -29,6 +29,8 @@ class Parametres(BaseSettings):
     refresh_token_expire_days: int = Field(default=15, validation_alias="REFRESH_TOKEN_EXPIRE_DAYS")
     seuil_reussite_cours: float = Field(default=50.0, validation_alias="SEUIL_REUSSITE_COURS")
     ponderation_max_cours: float = Field(default=100.0, validation_alias="PONDERATION_MAX_COURS")
+    seuil_risque_moyen: float = Field(default=35.0, validation_alias="SEUIL_RISQUE_MOYEN")
+    seuil_risque_eleve: float = Field(default=70.0, validation_alias="SEUIL_RISQUE_ELEVE")
     dossier_stockage_valve: str = Field(default="stockage/valve", validation_alias="DOSSIER_STOCKAGE_VALVE")
     taille_max_piece_jointe_valve_mb: int = Field(default=10, ge=1, validation_alias="TAILLE_MAX_PIECE_JOINTE_VALVE_MB")
     extensions_pieces_jointes_valve: list[str] = Field(

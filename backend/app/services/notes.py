@@ -23,6 +23,7 @@ from app.schemas.notes import (
 )
 from app.services.calcul_academique import calculer_resultat_cours
 from app.services.notifications import creer_notification
+from app.services.risques import recalculer_risque_etudiant_cours
 
 
 def _maintenant() -> datetime:
@@ -353,6 +354,7 @@ def publier_evaluation(
 
         for etudiant_id in inscrits:
             calculer_resultat_cours(session, etudiant_id, evaluation.cours_id)
+            recalculer_risque_etudiant_cours(session, etudiant_id, evaluation.cours_id, notifier=True)
 
         cours = session.get(Cours, evaluation.cours_id)
         titre = f"Resultats publies - {evaluation.titre}"

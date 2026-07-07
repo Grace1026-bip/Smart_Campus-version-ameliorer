@@ -109,8 +109,8 @@ class ProfileScreen extends StatelessWidget {
                 metric: KpiMetric(
                   title: 'API',
                   value: 'REST',
-                  trend: 'PHP POO',
-                  description: 'integration future',
+                  trend: 'FastAPI',
+                  description: 'integration active',
                 ),
                 icon: Icons.api_rounded,
                 color: AppColors.cyan,
@@ -218,7 +218,7 @@ class _StudentApiProfileScreenState extends State<_StudentApiProfileScreen> {
               const SizedBox(height: 22),
               ResponsiveGrid(
                 children: [
-                  StatCard(
+                  const StatCard(
                     metric: KpiMetric(
                       title: 'Role',
                       value: 'Etudiant',
@@ -302,7 +302,8 @@ class _StudentProfileFormState extends State<_StudentProfileForm> {
   @override
   void initState() {
     super.initState();
-    _nomController = TextEditingController(text: '${widget.profil['nom'] ?? ''}');
+    _nomController =
+        TextEditingController(text: '${widget.profil['nom'] ?? ''}');
     _postnomController =
         TextEditingController(text: '${widget.profil['postnom'] ?? ''}');
     _prenomController =
@@ -608,7 +609,7 @@ class _SecurityPanel extends StatelessWidget {
           ),
           _PermissionLine(
             icon: Icons.lock_rounded,
-            text: 'Session ou JWT prevu cote backend PHP.',
+            text: 'Session JWT geree cote backend FastAPI.',
           ),
         ],
       ),
