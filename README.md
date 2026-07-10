@@ -81,6 +81,12 @@ Remove-Item Env:\MYSQL_DATABASE
 
 Ne jamais lancer `pytest` sur `smart_faculty`.
 
+Un script dedie existe aussi depuis la racine:
+
+```powershell
+.\scripts\test_backend.bat
+```
+
 ## Lancer FastAPI
 
 Depuis la racine:
@@ -148,18 +154,48 @@ flutter test
 Tests backend:
 
 ```powershell
-cd backend
-.\.venv\Scripts\python.exe -m pytest -v
+.\scripts\test_backend.bat
 ```
 
 Important: les tests backend refusent de tourner sur la base principale. Configurer une base MySQL separee dont le nom finit par `_test`, par exemple `smart_faculty_test`, avant d'executer `pytest`.
 
 ## Diagnostic Flutter connu
 
-Sur cette machine, `where flutter` et `where dart` detectent le SDK dans `C:\Users\gisel\Downloads\flutter\bin`, mais les commandes `flutter --version`, `dart --version`, `flutter analyze` et `flutter test` peuvent rester silencieuses si un verrou du SDK Flutter est present dans `flutter\bin\cache`. Dans ce cas, fermer les processus Flutter/Dart restants et verifier les fichiers `flutter.bat.lock` et `lockfile` dans le cache du SDK Flutter avant de relancer les commandes.
+Sur cette machine, `where flutter` et `where dart` detectent le SDK dans `C:\Users\gisel\Downloads\flutter\bin`. Dans un environnement sandbox strict, les commandes Flutter peuvent rester silencieuses si le SDK ne peut pas ecrire dans `flutter\bin\cache`. Dans ce cas, fermer les processus Flutter/Dart restants, verifier les fichiers `flutter.bat.lock` et `lockfile`, puis relancer les commandes avec un acces autorise au cache SDK.
 
 ## Archives
 
 - `legacy/php`: anciens modules PHP et ancien script de lancement PHP.
 - `legacy/flask`: ancien point d'entree Flask.
 - `legacy/autres`: anciens elements racine ou experimentaux qui ne font pas partie de l'architecture officielle.
+## Architecture backend active
+
+Le backend actif est le backend FastAPI situe dans `backend/app`.
+
+- Point d'entree officiel: `backend/app/main.py`.
+- Connexion SQLAlchemy officielle: `backend/app/base_de_donnees/connexion.py`.
+- Base declarative SQLAlchemy: `backend/app/base_de_donnees/base.py`.
+- Configuration: `backend/app/configuration/`.
+- Modeles SQLAlchemy: `backend/app/modeles/`.
+- Schemas Pydantic: `backend/app/schemas/`.
+- Routes FastAPI: `backend/app/routes/`.
+- Services metier: `backend/app/services/`.
+- Migrations Alembic: `backend/alembic/versions/`.
+- Scripts SQL historiques ou de reference: `backend/base_de_donnees/`.
+- Scripts Python d'exploitation: `backend/scripts/`.
+- Tests backend: `backend/tests/`.
+
+Le dossier actif de connexion n'est pas `bdd`; le reliquat vide `backend/app/bdd/connexion.py` a ete retire apres verification qu'aucun import, script ou test ne l'utilisait.
+
+## Resultat de stabilisation backend
+
+Verification realisee avec MySQL WAMP sur `127.0.0.1:3307`.
+
+- Base principale detectee: `smart_faculty`.
+- Base de test officielle: `smart_faculty_test`.
+- Sauvegarde locale de `smart_faculty`: creee dans `backend/sauvegardes/`, dossier ignore par Git.
+- Migrations Alembic appliquees sur `smart_faculty_test`: revision `20260705_0002`.
+- Donnees initiales de test: creees ou deja presentes sur `smart_faculty_test`.
+- Tests backend officiels: `26 passed in 40.87s` avec `scripts/test_backend.bat`.
+
+La base principale `smart_faculty` reste la base normale de developpement. Les tests doivent continuer a utiliser uniquement une base dont le nom finit par `_test`.

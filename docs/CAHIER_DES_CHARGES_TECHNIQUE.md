@@ -118,13 +118,13 @@ Impact: la base de test officielle est `smart_faculty_test`; le modele de config
 
 ### D7 - Diagnostic Flutter local
 
-Raison: les commandes `flutter` et `dart` via `frontend/` restent silencieuses dans l'environnement courant.
+Raison: les commandes `flutter` et `dart` via `frontend/` restaient silencieuses lorsque le SDK local ne pouvait pas ecrire dans son cache hors workspace.
 
-Avantage: le probleme est isole au SDK Flutter local ou a ses verrous, pas a un ecran ou une logique Flutter.
+Avantage: le probleme est isole a l'environnement d'execution Flutter, pas a un ecran ou une logique Flutter.
 
-Risque: le frontend ne peut pas encore etre valide par `flutter analyze` et `flutter test`.
+Risque: `flutter analyze` signale encore des infos/lints liees a `dart:html`; elles devront etre traitees hors Prompt 2.5.
 
-Impact: avant le Prompt 3, il faut liberer ou nettoyer les verrous du SDK Flutter situe hors workspace, puis relancer les commandes Flutter.
+Impact: `flutter test` est executable et reussi; `flutter analyze` est executable mais retourne 6 infos/lints.
 
 ## Contraintes techniques importantes
 
@@ -137,3 +137,36 @@ Impact: avant le Prompt 3, il faut liberer ou nettoyer les verrous du SDK Flutte
 - Les anciens scripts PHP ou Flask doivent rester archives dans `legacy/`.
 - Les tests backend doivent cibler `smart_faculty_test`.
 - Ne jamais contourner la protection `_test` presente dans `backend/tests/conftest.py`.
+- Le script de test backend officiel est `scripts/test_backend.bat`.
+## Decision Prompt 2.6 - Architecture backend active
+
+Le backend actif reste FastAPI dans `backend/app`.
+
+- Point d'entree officiel: `backend/app/main.py`.
+- Connexion SQLAlchemy officielle: `backend/app/base_de_donnees/connexion.py`.
+- Base declarative SQLAlchemy officielle: `backend/app/base_de_donnees/base.py`.
+- Configuration active: `backend/app/configuration/`.
+- Modeles actifs: `backend/app/modeles/`.
+- Schemas actifs: `backend/app/schemas/`.
+- Routes actives: `backend/app/routes/`.
+- Services actifs: `backend/app/services/`.
+- Migrations Alembic: `backend/alembic/versions/`.
+- Scripts SQL historiques ou de reference: `backend/base_de_donnees/`.
+
+La documentation conceptuelle emploie les noms `config`, `database`, `models`, `repositories`; le code actif emploie les equivalents francais `configuration`, `base_de_donnees`, `modeles`, `depots`. Cette difference est acceptee car les imports FastAPI, Alembic, scripts et tests confirment la structure francaise existante.
+
+Le reliquat vide `backend/app/bdd/connexion.py` a ete retire car il n'etait importe par aucun fichier actif et doublonnait le nom de responsabilite de `backend/app/base_de_donnees`.
+
+### Resultat Prompt 2.6 - MySQL et tests
+
+MySQL WAMP repond sur `127.0.0.1:3307`.
+
+- `smart_faculty` existe et contient 29 tables.
+- `smart_faculty.alembic_version` existe avec la revision `20260705_0002`.
+- Une sauvegarde locale de `smart_faculty` a ete creee dans `backend/sauvegardes/`, dossier ignore par Git.
+- `smart_faculty_test` a ete creee avec le script non destructif `backend/scripts/preparer_base_test.sql`.
+- Les migrations Alembic ont ete appliquees sur `smart_faculty_test` jusqu'a `20260705_0002`.
+- Les donnees initiales de test ont ete creees ou verifiees sur `smart_faculty_test`.
+- Les tests backend officiels passent: `26 passed in 40.87s`.
+
+Decision: le backend est considere coherent et testable pour preparer le Prompt 3 sur l'authentification.

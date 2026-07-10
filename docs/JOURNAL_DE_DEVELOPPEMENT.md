@@ -192,6 +192,8 @@
 ### Fichiers crees
 
 - `backend/.env.test.example`
+- `backend/scripts/preparer_base_test.sql`
+- `scripts/test_backend.bat`
 
 ### Fichiers modifies
 
@@ -222,14 +224,20 @@
 - Les commandes `flutter --version` et `dart --version` via le PATH restent silencieuses.
 - Le binaire Dart direct `flutter/bin/cache/dart-sdk/bin/dart.exe` fonctionne, ce qui isole le probleme au wrapper Flutter/Dart ou au cache Flutter.
 - Des fichiers de verrou Flutter existent hors workspace dans le cache du SDK: `flutter.bat.lock` et `lockfile`.
+- Apres autorisation d'acces au cache SDK, Flutter fonctionne; le blocage etait lie a l'environnement sandbox et aux verrous du SDK.
+- `flutter analyze --verbose` termine avec 6 infos/lints liees a `dart:html` et `avoid_web_libraries_in_flutter`.
+- `flutter doctor -v` signale l'absence de SDK Android.
 
 ### Bugs corriges
 
 - Le script `scripts/demarrer_frontend.bat` verifie maintenant que Flutter est accessible avant de lancer l'application.
+- Les verrous Flutter obsoletes `flutter.bat.lock` et `lockfile` ont ete supprimes apres autorisation.
 
 ### Optimisations realisees
 
 - Ajout d'un modele `backend/.env.test.example` sans secret reel.
+- Ajout d'un script SQL non destructif pour creer `smart_faculty_test`.
+- Ajout du script `scripts/test_backend.bat` ciblant `smart_faculty_test`.
 - Ajout de `.env.test` et `backend/.env.test` dans `.gitignore`.
 - Documentation de la base de test officielle `smart_faculty_test`.
 - Documentation des commandes de test backend avec variable `MYSQL_DATABASE=smart_faculty_test`.
@@ -244,6 +252,12 @@
 - Alembic: configure via `backend/alembic.ini` et `backend/alembic/env.py`.
 - MySQL: connexion projet sur `127.0.0.1:3307` impossible tant que le service WAMP MySQL est arrete.
 - Flutter/Dart: `where.exe flutter` et `where.exe dart` trouvent le SDK; Dart direct fonctionne; wrappers Flutter/Dart bloquent.
+- FastAPI: Uvicorn demarre sur port de diagnostic `8010`; `/` et `/api/v1/statut` repondent correctement.
+- Pytest avec `MYSQL_DATABASE=smart_faculty_test`: 26 tests collectes, 1 reussi, 9 echoues, 16 erreurs; cause principale: connexion refusee vers MySQL `127.0.0.1:3307`.
+- Flutter: `flutter --version` OK, `dart --version` OK, `flutter doctor -v` OK sauf SDK Android absent.
+- Flutter: `flutter pub get` OK.
+- Flutter: `flutter test --reporter expanded` OK, 2 tests reussis.
+- Flutter: `flutter analyze --verbose` termine avec 6 infos/lints.
 
 ### Commandes MySQL recommandees
 
@@ -261,5 +275,58 @@ COLLATE utf8mb4_unicode_ci;
 - Creer `smart_faculty_test`.
 - Appliquer les migrations Alembic sur `smart_faculty_test`.
 - Relancer `backend/.venv/Scripts/python.exe -m pytest -v`.
-- Liberer ou nettoyer les verrous du SDK Flutter hors workspace, puis relancer `flutter pub get`, `flutter analyze --verbose` et `flutter test --reporter expanded`.
+- Corriger les 6 infos/lints Flutter `dart:html` dans une intervention frontend dediee.
 - Retirer `.env` et `backend/.env` de l'index Git sans supprimer les fichiers locaux, apres validation.
+## Prompt 2.6 - Clarification backend et finalisation MySQL
+
+### Objectif
+
+- Clarifier les dossiers backend similaires avant toute intervention sur l'authentification.
+- Verifier MySQL WAMP sur `127.0.0.1:3307`.
+- Creer et utiliser `smart_faculty_test` pour les migrations et tests backend.
+
+### Documents consultes
+
+- `docs/CAHIER_DES_CHARGES_TECHNIQUE.md`
+- `docs/JOURNAL_DE_DEVELOPPEMENT.md`
+- `docs/02_Conception/02.01 - Architecture generale.docx`
+- `docs/02_Conception/02.02 - Conception de la base de donnees.docx`
+- `docs/02_Conception/02.03 - Architecture du projet.docx`
+- `docs/02_Conception/02.04 - Architecture des API REST.docx`
+- `docs/01_Analyse/01.07 - Regles metier.docx`
+
+### Clarification d'architecture
+
+- La documentation officielle confirme l'architecture Flutter, FastAPI et MySQL.
+- La documentation conceptuelle nomme les responsabilites `config`, `database`, `models`, `schemas`, `routes`, `services`, `repositories`.
+- Le code actif utilise des noms francais equivalents: `configuration`, `base_de_donnees`, `modeles`, `schemas`, `routes`, `services`, `depots`.
+- `backend/app/base_de_donnees/connexion.py` est importe par les routes, dependances, tests, scripts et reste le chemin officiel de connexion SQLAlchemy.
+- `backend/app/base_de_donnees/base.py` est importe par les modeles et Alembic comme base declarative SQLAlchemy.
+- `backend/base_de_donnees` n'est pas un module Python FastAPI; il contient des scripts SQL et migrations SQL historiques ou de reference.
+- `backend/app/bdd/connexion.py` etait vide, non importe et non utilise.
+
+### Modification structurelle realisee
+
+- Suppression de `backend/app/bdd/connexion.py`, fichier vide et doublon reel inutilise.
+- Aucun modele metier, aucune route, aucune migration Alembic et aucune regle d'authentification n'ont ete modifies.
+
+### Etat MySQL
+
+- La verification MySQL complete du Prompt 2.6 reste a terminer: l'environnement d'execution a bloque les commandes avant la verification du port, la sauvegarde, la creation de `smart_faculty_test`, les migrations et les tests.
+- Aucune donnee de `smart_faculty` n'a ete modifiee pendant cette phase.
+
+### Resultats finaux apres reprise des commandes
+
+- MySQL WAMP repond sur `127.0.0.1:3307`.
+- `smart_faculty` existe, contient 29 tables et pointe sur Alembic `20260705_0002`.
+- Une sauvegarde locale de `smart_faculty` a ete creee dans `backend/sauvegardes/`, dossier ignore par Git.
+- `smart_faculty_test` a ete creee avec `backend/scripts/preparer_base_test.sql`.
+- Avant migrations, `smart_faculty_test` etait vide.
+- Alembic a applique les revisions `20260705_0001` puis `20260705_0002` sur `smart_faculty_test`.
+- Apres migrations, `smart_faculty_test` contient 29 tables et `alembic_version=20260705_0002`.
+- `backend/scripts/creer_donnees_initiales.py` est idempotent et ne contient pas de suppression destructrice; il a ete execute sur `smart_faculty_test`.
+- Import FastAPI reussi: `Smart Faculty API`, 86 routes, moteur SQLAlchemy cible `smart_faculty_test`.
+- Uvicorn a demarre sur `127.0.0.1:8010`; `/` et `/api/v1/statut` ont repondu correctement.
+- Alembic current: `20260705_0002 (head)`.
+- Tests backend avec `scripts/test_backend.bat`: 26 tests collectes, 26 reussis, 0 echec, 0 erreur, 0 ignore, duree 40.87 s.
+- Aucune donnee de `smart_faculty` n'a ete modifiee hors sauvegarde en lecture.
