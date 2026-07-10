@@ -221,12 +221,6 @@ class AppRoutes {
       case riskStudents:
         return _route(settings, const RiskStudentsScreen());
       case notifications:
-        if (SessionService.currentRole == UserRole.student) {
-          return _route(
-            const RouteSettings(name: studentValve),
-            const StudentValveScreen(),
-          );
-        }
         final args = settings.arguments;
         final courseId = args is int
             ? args

@@ -3,11 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/fichier_valve_picker.dart';
 import '../../../donnees/services/lien_externe.dart';
 import '../../../donnees/services/service_enseignant.dart';
+import '../../../donnees/services/service_notifications.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -35,74 +35,257 @@ class NotificationsScreen extends StatelessWidget {
       );
     }
 
-    const notifications = MockFacultyData.notifications;
+    return _NotificationsApiScreen(role: role);
+  }
+}
 
+class _NotificationsApiScreen extends StatefulWidget {
+  const _NotificationsApiScreen({required this.role});
+
+  final UserRole role;
+
+  @override
+  State<_NotificationsApiScreen> createState() =>
+      _NotificationsApiScreenState();
+}
+
+class _NotificationsApiScreenState extends State<_NotificationsApiScreen> {
+  late Future<Map<String, dynamic>> _future = _load();
+  String? _typeFilter;
+  bool? _readFilter;
+
+  Future<Map<String, dynamic>> _load() {
+    return NotificationsDataSource.service.lister(
+      typeNotification: _typeFilter,
+      estLue: _readFilter,
+    );
+  }
+
+  void _refresh() {
+    setState(() => _future = _load());
+  }
+
+  void _setTypeFilter(String? value) {
+    setState(() {
+      _typeFilter = value;
+      _future = _load();
+    });
+  }
+
+  void _setReadFilter(bool? value) {
+    setState(() {
+      _readFilter = value;
+      _future = _load();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return SmartFacultyShell(
-      role: role,
+      role: widget.role,
       selectedRoute: AppRoutes.notifications,
       title: 'Notifications',
       subtitle: 'Messages academiques, alertes et annonces institutionnelles.',
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ResponsiveGrid(
+      actions: [
+        IconButton(
+          tooltip: 'Actualiser',
+          onPressed: _refresh,
+          icon: const Icon(Icons.refresh_rounded),
+        ),
+        IconButton(
+          tooltip: 'Tout marquer comme lu',
+          onPressed: _markAllRead,
+          icon: const Icon(Icons.done_all_rounded),
+        ),
+      ],
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Connexion API impossible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(ApiConfig.serverUnavailableMessage),
+            );
+          }
+
+          final data = snapshot.data ?? const {};
+          final notifications = data['elements'] as List<dynamic>? ?? const [];
+          final unread = notifications
+              .where((item) => item is Map && item['est_lue'] != true)
+              .length;
+          final important = notifications
+              .where(
+                (item) =>
+                    item is Map &&
+                    {
+                      'alerte_academique',
+                      'reclamation_mise_a_jour',
+                    }.contains(item['type_notification']),
+              )
+              .length;
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              StatCard(
-                metric: KpiMetric(
-                  title: 'Notifications',
-                  value: '${notifications.length}',
-                  trend: 'mock',
-                  description: 'messages recents',
-                ),
-                icon: Icons.notifications_rounded,
-                color: AppColors.primary,
+              ResponsiveGrid(
+                children: [
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Notifications',
+                      value: '${data['total'] ?? notifications.length}',
+                      trend: 'API',
+                      description: 'messages recents',
+                    ),
+                    icon: Icons.notifications_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Non lues',
+                      value: '$unread',
+                      trend: 'a lire',
+                      description: 'suivi personnel',
+                    ),
+                    icon: Icons.mark_email_unread_rounded,
+                    color: AppColors.warning,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Prioritaires',
+                      value: '$important',
+                      trend: 'alertes',
+                      description: 'risques/reclamations',
+                    ),
+                    icon: Icons.priority_high_rounded,
+                    color: AppColors.danger,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Page',
+                      value: '${data['page'] ?? 1}/${data['pages'] ?? 1}',
+                      trend: '${data['taille'] ?? 20} lignes',
+                      description: 'pagination backend',
+                    ),
+                    icon: Icons.view_list_rounded,
+                    color: AppColors.success,
+                  ),
+                ],
               ),
-              const StatCard(
-                metric: KpiMetric(
-                  title: 'Prioritaires',
-                  value: '1',
-                  trend: 'a lire',
-                  description: 'alerte academique',
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Filtres',
+                subtitle:
+                    '${notifications.length} notification(s) affichee(s).',
+                child: Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  children: [
+                    SizedBox(
+                      width: 280,
+                      child: DropdownButtonFormField<String?>(
+                        initialValue: _typeFilter,
+                        decoration: const InputDecoration(labelText: 'Type'),
+                        items: const [
+                          DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Tous les types'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'nouvelle_note',
+                            child: Text('Notes'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'nouvelle_publication',
+                            child: Text('Valve'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'reclamation_mise_a_jour',
+                            child: Text('Reclamations'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'alerte_academique',
+                            child: Text('Alertes academiques'),
+                          ),
+                          DropdownMenuItem(
+                            value: 'information_systeme',
+                            child: Text('Systeme'),
+                          ),
+                        ],
+                        onChanged: _setTypeFilter,
+                      ),
+                    ),
+                    SizedBox(
+                      width: 220,
+                      child: DropdownButtonFormField<bool?>(
+                        initialValue: _readFilter,
+                        decoration: const InputDecoration(labelText: 'Lecture'),
+                        items: const [
+                          DropdownMenuItem<bool?>(
+                            value: null,
+                            child: Text('Toutes'),
+                          ),
+                          DropdownMenuItem(
+                            value: false,
+                            child: Text('Non lues'),
+                          ),
+                          DropdownMenuItem(
+                            value: true,
+                            child: Text('Lues'),
+                          ),
+                        ],
+                        onChanged: _setReadFilter,
+                      ),
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        setState(() {
+                          _typeFilter = null;
+                          _readFilter = null;
+                          _future = _load();
+                        });
+                      },
+                      icon: const Icon(Icons.filter_alt_off_rounded),
+                      label: const Text('Reinitialiser'),
+                    ),
+                  ],
                 ),
-                icon: Icons.priority_high_rounded,
-                color: AppColors.danger,
               ),
-              const StatCard(
-                metric: KpiMetric(
-                  title: 'Annonces',
-                  value: '2',
-                  trend: 'cette semaine',
-                  description: 'communication',
+              const SizedBox(height: 22),
+              SectionPanel(
+                title: 'Boite de notifications',
+                subtitle: 'Donnees internes generees par FastAPI.',
+                child: Column(
+                  children: [
+                    if (notifications.isEmpty)
+                      const Text('Aucune notification dans ce filtre.'),
+                    for (final item in notifications)
+                      _ApiNotificationCard(
+                        notification: item as Map<String, dynamic>,
+                        onRead: _refresh,
+                      ),
+                  ],
                 ),
-                icon: Icons.campaign_rounded,
-                color: AppColors.warning,
-              ),
-              const StatCard(
-                metric: KpiMetric(
-                  title: 'Canaux',
-                  value: '5',
-                  trend: 'roles',
-                  description: 'audiences ciblees',
-                ),
-                icon: Icons.groups_rounded,
-                color: AppColors.success,
               ),
             ],
-          ),
-          const SizedBox(height: 22),
-          SectionPanel(
-            title: 'Boite de notifications',
-            subtitle: 'Ces messages seront plus tard fournis par l API.',
-            child: Column(
-              children: [
-                for (final notification in notifications)
-                  _NotificationCard(notification: notification),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
+  }
+
+  Future<void> _markAllRead() async {
+    try {
+      await NotificationsDataSource.service.toutMarquerCommeLu();
+      _refresh();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
   }
 }
 
@@ -287,7 +470,8 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                           for (final course in data.courses)
                             DropdownMenuItem<int?>(
                               value: _asInt(course['id']),
-                              child: Text('${course['code']} - ${course['nom']}'),
+                              child:
+                                  Text('${course['code']} - ${course['nom']}'),
                             ),
                         ],
                         onChanged: (value) =>
@@ -430,14 +614,16 @@ class _PublicationFormState extends State<_PublicationForm> {
       (course) => _asInt(course['id']) == _courseId,
     );
     if (!hasSelectedCourse) {
-      _courseId = widget.courses.isEmpty ? null : _asInt(widget.courses.first['id']);
+      _courseId =
+          widget.courses.isEmpty ? null : _asInt(widget.courses.first['id']);
     }
 
     if (widget.courses.isEmpty) {
       return const SectionPanel(
         title: 'Nouvelle publication',
         subtitle: 'Aucun cours attribue a ce compte.',
-        child: Text('La valve sera disponible des qu un cours vous sera attribue.'),
+        child: Text(
+            'La valve sera disponible des qu un cours vous sera attribue.'),
       );
     }
 
@@ -472,12 +658,17 @@ class _PublicationFormState extends State<_PublicationForm> {
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: const [
                     DropdownMenuItem(value: 'annonce', child: Text('Annonce')),
-                    DropdownMenuItem(value: 'communique', child: Text('Communique')),
+                    DropdownMenuItem(
+                        value: 'communique', child: Text('Communique')),
                     DropdownMenuItem(value: 'devoir', child: Text('Devoir')),
-                    DropdownMenuItem(value: 'support_de_cours', child: Text('Support')),
-                    DropdownMenuItem(value: 'publication_notes', child: Text('Notes')),
-                    DropdownMenuItem(value: 'changement_horaire', child: Text('Changement horaire')),
-                    DropdownMenuItem(value: 'consigne_examen', child: Text('Consigne examen')),
+                    DropdownMenuItem(
+                        value: 'support_de_cours', child: Text('Support')),
+                    DropdownMenuItem(
+                        value: 'changement_horaire',
+                        child: Text('Changement horaire')),
+                    DropdownMenuItem(
+                        value: 'consigne_examen',
+                        child: Text('Consigne examen')),
                     DropdownMenuItem(value: 'rappel', child: Text('Rappel')),
                   ],
                   onChanged: (value) => setState(() => _type = value ?? _type),
@@ -520,10 +711,6 @@ class _PublicationFormState extends State<_PublicationForm> {
               }
             },
           ),
-          if (_type == 'publication_notes') ...[
-            const SizedBox(height: 12),
-            const _NotesPublicationHint(),
-          ],
           const SizedBox(height: 14),
           Align(
             alignment: Alignment.centerRight,
@@ -558,7 +745,8 @@ class _PublicationFormState extends State<_PublicationForm> {
         _pickedFileBase64 == null &&
         _attachmentController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ajoutez un fichier ou un lien pour le support.')),
+        const SnackBar(
+            content: Text('Ajoutez un fichier ou un lien pour le support.')),
       );
       return;
     }
@@ -717,35 +905,6 @@ class _AttachmentInput extends StatelessWidget {
             ],
           ),
         ],
-      ],
-    );
-  }
-}
-
-class _NotesPublicationHint extends StatelessWidget {
-  const _NotesPublicationHint();
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(Icons.fact_check_rounded, color: AppColors.primary),
-        const SizedBox(width: 10),
-        const Expanded(
-          child: Text(
-            'Les cotes officielles se publient depuis le module Notes.',
-            style: TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        OutlinedButton.icon(
-          onPressed: () => Navigator.of(context).pushNamed(AppRoutes.grades),
-          icon: const Icon(Icons.open_in_new_rounded),
-          label: const Text('Ouvrir Notes'),
-        ),
       ],
     );
   }
@@ -956,8 +1115,7 @@ class _TeacherPublicationCard extends StatelessWidget {
 
     try {
       final publicationId = _asInt(publication['id']);
-      await EnseignantDataSource.service
-          .supprimerPublication(publicationId);
+      await EnseignantDataSource.service.supprimerPublication(publicationId);
       onDeleted(publicationId);
     } catch (error) {
       if (!context.mounted) return;
@@ -988,7 +1146,8 @@ class _LoadWarningPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionPanel(
       title: 'Chargement partiel',
-      subtitle: 'La page reste ouverte pendant que les donnees API sont corrigees.',
+      subtitle:
+          'La page reste ouverte pendant que les donnees API sont corrigees.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -998,7 +1157,8 @@ class _LoadWarningPanel extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.warning),
                   const SizedBox(width: 8),
                   Expanded(child: Text(message)),
                 ],
@@ -1010,22 +1170,31 @@ class _LoadWarningPanel extends StatelessWidget {
   }
 }
 
-class _NotificationCard extends StatelessWidget {
-  const _NotificationCard({required this.notification});
+class _ApiNotificationCard extends StatelessWidget {
+  const _ApiNotificationCard({
+    required this.notification,
+    required this.onRead,
+  });
 
-  final FacultyNotification notification;
+  final Map<String, dynamic> notification;
+  final VoidCallback onRead;
 
   @override
   Widget build(BuildContext context) {
-    final color = _toneColor(notification.tone);
+    final type =
+        '${notification['type_notification'] ?? 'information_systeme'}';
+    final read = notification['est_lue'] == true;
+    final color = _notificationTypeColor(type);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
+        color: color.withValues(alpha: read ? 0.035 : 0.08),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.18)),
+        border: Border.all(
+          color: color.withValues(alpha: read ? 0.12 : 0.24),
+        ),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1037,7 +1206,7 @@ class _NotificationCard extends StatelessWidget {
               color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(_toneIcon(notification.tone), color: color),
+            child: Icon(_notificationTypeIcon(type), color: color),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1048,7 +1217,7 @@ class _NotificationCard extends StatelessWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        notification.title,
+                        '${notification['titre'] ?? '-'}',
                         style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.w900,
@@ -1056,28 +1225,43 @@ class _NotificationCard extends StatelessWidget {
                       ),
                     ),
                     StatusBadge(
-                      label: notification.audience,
-                      color: color,
+                      label: read ? 'Lue' : 'Non lue',
+                      color: read ? AppColors.success : AppColors.warning,
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  notification.message,
+                  '${notification['contenu'] ?? '-'}',
                   style: const TextStyle(
                     color: AppColors.textSecondary,
                     fontWeight: FontWeight.w600,
                     height: 1.35,
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  notification.timeLabel,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w800,
-                  ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    StatusBadge(
+                      label: _notificationTypeLabel(type),
+                      color: color,
+                      icon: _notificationTypeIcon(type),
+                    ),
+                    StatusBadge(
+                      label: '${notification['cree_le'] ?? '-'}',
+                      color: AppColors.textSecondary,
+                      icon: Icons.schedule_rounded,
+                    ),
+                    if (!read)
+                      TextButton.icon(
+                        onPressed: () => _markRead(context),
+                        icon: const Icon(Icons.mark_email_read_rounded),
+                        label: const Text('Marquer comme lue'),
+                      ),
+                  ],
                 ),
               ],
             ),
@@ -1086,6 +1270,19 @@ class _NotificationCard extends StatelessWidget {
       ),
     );
   }
+
+  Future<void> _markRead(BuildContext context) async {
+    try {
+      await NotificationsDataSource.service.marquerCommeLue(
+        _asInt(notification['id']),
+      );
+      onRead();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
 }
 
 const _publicationTypes = [
@@ -1093,7 +1290,6 @@ const _publicationTypes = [
   'communique',
   'devoir',
   'support_de_cours',
-  'publication_notes',
   'changement_horaire',
   'consigne_examen',
   'rappel',
@@ -1179,29 +1375,54 @@ String _attachmentUrl(String attachment) {
   return attachment;
 }
 
-Color _toneColor(NotificationTone tone) {
-  switch (tone) {
-    case NotificationTone.info:
-      return AppColors.primary;
-    case NotificationTone.success:
-      return AppColors.success;
-    case NotificationTone.warning:
-      return AppColors.warning;
-    case NotificationTone.danger:
-      return AppColors.danger;
+String _notificationTypeLabel(String type) {
+  switch (type) {
+    case 'nouvelle_note':
+      return 'Note';
+    case 'nouvelle_publication':
+      return 'Valve';
+    case 'reclamation_mise_a_jour':
+      return 'Reclamation';
+    case 'alerte_academique':
+      return 'Alerte';
+    case 'information_systeme':
+      return 'Systeme';
+    default:
+      return type;
   }
 }
 
-IconData _toneIcon(NotificationTone tone) {
-  switch (tone) {
-    case NotificationTone.info:
-      return Icons.info_rounded;
-    case NotificationTone.success:
-      return Icons.check_circle_rounded;
-    case NotificationTone.warning:
+IconData _notificationTypeIcon(String type) {
+  switch (type) {
+    case 'nouvelle_note':
+      return Icons.fact_check_rounded;
+    case 'nouvelle_publication':
       return Icons.campaign_rounded;
-    case NotificationTone.danger:
-      return Icons.priority_high_rounded;
+    case 'reclamation_mise_a_jour':
+      return Icons.mark_email_unread_rounded;
+    case 'alerte_academique':
+      return Icons.warning_amber_rounded;
+    case 'information_systeme':
+      return Icons.info_rounded;
+    default:
+      return Icons.notifications_rounded;
+  }
+}
+
+Color _notificationTypeColor(String type) {
+  switch (type) {
+    case 'nouvelle_note':
+      return AppColors.success;
+    case 'nouvelle_publication':
+      return AppColors.primary;
+    case 'reclamation_mise_a_jour':
+      return AppColors.violet;
+    case 'alerte_academique':
+      return AppColors.danger;
+    case 'information_systeme':
+      return AppColors.cyan;
+    default:
+      return AppColors.primary;
   }
 }
 

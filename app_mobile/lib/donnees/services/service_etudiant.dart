@@ -89,7 +89,8 @@ class EtudiantApiService {
 
   Future<List<dynamic>> alertes() async {
     final data = await RisquesDataSource.service.risquesEtudiant();
-    return data['risques'] as List<dynamic>? ?? const [];
+    final risques = data['risques'] as List<dynamic>? ?? const [];
+    return risques.map(_normaliserAlerteRisque).toList();
   }
 
   Future<List<dynamic>> reclamations() async {
@@ -246,6 +247,27 @@ class EtudiantApiService {
     };
   }
 
+  Map<String, dynamic> _normaliserAlerteRisque(dynamic item) {
+    if (item is! Map<String, dynamic>) return const {};
+    final cours = item['cours'] as Map?;
+    final niveauRisque = item['niveau_risque']?.toString() ?? 'faible';
+    final raisons = item['raisons_detaillees'] as List<dynamic>? ?? const [];
+    final score = item['score_risque']?.toString() ?? '-';
+
+    return {
+      ...item,
+      'niveau': _niveauAlerte(niveauRisque),
+      'titre': 'Risque academique ${_libelleNiveauRisque(niveauRisque)}',
+      'message': raisons.isEmpty
+          ? 'Score de risque : $score.'
+          : raisons.map((raison) => raison.toString()).join(' '),
+      'code_cours': cours?['code'] ?? '',
+      'cours': cours?['intitule'] ?? '',
+      'date_creation': item['calcule_le'],
+      'lue': true,
+    };
+  }
+
   String _nomEnseignant(dynamic enseignant) {
     if (enseignant is Map<String, dynamic>) {
       return enseignant['nom']?.toString() ?? '';
@@ -278,6 +300,28 @@ class EtudiantApiService {
         return 'faible';
       default:
         return 'normale';
+    }
+  }
+
+  String _niveauAlerte(String niveauRisque) {
+    switch (niveauRisque) {
+      case 'eleve':
+        return 'danger';
+      case 'moyen':
+        return 'attention';
+      default:
+        return 'info';
+    }
+  }
+
+  String _libelleNiveauRisque(String niveauRisque) {
+    switch (niveauRisque) {
+      case 'eleve':
+        return 'eleve';
+      case 'moyen':
+        return 'moyen';
+      default:
+        return 'faible';
     }
   }
 

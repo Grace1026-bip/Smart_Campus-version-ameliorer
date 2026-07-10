@@ -1,4 +1,6 @@
 import 'service_api.dart';
+import 'service_reclamations.dart';
+import 'service_risques.dart';
 
 class TableauDeBordApiService {
   const TableauDeBordApiService();
@@ -43,6 +45,28 @@ class TableauDeBordApiService {
         if (niveau != null) 'niveau': niveau,
       },
     );
+  }
+
+  Future<Map<String, dynamic>> donneesDecisionnelles() async {
+    final resultats = await Future.wait<Map<String, dynamic>>([
+      resumeDecisionnel(),
+      coursDifficiles(),
+      performancesPromotions(),
+      reclamations(),
+      risques(),
+      RisquesDataSource.service.risquesGlobal(taille: 10),
+      ReclamationsDataSource.service.reclamationsTraitement(taille: 10),
+    ]);
+
+    return {
+      'resume': resultats[0],
+      'cours_difficiles': resultats[1],
+      'performances_promotions': resultats[2],
+      'reclamations_dashboard': resultats[3],
+      'risques_dashboard': resultats[4],
+      'risques_global': resultats[5],
+      'reclamations_traitement': resultats[6],
+    };
   }
 }
 

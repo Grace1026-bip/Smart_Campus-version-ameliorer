@@ -666,7 +666,7 @@ List<Widget> _topActions(
   return [
     ...actions,
     IconButton(
-      tooltip: teacher || student
+      tooltip: teacher
           ? 'Valve'
           : apparitor
               ? 'Assistant'
@@ -674,13 +674,13 @@ List<Widget> _topActions(
       onPressed: () => _goTo(
         context,
         student
-            ? AppRoutes.studentValve
+            ? AppRoutes.notifications
             : apparitor
                 ? AppRoutes.apparitorAssistant
                 : AppRoutes.notifications,
       ),
       icon: Icon(
-        teacher || student
+        teacher
             ? Icons.campaign_rounded
             : apparitor
                 ? Icons.auto_awesome_rounded
