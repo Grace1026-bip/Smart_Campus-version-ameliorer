@@ -1,21 +1,19 @@
 @echo off
 setlocal
 
-cd /d "%~dp0\.."
+cd /d "%~dp0\..\backend"
 
-set "PHP_EXE=C:\wamp64\bin\php\php8.4.15\php.exe"
-
-if not exist "%PHP_EXE%" (
-    echo PHP introuvable: %PHP_EXE%
-    echo Verifie l'installation WAMP ou adapte PHP_EXE dans ce fichier.
+if not exist ".venv\Scripts\python.exe" (
+    echo Environnement Python introuvable: backend\.venv
+    echo Cree-le puis installe les dependances avec:
+    echo python -m venv .venv
+    echo .venv\Scripts\python.exe -m pip install -r requirements.txt
     exit /b 1
 )
 
-echo Smart Faculty API
+echo Smart Faculty - API FastAPI
 echo URL: http://127.0.0.1:8000
-echo.
-echo Garde cette fenetre ouverte pendant les tests Flutter.
-echo Appuie sur Ctrl+C pour arreter le serveur.
+echo Documentation: http://127.0.0.1:8000/docs
 echo.
 
-"%PHP_EXE%" -S 127.0.0.1:8000 -t backend\public backend\public\index.php
+".venv\Scripts\python.exe" -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000

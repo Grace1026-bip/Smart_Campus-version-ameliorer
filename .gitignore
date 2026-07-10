@@ -1,11 +1,49 @@
-app_mobile/.codex_logs/
-backend/public/fichiers/
-backend/sauvegardes/
+# Environnements et secrets
 .env
+.env.test
+backend/.env.test
 *.env
 !*.env.example
+!*.env.test.example
 .venv/
+venv/
 backend/.venv/
+
+# Python
 __pycache__/
+**/__pycache__/
 *.py[cod]
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Flutter / Dart
+frontend/.dart_tool/
+frontend/build/
+frontend/.codex-run/
+frontend/.codex_logs/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/.idea/
+*.iml
+
+# Logs et fichiers temporaires
+*.log
+*.tmp
+*.temp
+*.bak
+*.old
+
+# Stockage local genere
+backend/public/fichiers/
+backend/sauvegardes/
+backend/stockage/logs/*
+backend/stockage/sessions/*
+!backend/stockage/logs/.gitignore
+!backend/stockage/sessions/.gitignore
+
+# Bases locales non destinees au depot
+*.db
+*.sqlite
+*.sqlite3
+*.sql.bak
