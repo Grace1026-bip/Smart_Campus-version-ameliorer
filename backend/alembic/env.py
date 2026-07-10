@@ -1,7 +1,7 @@
 from logging.config import fileConfig
 
 from alembic import context
-from sqlalchemy import engine_from_config, pool
+from sqlalchemy import engine_from_config, pool, text
 
 from app.base_de_donnees.base import Base
 from app.configuration.parametres import obtenir_parametres
@@ -42,6 +42,14 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        if (
+            parametres.app_env.lower() == "test"
+            and parametres.mysql_host == "127.0.0.1"
+            and parametres.mysql_port == 3307
+            and parametres.mysql_database == "smart_faculty_test"
+        ):
+            connection.execute(text("SET SESSION default_storage_engine=InnoDB"))
+            connection.commit()
         context.configure(
             connection=connection,
             target_metadata=target_metadata,

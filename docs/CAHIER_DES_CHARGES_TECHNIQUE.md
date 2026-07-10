@@ -170,3 +170,34 @@ MySQL WAMP repond sur `127.0.0.1:3307`.
 - Les tests backend officiels passent: `26 passed in 40.87s`.
 
 Decision: le backend est considere coherent et testable pour preparer le Prompt 3 sur l'authentification.
+
+## Decision Prompt 2.7 - Isolation des tests backend
+
+La base officielle reste exclusivement `smart_faculty_test` sur `127.0.0.1:3307`. Le script `backend/scripts/reinitialiser_base_test.py` refuse toute autre cible, recree ce schema, applique Alembic jusqu'a `20260705_0002` et charge uniquement le seed FastAPI actif. `scripts/test_backend.bat` est la commande officielle et propage le code de sortie de `pytest`.
+
+La persistance observee provenait de deux causes combinees: les tests validaient de vraies transactions sans nettoyage, et le serveur creait les tables en MyISAM, moteur sans rollback. Pour la cible officielle de test uniquement, `backend/alembic/env.py` force maintenant InnoDB avant les migrations. La fixture autouse de `backend/tests/conftest.py` lie FastAPI et `SessionLocale` a une transaction externe par test, utilise des savepoints pour tolerer les `commit()` applicatifs, puis execute un rollback final.
+
+Le seed actif cree les cours `BD201` et `WEB202`, mais ne cree aucune evaluation, note ou ponderation. Le fichier historique `backend/base_de_donnees/donnees_test.sql` n'est pas utilise par la suite FastAPI.
+
+Validation sans reset entre executions:
+
+- execution 1: 26 collectes, 26 reussis, 0 echec, 0 erreur, 39.47 s;
+- execution 2: 26 collectes, 26 reussis, 0 echec, 0 erreur, 40.89 s;
+- execution 3: 26 collectes, 26 reussis, 0 echec, 0 erreur, 39.37 s;
+- ordre cible: 3 tests de notes reussis, 26 tests complets reussis, puis 3 tests de notes reussis.
+
+La protection `_test` reste obligatoire. Aucune operation de preparation ou de nettoyage ne doit viser `smart_faculty`.
+
+## Decision Prompt 3A - Connexion, roles et statuts
+
+Les roles fonctionnels de connexion FastAPI sont `etudiant`, `enseignant`, `chef_promotion`, `surveillant`, `appariteur`, `doyen` et `vice_doyen`. Le role `administrateur` est conserve comme role technique reserve. `icp` et `paritaire` restent dans le referentiel historique, sans activation dans le schema public de connexion ni conversion Flutter.
+
+Le role selectionne par Flutter est une demande de role actif. FastAPI charge les roles en base, refuse un role non possede, puis place le role verifie dans le JWT. Chaque requete authentifiee recharge l'utilisateur, exige le statut `actif` et verifie de nouveau que le role du jeton est encore possede. La suppression de l'utilisateur ou le retrait du role invalide donc un ancien access token.
+
+Les statuts utilisateurs officiels restent ceux du modele SQLAlchemy et de la migration active: `en_attente`, `actif`, `bloque`, `rejete`, `archive`. Seul `actif` permet la connexion. Aucun statut `approuve` n'est ajoute; une future approbation fera passer `en_attente` a `actif`.
+
+Flutter centralise les six conversions correspondant a ses espaces existants dans `modeles_faculte.dart`: `administrator/administrateur`, `apparitor/appariteur`, `student/etudiant`, `teacher/enseignant`, `promotionChief/chef_promotion`, `dean/doyen`. Le service utilise uniquement `role_actif` retourne par FastAPI et verifie sa presence dans les roles de l'utilisateur. `surveillant` et `vice_doyen` restent des roles backend valides sans etre assimiles localement a un espace plus privilegie.
+
+La protection des mots de passe et jetons existante est conservee: bcrypt, absence de mot de passe ou hash dans les reponses et JWT, refresh token hache en base, signature et expiration JWT, rotation du refresh token et revocation a la deconnexion ou au changement de mot de passe.
+
+Validation: 41 tests backend reussis, 0 echec, 0 erreur. L'analyse Flutter ne signale aucune erreur liee au Prompt 3A; les 6 informations historiques `dart:html` restent hors perimetre.

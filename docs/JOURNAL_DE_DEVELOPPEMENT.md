@@ -330,3 +330,75 @@ COLLATE utf8mb4_unicode_ci;
 - Alembic current: `20260705_0002 (head)`.
 - Tests backend avec `scripts/test_backend.bat`: 26 tests collectes, 26 reussis, 0 echec, 0 erreur, 0 ignore, duree 40.87 s.
 - Aucune donnee de `smart_faculty` n'a ete modifiee hors sauvegarde en lecture.
+
+## Prompt 2.7 - Isolation et reproductibilite des tests backend
+
+### Etat initial et cause
+
+- Etat reproduit: 26 tests collectes, 24 reussis, 2 echoues, 0 erreur.
+- `BD201` conservait une evaluation publiee de ponderation 100 % et `WEB202` une evaluation brouillon de ponderation 100 %.
+- Le seed FastAPI actif cree les deux cours, mais aucune evaluation, note ou ponderation; `backend/base_de_donnees/donnees_test.sql` est historique et n'est pas execute.
+- Les fixtures ne faisaient que verifier le suffixe `_test`; les sessions FastAPI validaient leurs transactions et aucun nettoyage ne suivait.
+- Les tables de test etaient en MyISAM, moteur non transactionnel choisi par defaut par MySQL WAMP. Un rollback SQLAlchemy ne pouvait donc pas annuler les ecritures.
+
+### Correction
+
+- Ajout de `backend/scripts/reinitialiser_base_test.py`: cible verrouillee sur `127.0.0.1:3307/smart_faculty_test`, recreation controlee, migrations Alembic et seed actif sans affichage du mot de passe de test.
+- Mise a jour de `backend/alembic/env.py`: InnoDB est force uniquement pour la cible officielle lorsque `APP_ENV=test`.
+- Mise a jour de `backend/tests/conftest.py`: transaction externe autouse, surcharge de la dependance FastAPI, sessions directes liees a la meme connexion, savepoints et rollback final.
+- Mise a jour de `scripts/test_backend.bat`: preparation automatique, variables locales a `setlocal` et propagation du code d'erreur de `pytest`.
+- Aucune regle metier, route, ponderation, authentification, role, statut ou seed n'a ete modifie.
+
+### Resultats
+
+- Revision de `smart_faculty_test`: `20260705_0002`; 29 tables InnoDB.
+- Trois suites consecutives sans reset intermediaire: `26 passed in 39.47s`, `26 passed in 40.89s`, `26 passed in 39.37s`.
+- Controle d'ordre: `test_notes_resultats.py` seul `3 passed in 3.10s`; suite complete `26 passed in 39.73s`; fichier cible apres la suite `3 passed in 3.11s`.
+- Apres tous les tests, `smart_faculty_test.evaluations` contient 0 ligne.
+- `smart_faculty` existe toujours avec 29 tables. Aucune commande d'ecriture ne l'a ciblee.
+
+Decision: les 26 tests historiques sont stables et reproductibles. Le Prompt 3A peut etre repris.
+
+## Prompt 3A - Alignement de la connexion, des roles et des statuts
+
+### Etat avant correction
+
+- Reference obligatoire relancee: 26 tests historiques reussis, 0 echec, 0 erreur.
+- La connexion verifiait deja le mot de passe bcrypt, le statut `actif`, le role possede en base, la signature et l'expiration JWT.
+- Le refresh token etait deja aleatoire, hache en base, tourne a l'actualisation et revoque a la deconnexion.
+- Le schema public limitait toutefois les roles a `etudiant`, `enseignant`, `appariteur`, `doyen`, `administrateur`.
+- Flutter appliquait des alias injustifies: `icp` vers chef de promotion et `paritaire` vers appariteur; un role backend inconnu pouvait retomber sur le role local demande.
+- `SessionService.connectAs` pouvait fabriquer une session locale sans reponse FastAPI, meme si cette methode n'etait appelee nulle part.
+
+### Correction appliquee
+
+- Roles fonctionnels FastAPI: `etudiant`, `enseignant`, `chef_promotion`, `surveillant`, `appariteur`, `doyen`, `vice_doyen`.
+- `administrateur` reste technique et reserve; aucune route d'inscription ou d'approbation n'a ete creee.
+- `icp` et `paritaire` sont conserves par le seed comme roles historiques, sans compte automatique ni acceptation publique.
+- Le seed de test fournit des comptes actifs pour chef de promotion, surveillant et vice-doyen; le chef possede aussi `etudiant`, le vice-doyen aussi `enseignant`.
+- Le seed n'affiche plus le mot de passe commun dans sa sortie standard.
+- Flutter centralise les six conversions de ses espaces existants et utilise exclusivement le `role_actif` retourne et confirme dans `utilisateur.roles`.
+- Flutter ne convertit plus `icp`, `paritaire`, `surveillant` ou `vice_doyen` vers un espace different. Les deux derniers restent connectables par FastAPI en attendant un espace Flutter dedie.
+- La creation locale de session par role a ete retiree; `currentRole` est derive de l'utilisateur authentifie.
+
+### Problemes infirmes
+
+- Aucun mot de passe en clair n'est stocke par le backend actif.
+- Aucun mot de passe ni hash n'est retourne par les schemas de reponse ou place dans le JWT.
+- Seul le statut `actif` permet deja la connexion; aucun changement du modele de statuts n'etait necessaire.
+- FastAPI verifiait deja le role actif en base a la connexion et sur chaque requete protegee.
+- Les jetons expires, modifies, associes a un utilisateur supprime ou a un role retire etaient deja refuses.
+
+### Tests
+
+- Ajout de 15 cas collectes: trois roles fonctionnels, quatre statuts refuses, normalisation email, champs sensibles absents, refresh token hache, token expire, token modifie, utilisateur supprime, role retire et role Flutter falsifie.
+- Suite officielle: 41 collectes, 41 reussis, 0 echec, 0 erreur, duree 57.83 s.
+- `flutter analyze`: aucune erreur nouvelle; 6 informations historiques sur `dart:html`.
+- `flutter test --reporter expanded`: lancement refuse par la limite d'usage de l'environnement Codex, sans resultat de test exploitable pour cette execution.
+
+### Securite des donnees
+
+- Tous les tests backend ont cible exclusivement `smart_faculty_test`.
+- `smart_faculty` n'a recu aucune migration, aucun seed et aucune ecriture pendant le Prompt 3A.
+
+Decision: le backend du Prompt 3A est valide avec 41/41 tests. La validation globale reste conditionnee a une nouvelle execution des tests Flutter lorsque l'environnement autorisera l'acces au SDK.

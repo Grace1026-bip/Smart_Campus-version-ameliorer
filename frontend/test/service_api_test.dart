@@ -99,6 +99,53 @@ void main() {
     expect(SessionService.currentRole, UserRole.teacher);
     expect(ApiDataSource.client.accessToken, 'access-token');
   });
+
+  test('les roles Flutter ont une correspondance FastAPI unique', () {
+    expect(
+      UserRole.values.map((role) => role.apiValue).toList(),
+      [
+        'administrateur',
+        'appariteur',
+        'etudiant',
+        'enseignant',
+        'chef_promotion',
+        'doyen',
+      ],
+    );
+    expect(userRoleFromApi('icp'), isNull);
+    expect(userRoleFromApi('paritaire'), isNull);
+    expect(userRoleFromApi('surveillant'), isNull);
+    expect(userRoleFromApi('vice_doyen'), isNull);
+  });
+
+  test('ApiAuthService utilise uniquement le role actif retourne', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {
+          'access_token': 'access-token',
+          'refresh_token': 'refresh-token',
+          'role_actif': 'etudiant',
+          'utilisateur': {
+            'nom': 'Etudiant',
+            'email': 'etudiant@smartfaculty.test',
+            'roles': ['etudiant'],
+          },
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final user = await const ApiAuthService().login(
+      identifier: 'etudiant@smartfaculty.test',
+      password: 'Smart@123456',
+      role: UserRole.administrator,
+    );
+
+    expect(user.role, UserRole.student);
+    expect(SessionService.currentRole, UserRole.student);
+    expect(ApiDataSource.client.roleActif, 'etudiant');
+  });
 }
 
 class _CapturedRequest {

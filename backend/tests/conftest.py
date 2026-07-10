@@ -12,7 +12,7 @@ RACINE_BACKEND = Path(__file__).resolve().parents[1]
 if str(RACINE_BACKEND) not in sys.path:
     sys.path.insert(0, str(RACINE_BACKEND))
 
-from app.base_de_donnees.connexion import SessionLocale
+from app.base_de_donnees.connexion import SessionLocale, moteur, obtenir_session
 from app.configuration.parametres import obtenir_parametres
 from app.main import app
 from app.modeles import AnneeAcademique, Semestre
@@ -25,6 +25,34 @@ def verifier_base_test():
         "Les tests doivent utiliser une base separee finissant par '_test'. "
         f"Base actuelle: {parametres.mysql_database}"
     )
+
+
+@pytest.fixture(autouse=True)
+def isoler_transaction_test():
+    connexion = moteur.connect()
+    transaction = connexion.begin()
+    SessionLocale.configure(
+        bind=connexion,
+        join_transaction_mode="create_savepoint",
+    )
+    session_test = SessionLocale()
+
+    def remplacer_session():
+        yield session_test
+
+    app.dependency_overrides[obtenir_session] = remplacer_session
+    try:
+        yield
+    finally:
+        app.dependency_overrides.pop(obtenir_session, None)
+        session_test.close()
+        if transaction.is_active:
+            transaction.rollback()
+        connexion.close()
+        SessionLocale.configure(
+            bind=moteur,
+            join_transaction_mode="conditional_savepoint",
+        )
 
 
 @pytest.fixture()

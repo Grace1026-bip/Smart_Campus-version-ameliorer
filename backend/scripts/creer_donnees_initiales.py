@@ -92,9 +92,14 @@ def creer_donnees_initiales() -> None:
             for nom, description in {
                 "etudiant": "Acces etudiant",
                 "enseignant": "Acces enseignant",
+                "chef_promotion": "Representation de promotion",
+                "surveillant": "Surveillance academique",
                 "appariteur": "Gestion academique operationnelle",
                 "doyen": "Pilotage et decision academique",
+                "vice_doyen": "Pilotage academique delegue",
                 "administrateur": "Administration systeme",
+                "icp": "Role historique conserve",
+                "paritaire": "Role historique conserve",
             }.items()
         }
 
@@ -116,9 +121,14 @@ def creer_donnees_initiales() -> None:
         matrice_permissions = {
             "etudiant": ["auth.moi", "reclamations.creer"],
             "enseignant": ["auth.moi", "academique.lecture", "notes.encoder", "notes.publier", "reclamations.traiter"],
+            "chef_promotion": ["auth.moi", "academique.lecture", "reclamations.creer"],
+            "surveillant": ["auth.moi", "academique.lecture"],
             "appariteur": ["auth.moi", "academique.lecture", "academique.ecriture", "reclamations.traiter", "dashboard.lecture"],
             "doyen": ["auth.moi", "academique.lecture", "dashboard.lecture"],
+            "vice_doyen": ["auth.moi", "academique.lecture", "dashboard.lecture"],
             "administrateur": list(permissions.keys()),
+            "icp": ["auth.moi"],
+            "paritaire": ["auth.moi"],
         }
         for role_nom, codes_permissions in matrice_permissions.items():
             for code in codes_permissions:
@@ -196,6 +206,20 @@ def creer_donnees_initiales() -> None:
         )
         creer_utilisateur(
             session,
+            "chef.promotion@smartfaculty.test",
+            "Kabeya",
+            "Chef",
+            [roles["etudiant"], roles["chef_promotion"]],
+        )
+        creer_utilisateur(
+            session,
+            "surveillant@smartfaculty.test",
+            "Surveillance",
+            "Campus",
+            [roles["surveillant"]],
+        )
+        creer_utilisateur(
+            session,
             "appariteur@smartfaculty.test",
             "Ilunga",
             "Patrick",
@@ -207,6 +231,13 @@ def creer_donnees_initiales() -> None:
             "Tshibanda",
             "Marie",
             [roles["doyen"], roles["enseignant"]],
+        )
+        creer_utilisateur(
+            session,
+            "vice.doyen@smartfaculty.test",
+            "Tshibanda",
+            "Vice",
+            [roles["vice_doyen"], roles["enseignant"]],
         )
 
         enseignant = obtenir_ou_creer(
@@ -245,7 +276,6 @@ def creer_donnees_initiales() -> None:
 
         session.commit()
         print("Donnees initiales creees ou deja presentes.")
-        print(f"Mot de passe de test commun: {MOT_DE_PASSE_TEST}")
         print(f"Administrateur de test: {utilisateur_admin.email}")
 
 

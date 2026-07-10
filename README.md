@@ -58,7 +58,7 @@ Un modele sans secret est disponible:
 backend/.env.test.example
 ```
 
-La configuration actuelle du backend lit les variables `MYSQL_*` depuis l'environnement ou depuis `.env` / `backend/.env`. Pour lancer les tests sans toucher a la base principale, definir au minimum `MYSQL_DATABASE=smart_faculty_test` dans la session PowerShell avant les migrations et `pytest`.
+La configuration actuelle du backend lit les variables `MYSQL_*` depuis l'environnement ou depuis `.env` / `backend/.env`. La commande officielle force `APP_ENV=test` et `MYSQL_DATABASE=smart_faculty_test`, verifie la cible exacte, recree la base de test, applique les migrations et le seed actif, puis lance `pytest`.
 
 Commande SQL a executer dans MySQL Workbench si la base de test n'existe pas encore:
 
@@ -68,23 +68,22 @@ CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
 ```
 
-Avec PowerShell, une session de test typique ressemble a ceci:
-
-```powershell
-cd backend
-$env:MYSQL_DATABASE = "smart_faculty_test"
-.\.venv\Scripts\python.exe -m alembic upgrade head
-.\.venv\Scripts\python.exe scripts\creer_donnees_initiales.py
-.\.venv\Scripts\python.exe -m pytest -v
-Remove-Item Env:\MYSQL_DATABASE
-```
-
-Ne jamais lancer `pytest` sur `smart_faculty`.
-
-Un script dedie existe aussi depuis la racine:
+Depuis la racine, lancer:
 
 ```powershell
 .\scripts\test_backend.bat
+```
+
+Le script refuse toute remise a zero si la cible n'est pas exactement `127.0.0.1:3307/smart_faculty_test` ou si son nom ne finit pas par `_test`. Ne jamais lancer `pytest` sur `smart_faculty`.
+
+Pendant les migrations de cette cible de test uniquement, Alembic force InnoDB. Chaque test utilise ensuite une transaction externe et des savepoints SQLAlchemy; les `commit()` de l'application restent visibles pendant le scenario, puis toutes ses ecritures sont annulees automatiquement a la fin du test.
+
+Apres une preparation officielle, une relance directe sans remise a zero est possible depuis `backend/`:
+
+```powershell
+$env:APP_ENV = "test"
+$env:MYSQL_DATABASE = "smart_faculty_test"
+.\.venv\Scripts\python.exe -m pytest -v
 ```
 
 ## Lancer FastAPI
@@ -195,7 +194,28 @@ Verification realisee avec MySQL WAMP sur `127.0.0.1:3307`.
 - Base de test officielle: `smart_faculty_test`.
 - Sauvegarde locale de `smart_faculty`: creee dans `backend/sauvegardes/`, dossier ignore par Git.
 - Migrations Alembic appliquees sur `smart_faculty_test`: revision `20260705_0002`.
-- Donnees initiales de test: creees ou deja presentes sur `smart_faculty_test`.
-- Tests backend officiels: `26 passed in 40.87s` avec `scripts/test_backend.bat`.
+- Donnees initiales de test: recreees par la commande officielle, sans evaluations ni notes concurrentes avec les tests.
+- Isolation: tables de test InnoDB, transaction externe et rollback automatique par test.
+- Reproductibilite: trois suites consecutives sans reset intermediaire ont chacune obtenu `26 passed`.
+- Controle d'ordre: `test_notes_resultats.py` seul (`3 passed`), suite complete (`26 passed`), puis fichier cible (`3 passed`).
 
 La base principale `smart_faculty` reste la base normale de developpement. Les tests doivent continuer a utiliser uniquement une base dont le nom finit par `_test`.
+
+## Authentification, roles et statuts
+
+La connexion FastAPI accepte les roles fonctionnels `etudiant`, `enseignant`, `chef_promotion`, `surveillant`, `appariteur`, `doyen` et `vice_doyen`. `administrateur` reste un role technique reserve. Les roles historiques `icp` et `paritaire` sont conserves dans le referentiel, mais ne sont pas acceptes par le schema public de connexion.
+
+Un utilisateur peut posseder plusieurs roles. Flutter demande un role actif, puis FastAPI verifie en base que l'utilisateur le possede avant de creer les jetons. Le role actif du backend est la seule source utilisee par Flutter pour ouvrir un espace; aucune session ne peut etre fabriquee localement.
+
+Correspondances des espaces Flutter actuellement disponibles:
+
+- `administrator` -> `administrateur`;
+- `apparitor` -> `appariteur`;
+- `student` -> `etudiant`;
+- `teacher` -> `enseignant`;
+- `promotionChief` -> `chef_promotion`;
+- `dean` -> `doyen`.
+
+`surveillant` et `vice_doyen` sont pris en charge par FastAPI, mais ne sont pas assimiles a un autre espace Flutter tant qu'un espace fonctionnel dedie n'existe pas. Les statuts officiels sont `en_attente`, `actif`, `bloque`, `rejete` et `archive`; seul `actif` autorise la connexion.
+
+Validation Prompt 3A: 41 tests backend reussis, dont les 26 historiques et 15 cas supplementaires collectes. `flutter analyze` ne remonte aucune erreur nouvelle et conserve les 6 informations historiques relatives a `dart:html`.

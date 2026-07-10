@@ -127,7 +127,7 @@ class _LoginScreenState extends State<LoginScreen> {
       case UserRole.apparitor:
         return ['appariteur@smartfaculty.test', 'Smart@123456'];
       case UserRole.promotionChief:
-        return ['etudiant@smartfaculty.test', 'Smart@123456'];
+        return ['chef.promotion@smartfaculty.test', 'Smart@123456'];
       case UserRole.dean:
         return ['doyen@smartfaculty.test', 'Smart@123456'];
     }

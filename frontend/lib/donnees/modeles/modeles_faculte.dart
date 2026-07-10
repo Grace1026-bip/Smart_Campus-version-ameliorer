@@ -41,6 +41,30 @@ extension UserRoleLabel on UserRole {
         return 'Pilotage decisionnel';
     }
   }
+
+  String get apiValue {
+    switch (this) {
+      case UserRole.administrator:
+        return 'administrateur';
+      case UserRole.apparitor:
+        return 'appariteur';
+      case UserRole.student:
+        return 'etudiant';
+      case UserRole.teacher:
+        return 'enseignant';
+      case UserRole.promotionChief:
+        return 'chef_promotion';
+      case UserRole.dean:
+        return 'doyen';
+    }
+  }
+}
+
+UserRole? userRoleFromApi(String value) {
+  for (final role in UserRole.values) {
+    if (role.apiValue == value.trim().toLowerCase()) return role;
+  }
+  return null;
 }
 
 enum ComplaintStatus { pending, inProgress, resolved, rejected }

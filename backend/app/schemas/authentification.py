@@ -1,7 +1,16 @@
 from pydantic import BaseModel, Field, field_validator
 
 
-ROLES_AUTORISES = {"etudiant", "enseignant", "appariteur", "doyen", "administrateur"}
+ROLES_FONCTIONNELS = {
+    "etudiant",
+    "enseignant",
+    "chef_promotion",
+    "surveillant",
+    "appariteur",
+    "doyen",
+    "vice_doyen",
+}
+ROLES_AUTORISES = ROLES_FONCTIONNELS | {"administrateur"}
 
 
 class ConnexionRequete(BaseModel):

@@ -19,4 +19,15 @@ echo.
 set "APP_ENV=test"
 set "MYSQL_DATABASE=smart_faculty_test"
 
+echo Reinitialisation controlee de smart_faculty_test...
+".venv\Scripts\python.exe" scripts\reinitialiser_base_test.py
+if errorlevel 1 (
+    echo Echec de la preparation de la base de test.
+    exit /b 1
+)
+echo.
+
 ".venv\Scripts\python.exe" -m pytest -v
+set "CODE_TESTS=%ERRORLEVEL%"
+
+exit /b %CODE_TESTS%
