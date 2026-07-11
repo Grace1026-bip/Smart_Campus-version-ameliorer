@@ -452,6 +452,15 @@ class _LoginForm extends StatelessWidget {
                 child: const Text('Mot de passe oublie'),
               ),
             ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => Navigator.of(context)
+                    .pushNamed(AppRoutes.registrationRequest),
+                icon: const Icon(Icons.person_add_alt_1_rounded),
+                label: const Text('Demander un compte'),
+              ),
+            ),
             const SizedBox(height: 18),
             SizedBox(
               width: double.infinity,

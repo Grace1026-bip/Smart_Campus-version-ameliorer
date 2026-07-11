@@ -201,6 +201,54 @@ Verification realisee avec MySQL WAMP sur `127.0.0.1:3307`.
 
 La base principale `smart_faculty` reste la base normale de developpement. Les tests doivent continuer a utiliser uniquement une base dont le nom finit par `_test`.
 
+## Demandes d'inscription
+
+Le processus d'inscription public est limite aux roles `etudiant` et `enseignant`.
+
+Routes principales:
+
+```text
+POST /api/v1/inscriptions/demandes
+GET  /api/v1/inscriptions/demandes/statut
+GET  /api/v1/inscriptions/demandes
+GET  /api/v1/inscriptions/demandes/{id}
+POST /api/v1/inscriptions/demandes/{id}/approuver
+POST /api/v1/inscriptions/demandes/{id}/rejeter
+```
+
+Regles:
+
+- Une demande publique ne cree aucune session et ne retourne aucun jeton.
+- Le mot de passe est hache immediatement; aucun mot de passe ni hash n'est retourne.
+- Une demande utilise les statuts `en_attente`, `approuvee`, `rejetee`.
+- Une approbation cree un compte `actif`, le profil correspondant et le role autorise.
+- Les demandes etudiant sont approuvables par `appariteur` ou par `chef_promotion` dans son perimetre.
+- Les demandes enseignant sont approuvables par `appariteur` ou `doyen`.
+- Les roles privilegies ne sont pas disponibles dans le formulaire public Flutter.
+
+Migration de test associee:
+
+```text
+20260711_0003_demandes_inscription.py
+```
+
+### Migration locale principale
+
+La migration `20260711_0003` a ete appliquee sur la base locale principale `smart_faculty` apres sauvegarde complete dans `backend/sauvegardes/`.
+
+Commande utilisee depuis `backend/`:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+Etat apres migration:
+
+- `smart_faculty`: revision `20260711_0003`.
+- Nouvelle table principale: `demandes_inscription`.
+- Les tests backend restent executes uniquement sur `smart_faculty_test` via `scripts/test_backend.bat`.
+- Une demande de demonstration locale peut etre supprimee avec une requete SQL ciblee sur son email de test, par exemple `demo.inscription.3b1@smartfaculty.test`.
+
 ## Authentification, roles et statuts
 
 La connexion FastAPI accepte les roles fonctionnels `etudiant`, `enseignant`, `chef_promotion`, `surveillant`, `appariteur`, `doyen` et `vice_doyen`. `administrateur` reste un role technique reserve. Les roles historiques `icp` et `paritaire` sont conserves dans le referentiel, mais ne sont pas acceptes par le schema public de connexion.

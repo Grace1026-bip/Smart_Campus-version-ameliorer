@@ -10,6 +10,7 @@ import '../../fonctionnalites/apparitorat/presentation/ecran_supervision_apparit
 import '../../fonctionnalites/apparitorat/presentation/ecran_tableau_bord_apparitorat.dart';
 import '../../fonctionnalites/authentification/presentation/ecran_mot_de_passe_oublie.dart';
 import '../../fonctionnalites/authentification/presentation/ecran_connexion.dart';
+import '../../fonctionnalites/authentification/presentation/ecran_demande_inscription.dart';
 import '../../fonctionnalites/reclamations/presentation/ecran_detail_reclamation.dart';
 import '../../fonctionnalites/reclamations/presentation/ecran_reclamations.dart';
 import '../../fonctionnalites/doyen/presentation/ecran_tableau_bord_doyen.dart';
@@ -30,6 +31,7 @@ import '../../fonctionnalites/enseignant/presentation/ecran_tableau_bord_enseign
 class AppRoutes {
   static const login = '/';
   static const forgotPassword = '/forgot-password';
+  static const registrationRequest = '/signup';
   static const adminDashboard = '/admin';
   static const adminManagement = '/administration/management';
   static const apparitorDashboard = '/apparitor';
@@ -104,6 +106,8 @@ class AppRoutes {
         return _route(settings, const LoginScreen());
       case forgotPassword:
         return _route(settings, const ForgotPasswordScreen());
+      case registrationRequest:
+        return _route(settings, const RegistrationRequestScreen());
       case adminDashboard:
         return _route(settings, const AdminDashboardScreen());
       case adminManagement:
@@ -250,7 +254,9 @@ class AppRoutes {
   }
 
   static bool _isPublicRoute(String route) {
-    return route == login || route == forgotPassword;
+    return route == login ||
+        route == forgotPassword ||
+        route == registrationRequest;
   }
 
   static bool _isRouteAllowed(UserRole role, String route) {

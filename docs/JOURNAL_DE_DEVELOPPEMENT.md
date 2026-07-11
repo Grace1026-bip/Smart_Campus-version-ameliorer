@@ -331,6 +331,130 @@ COLLATE utf8mb4_unicode_ci;
 - Tests backend avec `scripts/test_backend.bat`: 26 tests collectes, 26 reussis, 0 echec, 0 erreur, 0 ignore, duree 40.87 s.
 - Aucune donnee de `smart_faculty` n'a ete modifiee hors sauvegarde en lecture.
 
+## Prompt 3B - Demandes d'inscription et approbation
+
+### Etat initial valide
+
+- `scripts/test_backend.bat`: 41 tests collectes, 41 reussis avant modification.
+- MySQL WAMP disponible sur `127.0.0.1:3307`.
+- Base de test officielle: `smart_faculty_test`.
+
+### Audit avant modification
+
+- Aucun modele SQLAlchemy actif ne gerait les demandes d'inscription.
+- Aucune route FastAPI active ne permettait la creation, l'approbation ou le rejet d'une demande.
+- Une table historique `demandes_inscription` existait uniquement dans une sauvegarde SQL ancienne; elle n'a pas ete reprise comme source principale.
+- Les modeles actifs disponibles pour l'approbation sont `Utilisateur`, `UtilisateurRole`, `Etudiant`, `Enseignant`, `Promotion` et `Role`.
+
+### Fichiers crees
+
+- `backend/app/modeles/inscriptions.py`
+- `backend/app/schemas/inscriptions.py`
+- `backend/app/services/inscriptions.py`
+- `backend/app/routes/inscriptions.py`
+- `backend/alembic/versions/20260711_0003_demandes_inscription.py`
+- `backend/tests/test_inscriptions.py`
+- `frontend/lib/donnees/services/service_inscriptions.dart`
+- `frontend/lib/fonctionnalites/authentification/presentation/ecran_demande_inscription.dart`
+
+### Fichiers modifies
+
+- `backend/app/modeles/__init__.py`
+- `backend/app/routes/api.py`
+- `frontend/lib/coeur/routes/routes_application.dart`
+- `frontend/lib/fonctionnalites/authentification/presentation/ecran_connexion.dart`
+- `frontend/test/service_api_test.dart`
+- `README.md`
+- `docs/CAHIER_DES_CHARGES_TECHNIQUE.md`
+- `docs/JOURNAL_DE_DEVELOPPEMENT.md`
+
+### Regles implementees
+
+- Les demandes publiques acceptent seulement `etudiant` et `enseignant`.
+- Le mot de passe est hache immediatement et le hash n'est jamais retourne.
+- Les statuts de demande sont `en_attente`, `approuvee`, `rejetee`.
+- L'approbation cree un compte utilisateur `actif`, le profil correspondant et le role attendu.
+- Le rejet ne cree aucun compte.
+- Une demande deja traitee ne peut pas etre retraitee.
+- La consultation publique du statut exige la reference et l'email.
+- Le formulaire Flutter public ne propose aucun role privilegie et ne cree aucune session apres soumission.
+
+### Resultats de verification
+
+- Tests inscriptions seuls: 16 collectes, 16 reussis.
+- Suite backend complete, execution 1: 57 collectes, 57 reussis, 0 echec, 0 erreur.
+- Suite backend complete, execution 2: 57 collectes, 57 reussis, 0 echec, 0 erreur.
+- FastAPI demarre sur `127.0.0.1:8010`; `/`, `/api/v1/statut` et `POST /api/v1/inscriptions/demandes` repondent.
+- Flutter `flutter test --reporter expanded`: 15 tests reussis.
+- Flutter `flutter analyze`: 6 infos historiques `dart:html`, aucune nouvelle alerte liee au Prompt 3B.
+- `smart_faculty` reste a Alembic `20260705_0002` et ne contient pas `demandes_inscription`.
+
+## Prompt 3B.1 - Deploiement local controle de la migration d'inscription
+
+### Objectif
+
+- Appliquer sur la base locale principale `smart_faculty` la migration deja testee `20260711_0003_demandes_inscription.py`.
+- Ne developper aucune nouvelle fonctionnalite.
+- Ne pas lancer de seed de test sur `smart_faculty`.
+
+### Verifications prealables
+
+- MySQL WAMP repond sur `127.0.0.1:3307`.
+- `APP_ENV` et `MYSQL_DATABASE` etaient absents de l'environnement avant migration.
+- `smart_faculty`: revision `20260705_0002`, 29 tables, `demandes_inscription` absente.
+- `smart_faculty_test`: revision `20260711_0003`, 30 tables, `demandes_inscription` presente.
+- Migration presente: `backend/alembic/versions/20260711_0003_demandes_inscription.py`.
+
+### Audit de migration
+
+- Upgrade: creation de la table `demandes_inscription`.
+- Colonnes: reference, type_demande, email, identite, mot_de_passe_hash, champs etudiant, champs enseignant, statut, utilisateur lie, approbateur, dates.
+- Index: email, statut, type_demande/statut.
+- Contrainte unique: reference.
+- Relations: promotion et utilisateurs.
+- Aucun `DROP TABLE`, aucune suppression de colonne, aucune modification de compte existant.
+
+### Sauvegarde
+
+- Sauvegarde complete locale creee dans `backend/sauvegardes/`.
+- Fichier non vide: environ 41 Ko.
+- Dossier confirme ignore par Git.
+- La sauvegarde n'a pas ete affichee ni ajoutee au depot.
+
+### Migration appliquee
+
+- Commande: `backend/.venv/Scripts/python.exe -m alembic upgrade head`.
+- Cible: `127.0.0.1:3307/smart_faculty`.
+- Revision avant: `20260705_0002`.
+- Revision apres: `20260711_0003`.
+- Aucune erreur Alembic.
+
+### Verifications apres migration
+
+- `smart_faculty`: 30 tables.
+- `demandes_inscription`: presente avec 20 colonnes.
+- Contrainte unique `uq_demandes_inscription_reference` presente.
+- Index `email`, `statut`, `type_demande/statut` presents.
+- Utilisateurs et roles existants toujours presents.
+- FastAPI demarre sur `127.0.0.1:8010`.
+- `GET /` OK.
+- `GET /api/v1/statut` OK.
+- `POST /api/v1/inscriptions/demandes` OK sur une demande de demonstration non approuvee: `demo.inscription.3b1@smartfaculty.test`.
+
+### Tests apres migration
+
+- `scripts/test_backend.bat`: cible verifiee `127.0.0.1:3307/smart_faculty_test`.
+- Alembic test applique jusqu'a `20260711_0003`.
+- Backend: 57 tests collectes, 57 reussis, 0 echec, 0 erreur, duree 66.10 s.
+- Les tests Flutter n'ont pas pu etre relances pendant 3B.1 car l'escalade SDK Flutter a ete refusee par la limite d'utilisation de l'environnement.
+- Dernier resultat Flutter valide du Prompt 3B: `flutter test --reporter expanded`, 15 tests reussis; `flutter analyze`, 6 infos historiques `dart:html`.
+
+### Performance
+
+- Le run a 634.92 s observe pendant 3B etait ponctuel: la suite identique repasse a 66.10 s apres la migration locale.
+- Cause probable: ralentissement externe temporaire, attente MySQL/shell ou contention locale, plutot qu'un test precis devenu lent.
+- Recommandation: si le phenomene revient, mesurer par test avec `pytest --durations=20` sans modifier la logique metier.
+
 ## Prompt 2.7 - Isolation et reproductibilite des tests backend
 
 ### Etat initial et cause

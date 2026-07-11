@@ -5,6 +5,7 @@ import 'package:smart_campus_app/donnees/modeles/modeles_faculte.dart';
 import 'package:smart_campus_app/donnees/services/client_api_reponse.dart';
 import 'package:smart_campus_app/donnees/services/service_api.dart';
 import 'package:smart_campus_app/donnees/services/service_authentification.dart';
+import 'package:smart_campus_app/donnees/services/service_inscriptions.dart';
 import 'package:smart_campus_app/donnees/services/service_session.dart';
 
 void main() {
@@ -145,6 +146,78 @@ void main() {
     expect(user.role, UserRole.student);
     expect(SessionService.currentRole, UserRole.student);
     expect(ApiDataSource.client.roleActif, 'etudiant');
+  });
+
+  test('DemandeInscriptionPayload limite les roles publics', () {
+    expect(
+      TypeDemandeInscription.values.map((type) => type.apiValue).toList(),
+      ['etudiant', 'enseignant'],
+    );
+  });
+
+  test('ApiInscriptionService cree une demande sans session locale', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(201, {
+        'succes': true,
+        'message': 'Demande creee',
+        'donnees': {
+          'reference': 'SF-ABC123',
+          'type_demande': 'etudiant',
+          'email': 'test@smartfaculty.test',
+          'statut': 'en_attente',
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final demande = await const ApiInscriptionService().creerDemande(
+      const DemandeInscriptionPayload(
+        type: TypeDemandeInscription.etudiant,
+        email: ' TEST@SMARTFACULTY.TEST ',
+        motDePasse: 'Smart@123456',
+        nom: 'Test',
+        matricule: 'SF-TEST',
+        promotionId: 1,
+      ),
+    );
+
+    final body =
+        jsonDecode(fake.requests.single.body ?? '{}') as Map<String, dynamic>;
+    expect(fake.requests.single.uri.path, '/api/v1/inscriptions/demandes');
+    expect(body['type_demande'], 'etudiant');
+    expect(body['email'], 'test@smartfaculty.test');
+    expect(body.containsKey('access_token'), isFalse);
+    expect(demande.statut, 'en_attente');
+    expect(SessionService.isAuthenticated, isFalse);
+    expect(ApiDataSource.client.accessToken, isNull);
+  });
+
+  test('ApiInscriptionService consulte un statut de demande', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {
+          'reference': 'SF-ABC123',
+          'type_demande': 'enseignant',
+          'email': 'prof@smartfaculty.test',
+          'statut': 'rejetee',
+          'motif_rejet': 'Dossier incomplet',
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final demande = await const ApiInscriptionService().consulterStatut(
+      reference: 'SF-ABC123',
+      email: ' PROF@SMARTFACULTY.TEST ',
+    );
+
+    expect(
+        fake.requests.single.uri.path, '/api/v1/inscriptions/demandes/statut');
+    expect(fake.requests.single.uri.queryParameters['email'],
+        'prof@smartfaculty.test');
+    expect(demande.statut, 'rejetee');
+    expect(demande.motifRejet, 'Dossier incomplet');
   });
 
   for (final cas in <Map<String, Object>>[

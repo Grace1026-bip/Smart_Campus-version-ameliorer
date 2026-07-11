@@ -171,6 +171,66 @@ MySQL WAMP repond sur `127.0.0.1:3307`.
 
 Decision: le backend est considere coherent et testable pour preparer le Prompt 3 sur l'authentification.
 
+## Decision Prompt 3B - Demandes d'inscription
+
+Les demandes publiques d'inscription sont limitees a `etudiant` et `enseignant`. Les roles `administrateur`, `appariteur`, `doyen`, `vice_doyen`, `chef_promotion`, `surveillant`, `icp` et `paritaire` ne sont pas exposables publiquement.
+
+Une demande possede ses propres statuts: `en_attente`, `approuvee`, `rejetee`. Ces statuts sont distincts des statuts de compte utilisateur (`en_attente`, `actif`, `bloque`, `rejete`, `archive`). Une demande approuvee cree un compte utilisateur `actif`.
+
+Le modele actif est `backend/app/modeles/inscriptions.py`, table `demandes_inscription`. La migration non destructive est `backend/alembic/versions/20260711_0003_demandes_inscription.py`.
+
+Routes retenues:
+
+- `POST /api/v1/inscriptions/demandes`
+- `GET /api/v1/inscriptions/demandes/statut`
+- `GET /api/v1/inscriptions/demandes`
+- `GET /api/v1/inscriptions/demandes/{id}`
+- `POST /api/v1/inscriptions/demandes/{id}/approuver`
+- `POST /api/v1/inscriptions/demandes/{id}/rejeter`
+
+Autorites:
+
+- `appariteur`: approuve ou rejette les demandes etudiant et enseignant.
+- `chef_promotion`: approuve ou rejette uniquement les demandes etudiant de sa promotion lorsque son profil etudiant permet d'etablir ce perimetre.
+- `doyen`: approuve ou rejette les demandes enseignant.
+- `administrateur`: conserve comme role technique autorise.
+
+Securite:
+
+- Le mot de passe de la demande est hache immediatement avec le mecanisme existant.
+- Aucune demande ne cree de session ni de jeton.
+- Aucun mot de passe ni hash n'est retourne par l'API.
+- L'approbation verifie le statut `en_attente`, les doublons, cree le compte, le profil et le role dans une transaction.
+- `smart_faculty` n'a pas recu la migration de test; elle reste a la revision `20260705_0002`.
+
+## Decision Prompt 3B.1 - Migration locale principale
+
+La migration deja testee `20260711_0003_demandes_inscription.py` a ete appliquee sur la base locale principale `smart_faculty`.
+
+Controle avant application:
+
+- MySQL WAMP disponible sur `127.0.0.1:3307`.
+- `smart_faculty`: revision `20260705_0002`, 29 tables, table `demandes_inscription` absente.
+- `smart_faculty_test`: revision `20260711_0003`, 30 tables, table `demandes_inscription` presente.
+- Migration relue: creation uniquement de `demandes_inscription`, de ses index et contraintes; aucune suppression, aucune modification des comptes existants.
+
+Controle apres application:
+
+- `smart_faculty`: revision `20260711_0003`.
+- `smart_faculty`: 30 tables.
+- `demandes_inscription`: 20 colonnes, contrainte unique `uq_demandes_inscription_reference`, index `email`, `statut`, `type_demande/statut`, et index de relations vers `promotions` et `utilisateurs`.
+- Les utilisateurs et roles existants restent presents.
+- Une demande de demonstration `demo.inscription.3b1@smartfaculty.test` a ete creee en `en_attente` pour verifier la route publique; elle n'a pas ete approuvee.
+
+Tests apres migration:
+
+- `scripts/test_backend.bat`: cible confirmee `smart_faculty_test`, 57 tests reussis en 66.10 s.
+- Les tests Flutter n'ont pas pu etre relances pendant 3B.1 a cause de la limite d'execution de l'environnement; le dernier resultat valide du Prompt 3B reste `15 passed` et `flutter analyze` avec 6 infos historiques `dart:html`.
+
+Performance:
+
+- Le run backend precedent a 634.92 s semble exceptionnel: le run 3B.1 est revenu a 66.10 s avec la meme suite, ce qui indique probablement un ralentissement externe ponctuel autour de MySQL, du shell ou du poste, plutot qu'un test structurellement lent.
+
 ## Decision Prompt 2.7 - Isolation des tests backend
 
 La base officielle reste exclusivement `smart_faculty_test` sur `127.0.0.1:3307`. Le script `backend/scripts/reinitialiser_base_test.py` refuse toute autre cible, recree ce schema, applique Alembic jusqu'a `20260705_0002` et charge uniquement le seed FastAPI actif. `scripts/test_backend.bat` est la commande officielle et propage le code de sortie de `pytest`.

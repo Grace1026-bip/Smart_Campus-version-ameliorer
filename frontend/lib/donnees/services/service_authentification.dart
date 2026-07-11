@@ -1,5 +1,6 @@
 import '../modeles/modeles_faculte.dart';
 import 'service_api.dart';
+import 'service_persistence.dart';
 import 'service_session.dart';
 
 abstract class AuthService {
@@ -52,6 +53,15 @@ class ApiAuthService implements AuthService {
 
   @override
   Future<FacultyUser?> restoreSession() async {
+    final persisted = await SessionPersistenceService.restoreSession();
+    if (persisted != null) {
+      ApiDataSource.client.configurerSession(
+        accessToken: persisted['access_token']!,
+        refreshToken: persisted['refresh_token']!,
+        roleActif: persisted['role_actif']!,
+      );
+    }
+
     if (!ApiDataSource.client.estConnecte) {
       SessionService.clear();
       return null;

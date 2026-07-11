@@ -1,8 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
 
 import '../../core/config/api_config.dart';
 import 'client_api_reponse.dart';
 import 'client_api_stub.dart';
+import 'service_persistence.dart';
 
 typedef EnvoyeurRequeteHttp = Future<ReponseHttp> Function({
   required String methode,
@@ -44,12 +48,20 @@ class ApiService {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     _roleActif = roleActif;
+    unawaited(
+      SessionPersistenceService.saveSession(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        roleActif: roleActif,
+      ),
+    );
   }
 
   void viderSession() {
     _accessToken = null;
     _refreshToken = null;
     _roleActif = null;
+    unawaited(SessionPersistenceService.clearSession());
   }
 
   Future<Map<String, dynamic>> get(
@@ -329,3 +341,6 @@ class ApiService {
 class ApiDataSource {
   static ApiService client = ApiService();
 }
+
+
+

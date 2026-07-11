@@ -1,5 +1,8 @@
+import 'package:flutter/foundation.dart';
+
 import '../modeles/modeles_faculte.dart';
 import 'service_api.dart';
+import 'service_persistence.dart';
 
 class SessionService {
   static FacultyUser? _currentUser;
@@ -28,5 +31,6 @@ class SessionService {
   static void clear() {
     _currentUser = null;
     ApiDataSource.client.viderSession();
+    unawaited(SessionPersistenceService.clearSession());
   }
 }
