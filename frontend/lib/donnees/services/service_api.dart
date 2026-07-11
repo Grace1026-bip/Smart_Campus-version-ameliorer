@@ -174,6 +174,19 @@ class ApiService {
         headers: headers,
         body: body,
       );
+    } on ErreurTransportHttp catch (erreur) {
+      switch (erreur.type) {
+        case TypeErreurTransport.serveurInaccessible:
+          throw ApiException(ApiConfig.serverUnavailableMessage);
+        case TypeErreurTransport.delaiDepasse:
+          throw ApiException(
+            'Le serveur FastAPI ne repond pas dans le delai attendu.',
+          );
+        case TypeErreurTransport.cors:
+          throw ApiException(
+            'Connexion bloquee par la politique CORS du backend FastAPI.',
+          );
+      }
     } on ApiException {
       rethrow;
     } catch (_) {

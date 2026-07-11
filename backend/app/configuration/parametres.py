@@ -39,7 +39,12 @@ class Parametres(BaseSettings):
     )
 
     frontend_origins: list[str] = Field(
-        default_factory=lambda: ["http://localhost:3000", "http://localhost:5000"],
+        default_factory=lambda: [
+            "http://localhost:3000",
+            "http://localhost:5000",
+            "http://localhost:52100",
+            "http://127.0.0.1:52100",
+        ],
         validation_alias="FRONTEND_ORIGINS",
     )
 

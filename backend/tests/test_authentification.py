@@ -145,11 +145,13 @@ def test_access_token_expire_est_refuse(client: TestClient):
 def test_access_token_modifie_est_refuse(client: TestClient):
     connexion = _connecter(client, "etudiant@smartfaculty.test", "etudiant")
     token = connexion.json()["donnees"]["access_token"]
-    dernier = "a" if token[-1] != "a" else "b"
+    entete, contenu, signature = token.split(".")
+    premier = "a" if signature[0] != "a" else "b"
+    token_modifie = f"{entete}.{contenu}.{premier}{signature[1:]}"
 
     reponse = client.get(
         "/api/v1/auth/moi",
-        headers={"Authorization": f"Bearer {token[:-1]}{dernier}"},
+        headers={"Authorization": f"Bearer {token_modifie}"},
     )
 
     assert reponse.status_code == 401

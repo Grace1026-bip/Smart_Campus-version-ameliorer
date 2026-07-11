@@ -9,3 +9,11 @@ class ReponseHttp {
   final String body;
   final Map<String, String> headers;
 }
+
+enum TypeErreurTransport { serveurInaccessible, delaiDepasse, cors }
+
+class ErreurTransportHttp implements Exception {
+  const ErreurTransportHttp(this.type);
+
+  final TypeErreurTransport type;
+}

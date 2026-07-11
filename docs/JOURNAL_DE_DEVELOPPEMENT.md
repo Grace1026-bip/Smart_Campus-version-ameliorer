@@ -402,3 +402,42 @@ Decision: les 26 tests historiques sont stables et reproductibles. Le Prompt 3A 
 - `smart_faculty` n'a recu aucune migration, aucun seed et aucune ecriture pendant le Prompt 3A.
 
 Decision: le backend du Prompt 3A est valide avec 41/41 tests. La validation globale reste conditionnee a une nouvelle execution des tests Flutter lorsque l'environnement autorisera l'acces au SDK.
+
+## Prompt 3A.1 - Communication reelle Flutter Web et FastAPI
+
+### Cause exacte
+
+- L'URL Flutter etait deja correcte: `http://127.0.0.1:8000` avec le prefixe unique `/api/v1`; la connexion cible bien `POST /api/v1/auth/connexion`.
+- Aucune ancienne URL PHP, Flask, ni aucun port `8010` n'etait utilise par le frontend actif.
+- FastAPI autorisait seulement `http://localhost:3000` et `http://localhost:5000`.
+- Les prevols provenant de `http://localhost:52100` et `http://127.0.0.1:52100` repondaient `400 Disallowed CORS origin`.
+- Le navigateur masquait alors la reponse au code Flutter. Le client recevait un echec de transport ou un statut `0`, ensuite transforme par le traitement generique en message `Serveur indisponible`.
+
+### Correctif
+
+- Ajout limite aux environnements configures des origines `http://localhost:52100` et `http://127.0.0.1:52100`; aucune origine globale `*` n'a ete ajoutee.
+- Ajout d'erreurs de transport typees: serveur inaccessible, delai depasse et blocage CORS.
+- Le client Web utilise un delai de 10 secondes. En cas d'erreur opaque du navigateur, un probe `fetch` en mode `no-cors` distingue un backend joignable mais bloque par CORS d'un serveur reellement inaccessible.
+- Le client IO applique les memes delais et distingue les erreurs socket.
+- Les reponses HTTP `401`, `403`, `422` et `500` conservent desormais leur code et leur message backend; une reponse JSON invalide reste identifiee separement.
+- Aucun mot de passe ni jeton complet n'est journalise.
+
+### Verification reelle
+
+- `GET /`: HTTP 200.
+- `GET /api/v1/statut`: HTTP 200.
+- Prevol CORS depuis les deux origines `:52100`: HTTP 200 avec `Access-Control-Allow-Origin` exact.
+- Connexion valide depuis l'origine Web: HTTP 200, `role_actif=etudiant`, access token et refresh token presents.
+- Mauvais mot de passe: HTTP 401 avec le message backend, et non `Serveur indisponible`.
+- Role non possede: HTTP 401 avec le message backend.
+- Deconnexion reelle: HTTP 200.
+- `flutter run -d chrome --web-port 52100` a bien ete relance, mais le processus de debogage Chrome est reste en attente de connexion dans l'environnement Codex; aucune erreur applicative ou CORS n'a ete observee apres correction.
+
+### Tests finaux
+
+- Backend officiel: 41 collectes, 41 reussis, 0 echec, 0 erreur, 24.90 s.
+- Flutter: 12 tests reussis, 0 echec.
+- `flutter analyze`: aucune erreur nouvelle; les 6 informations historiques liees a `dart:html` restent hors perimetre.
+- Le test de JWT modifie a ete rendu deterministe en alterant le premier caractere de la signature Base64URL plutot que son dernier caractere de remplissage.
+
+Decision: la communication HTTP Flutter-FastAPI, CORS, la classification des erreurs et les scenarios de connexion/deconnexion sont valides. Le Prompt 3B peut commencer apres une confirmation visuelle locale de la redirection dans la fenetre Chrome deja utilisee par le developpeur.

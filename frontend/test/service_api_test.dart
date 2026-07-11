@@ -146,6 +146,117 @@ void main() {
     expect(SessionService.currentRole, UserRole.student);
     expect(ApiDataSource.client.roleActif, 'etudiant');
   });
+
+  for (final cas in <Map<String, Object>>[
+    {
+      'type': TypeErreurTransport.serveurInaccessible,
+      'message':
+          'Serveur indisponible. Verifiez que le backend FastAPI est lance.',
+    },
+    {
+      'type': TypeErreurTransport.delaiDepasse,
+      'message': 'Le serveur FastAPI ne repond pas dans le delai attendu.',
+    },
+    {
+      'type': TypeErreurTransport.cors,
+      'message': 'Connexion bloquee par la politique CORS du backend FastAPI.',
+    },
+  ]) {
+    final type = cas['type'] as TypeErreurTransport;
+    final message = cas['message'] as String;
+    test('ApiService distingue le transport ${type.name}', () async {
+      final client = ApiService(
+        envoyer: ({
+          required methode,
+          required uri,
+          required headers,
+          body,
+        }) async {
+          throw ErreurTransportHttp(type);
+        },
+      );
+
+      expect(
+        () => client.get('/statut'),
+        throwsA(
+          isA<ApiException>().having(
+            (erreur) => erreur.message,
+            'message',
+            message,
+          ),
+        ),
+      );
+    });
+  }
+
+  for (final cas in <Map<String, Object>>[
+    {'code': 401, 'message': 'Email, mot de passe ou role incorrect'},
+    {'code': 403, 'message': 'Compte non actif'},
+    {'code': 500, 'message': 'Erreur interne du serveur'},
+  ]) {
+    final code = cas['code'] as int;
+    final message = cas['message'] as String;
+    test('ApiService conserve le message HTTP $code', () async {
+      final fake = _FakeHttp([
+        _jsonResponse(code, {'message': message}),
+      ]);
+      final client = ApiService(envoyer: fake.send);
+
+      expect(
+        () => client.post('/auth/connexion'),
+        throwsA(
+          isA<ApiException>()
+              .having((erreur) => erreur.statusCode, 'statusCode', code)
+              .having((erreur) => erreur.message, 'message', message),
+        ),
+      );
+    });
+  }
+
+  test('ApiService identifie une validation HTTP 422', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(422, {
+        'detail': [
+          {
+            'loc': ['body', 'email'],
+            'msg': 'Field required'
+          },
+        ],
+      }),
+    ]);
+    final client = ApiService(envoyer: fake.send);
+
+    expect(
+      () => client.post('/auth/connexion'),
+      throwsA(
+        isA<ApiException>()
+            .having((erreur) => erreur.statusCode, 'statusCode', 422)
+            .having(
+              (erreur) => erreur.message,
+              'message',
+              'Validation des donnees refusee.',
+            ),
+      ),
+    );
+  });
+
+  test('ApiService identifie une reponse JSON invalide', () async {
+    final fake = _FakeHttp([
+      const ReponseHttp(statusCode: 200, body: '<html>', headers: {}),
+    ]);
+    final client = ApiService(envoyer: fake.send);
+
+    expect(
+      () => client.get('/statut'),
+      throwsA(
+        isA<ApiException>().having(
+          (erreur) => erreur.message,
+          'message',
+          contains('Reponse API invalide'),
+        ),
+      ),
+    );
+  });
 }
 
 class _CapturedRequest {
