@@ -4,6 +4,7 @@ import '../../../coeur/constantes/constantes_application.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_api.dart';
 import '../../../donnees/services/service_authentification.dart';
 import '../../../commun/composants/logo_application.dart';
 
@@ -35,13 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primarySoft, AppColors.background],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: AppColors.background,
         child: SafeArea(
           child: LayoutBuilder(
             builder: (context, constraints) {
@@ -102,11 +97,16 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
+        SnackBar(content: Text(_messageErreur(error))),
       );
     } finally {
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  String _messageErreur(Object error) {
+    if (error is ApiException) return error.messagePourUtilisateur;
+    return 'Le serveur FastAPI est inaccessible.';
   }
 
   void _changeRole(UserRole role) {
@@ -234,7 +234,7 @@ class _AcademicVisual extends StatelessWidget {
                 icon: Icons.mark_email_unread_rounded,
                 label: 'Reclam.',
                 value: '142',
-                color: AppColors.primarySoft,
+                color: AppColors.terracotta,
               ),
             ],
           ),

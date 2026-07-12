@@ -565,3 +565,179 @@ Decision: le backend du Prompt 3A est valide avec 41/41 tests. La validation glo
 - Le test de JWT modifie a ete rendu deterministe en alterant le premier caractere de la signature Base64URL plutot que son dernier caractere de remplissage.
 
 Decision: la communication HTTP Flutter-FastAPI, CORS, la classification des erreurs et les scenarios de connexion/deconnexion sont valides. Le Prompt 3B peut commencer apres une confirmation visuelle locale de la redirection dans la fenetre Chrome deja utilisee par le developpeur.
+
+## Audit de reprise Copilot avant le Prompt 3C - 2026-07-11
+
+### Sauvegarde et historique Git
+
+- Branche active: `main`.
+- Branche locale de securite creee: `sauvegarde-avant-audit-copilot`, pointee sur `2fd8e45`.
+- Aucun push, reset, suppression de commit ou reecriture d'historique n'a ete effectue.
+- Les commits recents sont `2fd8e45` (`ah pardon`), `a36c3a4` (checkpoint VS Code), `4724657` (`modification eeeh`) et `614751c` (`moi`).
+- `shared_preferences` a ete ajoute dans `2fd8e45`, signe par l'auteur Git `Grace1026-bip`.
+- `service_persistence.dart` a ete ajoute dans ce meme commit. Aucun commit distinct attribuable a Copilot n'est identifiable dans Git; Git permet de constater l'auteur du commit, pas l'outil qui a produit chaque ligne.
+- Le dernier commit avant l'ajout de la persistance est anterieur a `2fd8e45` (`a36c3a4`/`4e52452`). Le resultat historique de 15 tests Flutter est consigne dans les rapports precedents, mais aucun commit ne permet d'en prouver seul la provenance exacte.
+
+### Etat Copilot et correction
+
+- Avant l'audit, les changements non committes concernaient `service_session.dart`, `pubspec.yaml`, `pubspec.lock` et le registrant macOS genere.
+- `service_persistence.dart`, `shared_preferences`, ainsi que les premiers changements de `service_api.dart` et `service_api_test.dart`, etaient deja dans `HEAD`; ils n'ont donc pas ete restaures globalement.
+- La cause de `Binding has not yet been initialized` etait l'appel asynchrone a `SharedPreferences.getInstance()` depuis `ApiService.configurerSession()` et `ApiService.viderSession()` pendant les tests, sans binding Flutter.
+- La correction conserve `shared_preferences`, mais rend l'acces paresseux, injectable via `SessionStorage`, tolerant aux erreurs et sans appel plateforme a l'import. `SessionService.clear()` ne lance plus une seconde suppression concurrente.
+
+### Authorization et persistance
+
+- Le code de transport actuel construisait deja `Authorization: Bearer <access_token>`; aucune valeur litterale masquee n'est envoyee.
+- Les tests verifient l'absence du header sans token, la valeur Bearer exacte avec des valeurs fictives, le remplacement apres refresh et l'absence de `******` dans la requete capturee.
+- La persistance ne contient que `access_token`, `refresh_token` et `role_actif`. Aucun mot de passe n'est accepte par le contrat de stockage; les tests verifient aussi la suppression complete et les erreurs de lecture/ecriture.
+- `shared_preferences` est un stockage de preferences, pas un coffre-fort. Ses valeurs sont plus exposees que dans Keychain/Keystore; le Web n'offre pas d'equivalent natif. Une evolution vers `flutter_secure_storage` sur mobile ou vers des cookies HttpOnly sur le Web devra etre decidee dans un prompt ulterieur coordonne avec le backend.
+
+### Resultats de stabilisation
+
+- `flutter pub get`: reussi.
+- `flutter test --reporter expanded`: `18 passed`, `0 failed`, sans erreur de binding.
+- `flutter analyze`: aucune erreur ni nouvelle alerte; les 6 informations historiques `dart:html` restent presentes.
+- Backend: `scripts\\test_backend.bat` a cible `smart_faculty_test`; `57 passed`, `0 failed`. Aucun code backend ni aucune donnee de `smart_faculty` n'a ete modifie.
+
+### Decision
+
+L'etat Flutter est stable, l'en-tete Authorization est correct et la persistance minimale est testable sans dependance de mock supplementaire. Les changements Copilot sont acceptables apres cette reparation. Le Prompt 3C complet n'est pas termine; son volet 3C-A peut reprendre a partir de cet etat valide.
+
+## Prompt 3C-A - Persistance et restauration de session Flutter - 2026-07-11
+
+### Perimetre
+
+Cette intervention a porte uniquement sur la sauvegarde apres connexion, la restauration au redemarrage, la verification de session par FastAPI, le nettoyage d'une session invalide et la navigation selon le role actif confirme. Aucun changement de theme, de couleur, de design, de backend ou de base `smart_faculty` n'a ete effectue.
+
+### Implementation
+
+- `ApiService.configurerSession` attend maintenant l'ecriture locale avant de terminer; `viderSession` attend la suppression des trois valeurs.
+- `ApiAuthService.login` sauvegarde la session seulement apres validation de `role_actif` et de sa presence dans les roles retournes.
+- `ApiAuthService.restoreSession` recharge les donnees persistantes, appelle `/auth/moi`, reconstruit l'utilisateur a partir du role backend confirme et laisse `SmartFacultyApp` ouvrir `AppRoutes.dashboardForRole`.
+- Une session absente, incomplete ou refusee est effacee de la memoire et du stockage avant le retour a `AppRoutes.login`.
+- Le bouton de deconnexion attend le nettoyage local avant de remplacer la route.
+
+### Tests ajoutes
+
+- restauration d'une session sauvegardee et verification de l'appel `/auth/moi`;
+- navigation vers le tableau de bord correspondant au role confirme par l'API;
+- suppression complete d'une session refusee;
+- absence de session sans appel API;
+- sauvegarde deterministe apres connexion et gestion des erreurs du stockage.
+
+### Validation finale
+
+- `flutter pub get`: reussi;
+- `flutter analyze`: 0 erreur, 0 nouvelle alerte, 6 informations historiques `dart:html`;
+- `flutter test --reporter expanded`: 22 passed, 0 echec;
+- `scripts\\test_backend.bat`: 57 passed sur `smart_faculty_test`, revision Alembic `20260711_0003`;
+- aucune donnee de `smart_faculty` modifiee.
+
+Decision: le Prompt 3C-A est valide. Le Prompt 3C complet n'est pas declare termine; la prochaine intervention UI pourra traiter separement le theme beige et marron.
+
+## Prompt UI-1 - Theme global beige et marron - 2026-07-12
+
+### Audit initial
+
+- Branche de travail creee et activee: `ui-theme-beige-marron`.
+- Etat avant UI-1: 22 tests Flutter reussis, 57 tests backend reussis, authentification et session stables.
+- L'ancien theme etait centralise, mais bleu: `#0B3D91`, `#2563EB`, fonds `#F3F7FC` / `#F8FAFC`, accents cyan et violet.
+- Un seul fichier contenait les codes hexadecimaux: `couleurs_application.dart`; les ecrans consommaient majoritairement `AppColors`.
+- Les blancs et transparences de la connexion et de la sidebar etaient des couleurs de contraste sur fond sombre, pas des palettes concurrentes.
+
+### Correctif visuel
+
+- Palette officielle beige/marron centralisee dans `couleurs_application.dart`.
+- `ColorScheme` et `ThemeData` mis en coherence avec les surfaces creme, le marron profond et le terracotta.
+- Ajout/configuration des themes AppBar, cartes, boutons, champs, icones, diviseurs, drawer, dialogues, SnackBar, progression, chips et tableaux.
+- Connexion: fond creme, panneau marron, formulaire beige, focus terracotta, bouton marron, liens terracotta.
+- Demande d'inscription: carte beige, bordures marron clair, champs et bouton alignes sur la connexion.
+- Navigation laterale: fond marron profond, texte beige, selection claire et sorties preservees.
+- Cyan et violet remplaces par des variantes desaturees uniquement pour les graphiques/categories; les couleurs semantiques de succes, avertissement et erreur restent distinctes.
+
+### Verification visuelle
+
+- `flutter build web --release`: reussi.
+- `flutter run -d chrome` ne rendait pas le canvas dans l'environnement de debug, le canal Dart restant en attente; la build statique Web a donc ete servie localement.
+- Connexion controlee en desktop 1280x720 et mobile 390x844.
+- Demande d'inscription controlee en desktop et mobile.
+- Aucun texte coupe, bouton inaccessible, debordement ou perte de contraste observe.
+
+### Tests et securite fonctionnelle
+
+- `flutter pub get`: reussi, sans `flutter upgrade` ni `flutter pub upgrade`.
+- `flutter analyze`: aucune erreur ni nouvelle alerte; 6 informations historiques `dart:html`.
+- `flutter test --reporter expanded`: 24 passed, 0 echec;
+- `scripts\\test_backend.bat`: 57 passed sur `127.0.0.1:3307/smart_faculty_test`.
+- Aucun backend, route, service fonctionnel, modele, API ou base `smart_faculty` n'a ete modifie.
+- L'authentification et la persistance de session restent couvertes par les tests precedents.
+
+Decision: le Prompt UI-1 est valide. Le theme beige et marron est applique et coherent sur les surfaces controlees. Les ajustements visuels plus fins des dashboards pourront etre traites ulterieurement sans remettre en cause la logique fonctionnelle.
+
+## Correction CORS Flutter Web / FastAPI - 2026-07-12
+
+### Diagnostic
+
+- URL backend Flutter: `http://127.0.0.1:8000/api/v1`.
+- Origine navigateur Flutter observee pour le test: `http://localhost:52100`; Flutter peut aussi utiliser `http://127.0.0.1:<port>` ou un port local dynamique.
+- Ancienne configuration: liste de ports fixes, `allow_credentials=True`, `allow_methods=["*"]`, `allow_headers=["*"]`.
+- Cause du blocage: une origine locale dynamique non presente dans `FRONTEND_ORIGINS` recevait `Disallowed CORS origin` lors du preflight `OPTIONS`.
+
+### Correction appliquee
+
+- `backend/app/main.py` utilise la regex locale uniquement pour `development`, `dev` et `test`: `^http://(localhost|127\\.0\\.0\\.1)(:\\d+)?$`.
+- La production utilise toujours la liste explicite `parametres.frontend_origins`.
+- Methodes autorisees: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`.
+- Headers autorises: `Authorization`, `Content-Type`, `Accept`.
+- `allow_credentials=False`, car les jetons Smart Faculty ne sont pas des cookies inter-origines.
+- Aucun wildcard d'origine, aucun secret et aucun middleware CORS concurrent n'ont ete ajoutes.
+
+### Tests CORS ajoutes
+
+- preflight localhost avec port `3000`;
+- preflight `127.0.0.1` avec port dynamique;
+- refus d'une origine externe;
+- requete simple locale sans header credentials.
+
+### Verification reelle
+
+- `OPTIONS /api/v1/auth/connexion`: HTTP 200, `Access-Control-Allow-Origin: http://localhost:52100`;
+- `POST /api/v1/auth/connexion`: HTTP 200;
+- `GET /api/v1/auth/moi` avec Bearer: HTTP 200;
+- identifiants invalides: HTTP 401 provenant de l'API, sans erreur navigateur CORS;
+- origine externe: preflight refuse.
+
+### Validation finale
+
+- `scripts\\test_backend.bat`: `61 passed` sur `smart_faculty_test`;
+- `flutter analyze`: aucune erreur ni nouvelle alerte, 6 informations historiques `dart:html`;
+- `flutter test --reporter expanded`: `24 passed`;
+- aucune logique d'authentification, écran, thème, route métier, migration ou base de données modifiee.
+
+Decision: la correction CORS ciblée est valide. Flutter Web peut communiquer avec FastAPI sur les origines locales autorisees, tandis que la production conserve une liste explicite d'origines.
+
+## Correction ciblee du diagnostic CORS Flutter Web - 2026-07-12
+
+### Constat
+
+Le backend repondait correctement depuis l'origine `http://localhost:52100`: preflight `OPTIONS 200`, connexion `POST 200`, verification `/auth/moi 200` et identifiants fictifs invalides `401`. Le message Flutter « connexion bloquee par CORS » etait donc trop generique pour conclure a un blocage CORS.
+
+### Correction Flutter
+
+- `service_api.dart` mappe les erreurs HTTP 401, 403, 422 et 500 vers des messages utilisateur distincts.
+- Le timeout affiche `La connexion a expire.`.
+- Une indisponibilite ou erreur reseau inattendue affiche `Le serveur FastAPI est inaccessible.`.
+- Le message `Requete refusee par le navigateur.` est reserve au type de transport CORS emis apres un probe `no-cors` reussi vers la meme URL API.
+- `client_api_web.dart` ne sonde plus la racine generique du serveur: il sonde l'URL API demandee, ce qui evite de conclure a tort a partir d'un endpoint different.
+- L'ecran de connexion utilise le message utilisateur mappe par `ApiException`, sans afficher d'exception technique brute.
+
+### Controle et limites
+
+- Aucun changement de politique CORS pendant cette intervention.
+- Aucun changement de logique d'authentification, role, session, backend, base de donnees ou theme.
+- Aucun token, mot de passe ou corps sensible n'a ete affiche.
+- `scripts\\test_backend.bat`: `61 passed` sur `smart_faculty_test` lors de la validation CORS.
+- Derniere suite Flutter validee avant cette correction: `24 passed`, `flutter analyze` sans erreur ni nouvelle alerte et 6 informations historiques `dart:html`.
+- La relance Flutter ciblee apres correction est restee bloquee avant toute sortie dans l'environnement local; le processus a ete arrete proprement et aucun echec de test n'a ete observe.
+
+Decision: le diagnostic CORS est corrige cote Flutter et la configuration backend existante est confirmee fonctionnelle. Une nouvelle execution Flutter hors de cet etat d'environnement est necessaire pour clore la validation automatique de cette correction.

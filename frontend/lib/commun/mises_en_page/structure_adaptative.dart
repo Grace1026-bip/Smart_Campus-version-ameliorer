@@ -474,8 +474,9 @@ class _Sidebar extends StatelessWidget {
                   route: AppRoutes.login,
                 ),
                 selected: false,
-                onTap: () {
-                  SessionService.clear();
+                onTap: () async {
+                  await SessionService.clear();
+                  if (!context.mounted) return;
                   Navigator.of(
                     context,
                   ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);

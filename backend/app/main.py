@@ -7,6 +7,11 @@ from app.routes.api import routeur_api
 from app.utilitaires.reponses import reponse_succes
 
 
+ORIGINE_LOCALE_REGEX = r"^http://(localhost|127\.0\.0\.1)(:\d+)?$"
+METHODES_CORS = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+HEADERS_CORS = ["Authorization", "Content-Type", "Accept"]
+
+
 def creer_application() -> FastAPI:
     parametres = obtenir_parametres()
 
@@ -19,13 +24,23 @@ def creer_application() -> FastAPI:
         openapi_url="/openapi.json",
     )
 
-    application.add_middleware(
-        CORSMiddleware,
-        allow_origins=parametres.frontend_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
+    est_environnement_local = parametres.app_env.lower() in {
+        "development",
+        "dev",
+        "test",
+    }
+    configuration_cors = {
+        "allow_credentials": False,
+        "allow_methods": METHODES_CORS,
+        "allow_headers": HEADERS_CORS,
+    }
+    if est_environnement_local:
+        configuration_cors["allow_origins"] = []
+        configuration_cors["allow_origin_regex"] = ORIGINE_LOCALE_REGEX
+    else:
+        configuration_cors["allow_origins"] = parametres.frontend_origins
+
+    application.add_middleware(CORSMiddleware, **configuration_cors)
 
     enregistrer_gestionnaires_exceptions(application)
     application.include_router(routeur_api)

@@ -261,3 +261,62 @@ Flutter centralise les six conversions correspondant a ses espaces existants dan
 La protection des mots de passe et jetons existante est conservee: bcrypt, absence de mot de passe ou hash dans les reponses et JWT, refresh token hache en base, signature et expiration JWT, rotation du refresh token et revocation a la deconnexion ou au changement de mot de passe.
 
 Validation: 41 tests backend reussis, 0 echec, 0 erreur. L'analyse Flutter ne signale aucune erreur liee au Prompt 3A; les 6 informations historiques `dart:html` restent hors perimetre.
+
+## Exigences techniques - Prompt UI-1
+
+Le theme visuel global Flutter est centralise dans `frontend/lib/coeur/theme/couleurs_application.dart` et `frontend/lib/coeur/theme/theme_application.dart`. Les ecrans ne doivent pas redeclarer de palette generale ni multiplier les codes hexadecimaux.
+
+Regles de repartition:
+
+- `#FFFDF8` pour le fond general et `#FAF4EA` pour les surfaces et cartes;
+- `#5D4037` pour les actions principales, AppBar et navigation profonde;
+- `#795548` pour les actions secondaires et icones principales;
+- `#C47A5A` pour les liens, le focus et les accents terracotta;
+- `#2F2522` et `#6D625D` pour les textes;
+- `#D8C8B8` pour les bordures;
+- `#4F7A5A`, `#C48A2A` et `#B94A48` pour les etats succes, avertissement et erreur;
+- `#E7DDD2` et `#9B8E87` pour les elements desactives.
+
+Le `ThemeData` central configure `ColorScheme`, `AppBarTheme`, `CardThemeData`, `InputDecorationTheme`, boutons Material, `IconTheme`, `DividerTheme`, `DrawerTheme`, `DialogThemeData`, `SnackBarTheme`, `ProgressIndicatorTheme`, `ChipTheme` et `DataTableTheme`. Les couleurs de graphiques et de categories sont conservees uniquement lorsqu'elles ont une signification independante de la palette generale.
+
+Le Prompt UI-1 couvre la connexion, la demande d'inscription, la navigation laterale et les composants partages sans modifier la structure des ecrans, les routes ou la logique metier. La build Web release a ete verifiee visuellement sur desktop et mobile. Validation: 24 tests Flutter reussis, 57 tests backend reussis sur `smart_faculty_test`, aucune nouvelle alerte d'analyse; les 6 informations historiques `dart:html` restent connues.
+
+## Exigences techniques - Politique CORS Flutter Web / FastAPI
+
+Le backend distingue les environnements locaux et la production. En `development`, `dev` ou `test`, `CORSMiddleware` utilise la regex locale `^http://(localhost|127\\.0\\.0\\.1)(:\\d+)?$`. Elle autorise uniquement HTTP, les deux hotes locaux et un port numerique optionnel. En production, seule la liste explicite `FRONTEND_ORIGINS` est utilisee.
+
+La politique autorise explicitement les methodes `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS` et les headers `Authorization`, `Content-Type`, `Accept`. `allow_credentials=False` est obligatoire pour l'architecture actuelle, qui transporte les jetons dans les headers ou le JSON et n'utilise pas de cookies inter-origines. Aucun wildcard d'origine n'est utilise.
+
+Le preflight d'une connexion doit retourner `Access-Control-Allow-Origin` egal a l'origine locale recue, ainsi que les methodes et headers autorises. Une origine externe doit etre refusee. Cette regle ne modifie ni l'authentification, ni les roles, ni les statuts, ni les routes metier.
+
+Validation de la correction: 4 tests CORS ajoutes, suite backend `61 passed` sur `smart_faculty_test`, suite Flutter `24 passed`, preflight reel HTTP 200 depuis `http://localhost:52100`, connexion HTTP 200, `/auth/moi` HTTP 200, identifiants invalides HTTP 401. Aucune base de donnees n'a ete modifiee.
+
+## Classification des erreurs reseau Flutter Web
+
+Le client Flutter ne doit pas assimiler toute exception reseau a CORS. `ServiceApi` conserve le type de transport remonte par le client Web et mappe les statuts HTTP independamment:
+
+- serveur inaccessible ou erreur reseau inattendue: `Le serveur FastAPI est inaccessible.`;
+- timeout: `La connexion a expire.`;
+- 401: `Identifiants incorrects.`;
+- 403: compte non autorise ou acces refuse;
+- 422: requete invalide;
+- 500: erreur du serveur FastAPI;
+- erreur CORS: `Requete refusee par le navigateur.` uniquement apres un echec XHR accompagne d'un probe `no-cors` reussi vers la meme URL API.
+
+Le probe ne permet pas de lire la reponse et ne remplace pas l'appel authentifie; il sert uniquement a separer une origine joignable mais refusee par la politique du navigateur d'un serveur inaccessible. Les corps HTTP sont traduits en messages utilisateur sans afficher de token ou de mot de passe.
+
+Le controle reel depuis `http://localhost:52100` vers `http://127.0.0.1:8000/api/v1/auth/connexion` a retourne `OPTIONS 200`, `POST 200`, `/auth/moi 200` et `401` pour des identifiants fictifs invalides. Aucun changement de politique CORS, d'authentification, de role, de base ou de theme n'est requis par ce correctif.
+
+## Exigences techniques - Prompt 3C-A
+
+La session Flutter repose sur trois valeurs minimales: `access_token`, `refresh_token` et `role_actif`. `SessionPersistenceService` utilise un stockage paresseux compatible avec `shared_preferences`; aucun appel a `SharedPreferences.getInstance()` n'est execute au chargement du module. Le stockage implemente le contrat injectable `SessionStorage` afin de tester la restauration et la suppression sans dependance de plateforme.
+
+Le flux obligatoire est le suivant:
+
+1. `ApiAuthService.login` valide la reponse de connexion, confirme que `role_actif` figure dans les roles de l'utilisateur, configure la session memoire et attend sa sauvegarde locale.
+2. Au demarrage, `restoreSession` recharge les jetons, configure le client API et appelle `GET /api/v1/auth/moi`.
+3. Le role de navigation est derive de la reponse backend verifiee, jamais d'un role local choisi arbitrairement.
+4. Si les donnees sont absentes, incompletes, expirees ou refusees, la session memoire et les trois cles locales sont supprimees avant le retour a la connexion.
+5. La deconnexion attend la suppression locale meme si l'appel backend echoue.
+
+Les tests Flutter couvrent la sauvegarde apres connexion, la restauration valide, la verification `/auth/moi`, la suppression d'une session invalide, l'absence de session et la navigation selon le role confirme. Validation de l'etape: 22 tests Flutter reussis, 57 tests backend reussis sur `smart_faculty_test`, 0 erreur d'analyse et 6 informations historiques `dart:html`. Le theme, les couleurs et le design ne font pas partie de cette etape.

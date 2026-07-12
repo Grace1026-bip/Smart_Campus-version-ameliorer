@@ -55,7 +55,7 @@ class ApiAuthService implements AuthService {
   Future<FacultyUser?> restoreSession() async {
     final persisted = await SessionPersistenceService.restoreSession();
     if (persisted != null) {
-      ApiDataSource.client.configurerSession(
+      await ApiDataSource.client.configurerSession(
         accessToken: persisted['access_token']!,
         refreshToken: persisted['refresh_token']!,
         roleActif: persisted['role_actif']!,
@@ -63,7 +63,7 @@ class ApiAuthService implements AuthService {
     }
 
     if (!ApiDataSource.client.estConnecte) {
-      SessionService.clear();
+      await SessionService.clear();
       return null;
     }
 
@@ -83,7 +83,7 @@ class ApiAuthService implements AuthService {
       SessionService.connectWithUser(user);
       return user;
     } catch (_) {
-      SessionService.clear();
+      await SessionService.clear();
       return null;
     }
   }
@@ -99,11 +99,14 @@ class ApiAuthService implements AuthService {
         );
       }
     } finally {
-      SessionService.clear();
+      await SessionService.clear();
     }
   }
 
-  void _configurerJetons(Map<String, dynamic> data, String roleActif) {
+  Future<void> _configurerJetons(
+    Map<String, dynamic> data,
+    String roleActif,
+  ) async {
     final accessToken = data['access_token']?.toString();
     final refreshToken = data['refresh_token']?.toString();
 
@@ -111,7 +114,7 @@ class ApiAuthService implements AuthService {
       throw ApiException('Jetons de connexion absents dans la reponse API.');
     }
 
-    ApiDataSource.client.configurerSession(
+    await ApiDataSource.client.configurerSession(
       accessToken: accessToken,
       refreshToken: refreshToken,
       roleActif: roleActif,

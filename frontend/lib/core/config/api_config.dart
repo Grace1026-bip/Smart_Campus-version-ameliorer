@@ -27,7 +27,7 @@ class ApiConfig {
   );
 
   static const String serverUnavailableMessage =
-      'Serveur indisponible. Verifiez que le backend FastAPI est lance.';
+      'Le serveur FastAPI est inaccessible.';
 
   static const String apiPrefix = '/api/v1';
 

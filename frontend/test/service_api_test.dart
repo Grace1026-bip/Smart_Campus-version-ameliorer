@@ -6,11 +6,14 @@ import 'package:smart_campus_app/donnees/services/client_api_reponse.dart';
 import 'package:smart_campus_app/donnees/services/service_api.dart';
 import 'package:smart_campus_app/donnees/services/service_authentification.dart';
 import 'package:smart_campus_app/donnees/services/service_inscriptions.dart';
+import 'package:smart_campus_app/donnees/services/service_persistence.dart';
 import 'package:smart_campus_app/donnees/services/service_session.dart';
+import 'package:smart_campus_app/coeur/routes/routes_application.dart';
 
 void main() {
-  tearDown(() {
-    SessionService.clear();
+  tearDown(() async {
+    await SessionService.clear();
+    SessionPersistenceService.resetStorage();
     ApiDataSource.client = ApiService();
     AuthDataSource.service = const ApiAuthService();
   });
@@ -33,12 +36,12 @@ void main() {
         'donnees': {'valeur': 42},
       }),
     ]);
-    final client = ApiService(envoyer: fake.send)
-      ..configurerSession(
-        accessToken: 'access-old',
-        refreshToken: 'refresh-old',
-        roleActif: 'etudiant',
-      );
+    final client = ApiService(envoyer: fake.send);
+    await client.configurerSession(
+      accessToken: 'access-old',
+      refreshToken: 'refresh-old',
+      roleActif: 'etudiant',
+    );
 
     final data = await client.get('/notifications');
 
@@ -48,6 +51,7 @@ void main() {
       fake.requests.first.headers['Authorization'],
       'Bearer access-old',
     );
+    expect(fake.requests.first.headers.containsValue('******'), isFalse);
     expect(fake.requests[1].uri.path, '/api/v1/auth/actualiser');
     expect(
       fake.requests.last.headers['Authorization'],
@@ -57,7 +61,24 @@ void main() {
     expect(client.refreshToken, 'refresh-new');
   });
 
+  test('ApiService n ajoute pas de header Authorization sans token', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {'valeur': 1},
+      }),
+    ]);
+    final client = ApiService(envoyer: fake.send);
+
+    await client.get('/statut');
+
+    expect(fake.requests.single.headers.containsKey('Authorization'), isFalse);
+    expect(fake.requests.single.headers.containsValue('******'), isFalse);
+  });
+
   test('ApiAuthService envoie email, mot de passe et role a FastAPI', () async {
+    final storage = _FakeSessionStorage();
+    SessionPersistenceService.configureStorage(storage);
     final fake = _FakeHttp([
       _jsonResponse(200, {
         'succes': true,
@@ -99,6 +120,122 @@ void main() {
     expect(user.role, UserRole.teacher);
     expect(SessionService.currentRole, UserRole.teacher);
     expect(ApiDataSource.client.accessToken, 'access-token');
+    await Future<void>.delayed(Duration.zero);
+    expect(storage.session?['access_token'], 'access-token');
+    expect(storage.session?['refresh_token'], 'refresh-token');
+    expect(storage.session?.containsKey('mot_de_passe'), isFalse);
+  });
+
+  test('ApiAuthService restaure et confirme le role actif via /auth/moi',
+      () async {
+    final storage = _FakeSessionStorage()
+      ..session = {
+        'access_token': 'access-restored',
+        'refresh_token': 'refresh-restored',
+        'role_actif': 'etudiant',
+      };
+    SessionPersistenceService.configureStorage(storage);
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {
+          'nom': 'Enseignant',
+          'prenom': 'Restaure',
+          'email': 'restaure@smartfaculty.test',
+          'roles': ['enseignant'],
+          'role_actif': 'enseignant',
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final user = await const ApiAuthService().restoreSession();
+
+    expect(user?.role, UserRole.teacher);
+    expect(SessionService.currentRole, UserRole.teacher);
+    expect(AppRoutes.dashboardForRole(user!.role), AppRoutes.teacherDashboard);
+    expect(fake.requests.single.uri.path, '/api/v1/auth/moi');
+    expect(
+      fake.requests.single.headers['Authorization'],
+      'Bearer access-restored',
+    );
+  });
+
+  test('ApiAuthService supprime une session locale invalide', () async {
+    final storage = _FakeSessionStorage()
+      ..session = {
+        'access_token': 'access-invalid',
+        'refresh_token': 'refresh-invalid',
+        'role_actif': 'etudiant',
+      };
+    SessionPersistenceService.configureStorage(storage);
+    final fake = _FakeHttp([
+      _jsonResponse(403, {'message': 'Compte non actif'}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final user = await const ApiAuthService().restoreSession();
+
+    expect(user, isNull);
+    expect(SessionService.isAuthenticated, isFalse);
+    expect(ApiDataSource.client.estConnecte, isFalse);
+    expect(storage.session, isNull);
+  });
+
+  test('ApiAuthService reste deconnecte sans session sauvegardee', () async {
+    final storage = _FakeSessionStorage();
+    SessionPersistenceService.configureStorage(storage);
+    final fake = _FakeHttp([]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final user = await const ApiAuthService().restoreSession();
+
+    expect(user, isNull);
+    expect(SessionService.isAuthenticated, isFalse);
+    expect(fake.requests, isEmpty);
+  });
+
+  test(
+      'SessionPersistenceService restaure et supprime une session via injection',
+      () async {
+    final storage = _FakeSessionStorage();
+    SessionPersistenceService.configureStorage(storage);
+
+    await SessionPersistenceService.saveSession(
+      accessToken: 'access-test',
+      refreshToken: 'refresh-test',
+      roleActif: 'etudiant',
+    );
+
+    expect(await SessionPersistenceService.restoreSession(), {
+      'access_token': 'access-test',
+      'refresh_token': 'refresh-test',
+      'role_actif': 'etudiant',
+    });
+    expect(storage.session?.containsKey('mot_de_passe'), isFalse);
+
+    await SessionPersistenceService.clearSession();
+    expect(await SessionPersistenceService.restoreSession(), isNull);
+  });
+
+  test('SessionPersistenceService absorbe les erreurs de stockage', () async {
+    final storage = _FakeSessionStorage()
+      ..failRead = true
+      ..failWrite = true
+      ..failClear = true;
+    SessionPersistenceService.configureStorage(storage);
+
+    await expectLater(
+      SessionPersistenceService.saveSession(
+        accessToken: 'access-test',
+        refreshToken: 'refresh-test',
+        roleActif: 'etudiant',
+      ),
+      completes,
+    );
+    await expectLater(SessionPersistenceService.restoreSession(), completes);
+    await expectLater(SessionPersistenceService.clearSession(), completes);
+    expect(await SessionPersistenceService.restoreSession(), isNull);
   });
 
   test('les roles Flutter ont une correspondance FastAPI unique', () {
@@ -224,15 +361,15 @@ void main() {
     {
       'type': TypeErreurTransport.serveurInaccessible,
       'message':
-          'Serveur indisponible. Verifiez que le backend FastAPI est lance.',
+          'Le serveur FastAPI est inaccessible.',
     },
     {
       'type': TypeErreurTransport.delaiDepasse,
-      'message': 'Le serveur FastAPI ne repond pas dans le delai attendu.',
+      'message': 'La connexion a expire.',
     },
     {
       'type': TypeErreurTransport.cors,
-      'message': 'Connexion bloquee par la politique CORS du backend FastAPI.',
+      'message': 'Requete refusee par le navigateur.',
     },
   ]) {
     final type = cas['type'] as TypeErreurTransport;
@@ -263,9 +400,9 @@ void main() {
   }
 
   for (final cas in <Map<String, Object>>[
-    {'code': 401, 'message': 'Email, mot de passe ou role incorrect'},
-    {'code': 403, 'message': 'Compte non actif'},
-    {'code': 500, 'message': 'Erreur interne du serveur'},
+    {'code': 401, 'message': 'Identifiants incorrects.'},
+    {'code': 403, 'message': 'Compte non autorise ou acces refuse.'},
+    {'code': 500, 'message': 'Le serveur FastAPI a rencontre une erreur.'},
   ]) {
     final code = cas['code'] as int;
     final message = cas['message'] as String;
@@ -307,8 +444,32 @@ void main() {
             .having(
               (erreur) => erreur.message,
               'message',
-              'Validation des donnees refusee.',
+              'Requete invalide. Verifiez les donnees saisies.',
             ),
+      ),
+    );
+  });
+
+  test('ApiService ne classe pas une erreur inattendue comme CORS', () async {
+    final client = ApiService(
+      envoyer: ({
+        required methode,
+        required uri,
+        required headers,
+        body,
+      }) async {
+        throw StateError('erreur reseau inattendue');
+      },
+    );
+
+    expect(
+      () => client.get('/statut'),
+      throwsA(
+        isA<ApiException>().having(
+          (erreur) => erreur.message,
+          'message',
+          'Le serveur FastAPI est inaccessible.',
+        ),
       ),
     );
   });
@@ -370,6 +531,39 @@ class _FakeHttp {
       return _jsonResponse(500, {'message': 'Aucune reponse fake'});
     }
     return responses.removeAt(0);
+  }
+}
+
+class _FakeSessionStorage implements SessionStorage {
+  Map<String, String>? session;
+  bool failRead = false;
+  bool failWrite = false;
+  bool failClear = false;
+
+  @override
+  Future<Map<String, String>?> readSession() async {
+    if (failRead) throw StateError('lecture impossible');
+    return session == null ? null : Map<String, String>.from(session!);
+  }
+
+  @override
+  Future<void> writeSession({
+    required String accessToken,
+    required String refreshToken,
+    required String roleActif,
+  }) async {
+    if (failWrite) throw StateError('ecriture impossible');
+    session = {
+      'access_token': accessToken,
+      'refresh_token': refreshToken,
+      'role_actif': roleActif,
+    };
+  }
+
+  @override
+  Future<void> clearSession() async {
+    if (failClear) throw StateError('suppression impossible');
+    session = null;
   }
 }
 
