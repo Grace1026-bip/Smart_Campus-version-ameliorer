@@ -360,8 +360,7 @@ void main() {
   for (final cas in <Map<String, Object>>[
     {
       'type': TypeErreurTransport.serveurInaccessible,
-      'message':
-          'Le serveur FastAPI est inaccessible.',
+      'message': 'Le serveur FastAPI est inaccessible.',
     },
     {
       'type': TypeErreurTransport.delaiDepasse,
@@ -442,8 +441,8 @@ void main() {
         isA<ApiException>()
             .having((erreur) => erreur.statusCode, 'statusCode', 422)
             .having(
-              (erreur) => erreur.message,
-              'message',
+              (erreur) => erreur.messagePourUtilisateur,
+              'messagePourUtilisateur',
               'Requete invalide. Verifiez les donnees saisies.',
             ),
       ),

@@ -320,3 +320,83 @@ Le flux obligatoire est le suivant:
 5. La deconnexion attend la suppression locale meme si l'appel backend echoue.
 
 Les tests Flutter couvrent la sauvegarde apres connexion, la restauration valide, la verification `/auth/moi`, la suppression d'une session invalide, l'absence de session et la navigation selon le role confirme. Validation de l'etape: 22 tests Flutter reussis, 57 tests backend reussis sur `smart_faculty_test`, 0 erreur d'analyse et 6 informations historiques `dart:html`. Le theme, les couleurs et le design ne font pas partie de cette etape.
+
+## Exigences techniques - Compte Enseignant 4A-R
+
+Le socle Enseignant reutilise les modeles `Utilisateurs`, `Enseignants`, `Cours`, `CoursEnseignant`, `Promotions`, `Semestres` et `AnneeAcademique`. Aucune table ni migration n'est necessaire.
+
+Routes dediees:
+
+- `GET /api/v1/enseignants/moi`;
+- `GET /api/v1/enseignants/moi/cours`;
+- `GET /api/v1/enseignants/moi/cours/{cours_id}`.
+
+Chaque route utilise `exiger_role("enseignant")`. Cette dependance valide le bearer token, le compte actif et le `role_actif` enseignant. La requete SQL retrouve ensuite le profil `Enseignant` par `utilisateur_id` et la liste par `CoursEnseignant`. Un cours non attribue retourne `404`; un autre role actif retourne `403`.
+
+Le profil expose uniquement l'identite, l'email, le telephone, le matricule agent, le grade, le departement, le statut et les roles. Aucun mot de passe, hash, access token, refresh token ou secret n'est serialise.
+
+Le frontend remplace les appels generiques `/cours` et `/cours/{id}` dans `EnseignantApiService`. Le dashboard affiche les cours, les etudiants inscrits, les publications et les reclamations lorsqu'elles sont disponibles. Le profil enseignant est consulte aupres de FastAPI en lecture seule. L'etat vide est distinct d'une erreur et n'invente aucune donnee.
+
+Validation 4A-R:
+
+- Flutter: `28 tests` reussis avec `--concurrency=1`;
+- analyse: 6 informations historiques `dart:html`, aucune nouvelle erreur;
+- build Web release reussi;
+- backend: `68 tests` reussis lors de deux executions sur `smart_faculty_test`;
+- responsive desktop controle; la tentative de capture mobile du navigateur de verification a expire sans impact sur le build.
+
+## Exigences techniques - Prompt 4B Valve Enseignant
+
+Le module Valve actif est reutilise. Le modele `PublicationValve` relie chaque publication a un `cours_id` et a l'utilisateur auteur, avec les statuts `brouillon`, `publiee` et `archivee`. Aucune table ni migration n'est necessaire pour ce prompt.
+
+Les routes enseignant couvrent la liste, la creation, le detail, la modification, la publication et l'archivage sous `/api/v1/enseignant/valve`. Chaque route exige le role actif `enseignant`. Le cours est autorise par `CoursEnseignant`; l'auteur est derive du bearer token lors de la creation. La lecture d'un cours affecte est permise, mais modifier, publier, archiver ou gerer les pieces jointes d'une publication est reserve a son auteur. La reponse expose `est_auteur` pour que Flutter n'affiche pas d'action d'ecriture sur une publication d'un collegue.
+
+Le schema Pydantic limite les types de publication a `annonce`, `communique`, `devoir`, `support_de_cours`, `changement_horaire`, `consigne_examen` et `rappel`. `publication_notes` demeure reserve au cycle Notes et n'est pas acceptable dans la creation Valve 4B. Les fonctions Notes, resultats, evaluations, presences, reclamations et statistiques ne sont pas implementees ou modifiees par ce prompt.
+
+Flutter utilise `ValveApiService` et `EnseignantApiService`: le formulaire choisit entre publication immediate et brouillon, puis une carte permet de publier un brouillon de l'auteur. Les filtres et l'affichage des statuts reutilisent les donnees FastAPI normalisees. Le picker et les routes de pieces jointes existants sont conserves sans nouveau stockage ni encodage improvises.
+
+Validation 4B: `scripts\\test_backend.bat` a retourne `69 passed` sur `smart_faculty_test`; `flutter pub get` a resolu les dependances; `flutter test --reporter expanded --concurrency=1` a retourne `31 passed`; `flutter analyze` ne signale aucune erreur et conserve uniquement les 6 informations historiques `dart:html`; `flutter build web --release` est reussi. Aucune donnee de `smart_faculty` n'a ete ecrite et aucun backend hors Valve n'a ete modifie.
+
+## Exigences techniques - Prompt 4C-A Evaluations et Notes
+
+Le schema actif contenait deja `TypeEvaluation`, `Evaluation`, `Note`, `InscriptionCours`, `Etudiant`, `Promotion`, `Cours` et `CoursEnseignant`. Aucune migration n'est necessaire. Les types de donnees initiales sont `interrogation`, `travail_pratique`, `examen` et `autre`; Flutter les charge via `GET /api/v1/enseignant/types-evaluations` au lieu d'envoyer un libelle arbitraire.
+
+Routes enseignant utilisees:
+
+- `GET /api/v1/enseignant/types-evaluations`;
+- `GET` et `POST /api/v1/enseignant/cours/{cours_id}/evaluations`;
+- `GET` et `PUT /api/v1/enseignant/evaluations/{evaluation_id}`;
+- `GET` et `PUT /api/v1/enseignant/evaluations/{evaluation_id}/notes`;
+- `POST /api/v1/enseignant/evaluations/{evaluation_id}/publier`;
+- `POST /api/v1/enseignant/evaluations/{evaluation_id}/verrouiller`.
+
+La dependance d'authentification impose un compte actif et le role actif `enseignant`. L'affectation `CoursEnseignant` est verifiee pour toute lecture ou ecriture. La creation determine `cree_par` depuis le contexte authentifie. Les mutations d'evaluation et de notes sont reservees a cet auteur; un autre enseignant affecte au meme cours peut consulter mais ne peut pas modifier. Les notes sont limitees a la liste des inscriptions actives de l'annee academique active et aux etudiants de statut academique actif. Les reponses de roster exposent uniquement identifiant, matricule, nom et promotion, sans email, mot de passe ni token.
+
+La somme des ponderations non archivees est calculee côté backend et ne peut pas depasser 100 %. La verification verrouille les lignes d'evaluation du cours pendant la transaction. Les contraintes Pydantic et metier refusent titre/type/ponderation/note maximale invalides. La contrainte unique `evaluation_id + etudiant_id` et la mise a jour par couple evitent les doublons. Une note vide n'est pas envoyee par Flutter; une valeur `0` est envoyee explicitement et reste distincte d'une absence.
+
+Flutter propose le choix du cours, la liste des evaluations, les types, les statuts, la ponderation utilisee/restante, la creation et modification d'un brouillon, la saisie par evaluation, les etats vide/chargement/erreur et la lecture seule apres publication/verrouillage. L'interface reste responsive par composants existants et ne modifie pas le theme.
+
+Limites reportees au Prompt 4C-B: formalisation du calcul general des resultats semestriels, moyenne annuelle, decisions reussi/echoue, releves, affichage Etudiant complet, reclamations et Campus Analytics. La publication backend existante conserve ses effets historiques de calcul et notification; aucune nouvelle logique de resultats n'a ete ajoutee ici.
+
+Validation 4C-A: `scripts\\test_backend.bat` a retourne `71 passed` sur `smart_faculty_test`; Flutter `34 passed`; `flutter analyze` conserve seulement les 6 informations historiques `dart:html`; `flutter build web --release` est reussi. Aucun schema n'a ete migre et `smart_faculty` n'a pas ete modifiee.
+
+## Exigences techniques - Prompt 4C-B1 Calcul et publication des resultats d'un cours
+
+Le calcul B1 reutilise `Evaluation`, `Note`, `InscriptionCours`, `Etudiant`, `CoursEnseignant` et `PublicationValve`. Aucun stockage de resultat supplementaire et aucune migration ne sont necessaires. L'aperçu n'est pas persiste: il est recalcule a la demande a partir des donnees actives.
+
+Routes ajoutees:
+
+- `GET /api/v1/enseignant/cours/{cours_id}/resultats/apercu`;
+- `POST /api/v1/enseignant/cours/{cours_id}/resultats/publier`.
+
+Les deux routes exigent un compte actif avec `role_actif=enseignant` et une affectation au cours. Aucun `enseignant_id`, `auteur_id` ou resultat fourni par Flutter n'est accepte. Le roster reprend uniquement les inscriptions actives de l'annee active et les etudiants academiquement actifs.
+
+La formule retenue depuis le code actif est `contribution = note_obtenue / note_maximale * ponderation`, puis `resultat du cours = somme des contributions`, sur 100. Les calculs internes utilisent `Decimal`; aucune contribution n'est arrondie avant la somme et les valeurs exposees sont arrondies a deux decimales. Le zero est conserve; l'absence reste dans `notes_manquantes` et ne contribue pas comme zero.
+
+L'aperçu expose l'etat `incomplet`, `publie` ou `verrouille`, la ponderation totale/restante, les contributions par evaluation, les notes manquantes et les resultats provisoires. Il n'expose ni credits, ni statut de reussite/echec, ni moyenne semestrielle ou annuelle. La publication est refusee si la ponderation n'est pas 100 %, si une evaluation active reste en brouillon ou si une note manque.
+
+La publication verrouille les lignes d'evaluation du cours, revalide l'aperçu dans la transaction, publie les evaluations, renseigne leur date, active `est_verrouillee` et cree une annonce Valve de type `publication_notes` sans note individuelle. Une seconde publication retourne l'etat verrouille sans creer de doublon. La modification des notes reste bloquee par le verrouillage existant.
+
+Le calcul historique de `ResultatCours`, des credits et de la reussite/echec existe encore dans l'ancien flux de publication d'une evaluation; il n'est pas utilise par le nouvel aperçu B1 et n'a pas ete etendu. Sa formalisation appartient au Prompt 4C-B2.
+
+Validation B1: `scripts\\test_backend.bat` a retourne `73 passed` sur `smart_faculty_test`; les tests Flutter sont a `35 passed`; `flutter analyze` conserve uniquement les 6 informations historiques `dart:html`; `flutter build web --release` est reussi. Aucun schema n'a ete migre et `smart_faculty` n'a pas ete modifiee.

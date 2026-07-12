@@ -6,8 +6,12 @@ import 'service_valve.dart';
 class EnseignantApiService {
   const EnseignantApiService();
 
+  Future<Map<String, dynamic>> profil() async {
+    return ApiDataSource.client.get('/enseignants/moi');
+  }
+
   Future<Map<String, dynamic>> tableauDeBord() async {
-    final profil = await ApiDataSource.client.get('/auth/moi');
+    final profil = await this.profil();
     final coursListe = await cours();
     final publicationsPayload = await ValveDataSource.service.valveEnseignant();
     final reclamationsListe = await reclamations();
@@ -28,7 +32,10 @@ class EnseignantApiService {
             .join(' '),
       },
       'nombre_cours': coursListe.length,
-      'nombre_total_etudiants': 0,
+      'nombre_total_etudiants': coursListe.fold<int>(
+        0,
+        (total, item) => total + (item['nombre_etudiants'] as int? ?? 0),
+      ),
       'nombre_publications': publications.length,
       'publications_recentes':
           publications.map(_normaliserPublication).toList(),
@@ -36,9 +43,6 @@ class EnseignantApiService {
       'nombre_reclamations_en_attente': reclamationsListe
           .where((item) => item is Map && item['statut'] == 'en_attente')
           .length,
-      'notes_brouillon': 0,
-      'nombre_etudiants_a_risque': 0,
-      'etudiants_a_risque': const [],
       'statistiques_cours': coursListe,
       'dernieres_activites': const [],
       'reclamations': reclamationsListe,
@@ -46,13 +50,13 @@ class EnseignantApiService {
   }
 
   Future<List<dynamic>> cours() async {
-    final data = await ApiDataSource.client.get('/cours');
+    final data = await ApiDataSource.client.get('/enseignants/moi/cours');
     final elements = data['elements'] as List<dynamic>? ?? const [];
     return elements.map(_normaliserCours).toList();
   }
 
   Future<Map<String, dynamic>> detailCours(int id) async {
-    final data = await ApiDataSource.client.get('/cours/$id');
+    final data = await ApiDataSource.client.get('/enseignants/moi/cours/$id');
     return _normaliserCours(data);
   }
 
@@ -71,6 +75,7 @@ class EnseignantApiService {
     String? pieceJointeNom,
     String? pieceJointeBase64,
     bool estImportant = false,
+    bool publierMaintenant = true,
   }) async {
     final publication = await ValveDataSource.service.creerPublication(
       coursId: coursId,
@@ -78,7 +83,7 @@ class EnseignantApiService {
       titre: titre,
       contenu: contenu,
       estImportante: estImportant,
-      publierMaintenant: true,
+      publierMaintenant: publierMaintenant,
     );
     return {'publication': publication};
   }
@@ -105,6 +110,12 @@ class EnseignantApiService {
 
   Future<void> supprimerPublication(int publicationId) async {
     await ValveDataSource.service.archiverPublication(publicationId);
+  }
+
+  Future<Map<String, dynamic>> publierPublication(int publicationId) async {
+    final publication =
+        await ValveDataSource.service.publierPublication(publicationId);
+    return {'publication': publication};
   }
 
   Future<List<dynamic>> etudiantsCours(int id) async {
@@ -169,11 +180,19 @@ class EnseignantApiService {
 
   Map<String, dynamic> _normaliserCours(dynamic item) {
     if (item is! Map<String, dynamic>) return const {};
+    final promotion = item['promotion'];
+    final semestre = item['semestre'];
+    final annee = item['annee_academique'];
     return {
       ...item,
       'nom': item['nom'] ?? item['intitule'] ?? '',
       'course': item['intitule'] ?? item['nom'] ?? '',
-      'promotion': item['promotion'] ?? '',
+      'promotion_details': promotion is Map ? promotion : null,
+      'promotion': promotion is Map ? promotion['nom'] ?? '' : promotion ?? '',
+      'semestre_details': semestre is Map ? semestre : null,
+      'semestre': semestre is Map ? semestre['nom'] ?? '' : semestre ?? '',
+      'annee_academique': annee is Map ? annee['libelle'] ?? '' : annee ?? '',
+      'credits': item['credits'] ?? item['nombre_credits'] ?? 0,
       'students': item['nombre_etudiants'] ?? 0,
       'publishedGrades': item['notes_publiees'] ?? 0,
       'average': item['moyenne'] ?? 0,

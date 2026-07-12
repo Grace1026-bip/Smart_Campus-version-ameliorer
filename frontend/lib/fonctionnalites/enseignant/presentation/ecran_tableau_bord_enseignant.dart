@@ -4,6 +4,7 @@ import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_api.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/tuile_fonctionnalite.dart';
@@ -32,8 +33,8 @@ class TeacherDashboardScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return SectionPanel(
               title: 'Connexion API impossible',
-              subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              subtitle: _messageErreur(snapshot.error!),
+              child: Text(_messageErreur(snapshot.error!)),
             );
           }
 
@@ -43,7 +44,6 @@ class TeacherDashboardScreen extends StatelessWidget {
           final publications =
               data['publications_recentes'] as List<dynamic>? ?? [];
           final reclamations = data['reclamations'] as List<dynamic>? ?? [];
-          final risques = data['etudiants_a_risque'] as List<dynamic>? ?? [];
           final activites = data['dernieres_activites'] as List<dynamic>? ?? [];
           final nombrePublications =
               data['nombre_publications'] ?? publications.length;
@@ -98,38 +98,20 @@ class TeacherDashboardScreen extends StatelessWidget {
                     icon: Icons.mark_email_unread_rounded,
                     color: AppColors.violet,
                   ),
-                  StatCard(
-                    metric: KpiMetric(
-                      title: 'Notes brouillon',
-                      value: '${data['notes_brouillon'] ?? 0}',
-                      trend: 'a publier',
-                      description: 'non visibles etudiant',
-                    ),
-                    icon: Icons.edit_note_rounded,
-                    color: AppColors.warning,
-                  ),
-                  StatCard(
-                    metric: KpiMetric(
-                      title: 'Etudiants a risque',
-                      value: '${data['nombre_etudiants_a_risque'] ?? risques.length}',
-                      trend: 'moyenne basse',
-                      description: 'dans vos cours',
-                    ),
-                    icon: Icons.health_and_safety_rounded,
-                    color: AppColors.danger,
-                  ),
                 ],
               ),
               const SizedBox(height: 22),
               SmartTable(
                 title: 'Cours attribues',
-                subtitle: 'Statistiques calculees depuis les notes reelles.',
+                subtitle:
+                    'Informations confirmees par les affectations reelles.',
                 columns: const [
                   DataColumn(label: Text('Cours')),
                   DataColumn(label: Text('Promotion')),
+                  DataColumn(label: Text('Annee')),
+                  DataColumn(label: Text('Credits')),
+                  DataColumn(label: Text('Heures')),
                   DataColumn(label: Text('Etudiants')),
-                  DataColumn(label: Text('Publiees')),
-                  DataColumn(label: Text('Moyenne')),
                 ],
                 rows: [
                   for (final item in stats)
@@ -137,13 +119,10 @@ class TeacherDashboardScreen extends StatelessWidget {
                       cells: [
                         DataCell(Text('${item['cours'] ?? '-'}')),
                         DataCell(Text('${item['promotion'] ?? '-'}')),
+                        DataCell(Text('${item['annee_academique'] ?? '-'}')),
+                        DataCell(Text('${item['credits'] ?? 0}')),
+                        DataCell(Text('${item['nombre_heures'] ?? 0}')),
                         DataCell(Text('${item['nombre_etudiants'] ?? 0}')),
-                        DataCell(Text(
-                          '${item['statistiques']?['moyennes_publiees'] ?? 0}',
-                        )),
-                        DataCell(Text(
-                          _formatNumber(item['statistiques']?['moyenne_cours']),
-                        )),
                       ],
                     ),
                 ],
@@ -398,14 +377,13 @@ IconData _activityIcon(String type) {
   }
 }
 
-String _formatNumber(dynamic value) {
-  if (value == null) return '-';
-  if (value is num) return value.toStringAsFixed(2);
-  return value.toString();
-}
-
 String _initials(String name) {
   final parts = name.trim().split(RegExp(r'\s+'));
   if (parts.isEmpty || parts.first.isEmpty) return 'SF';
   return parts.take(2).map((part) => part[0].toUpperCase()).join();
+}
+
+String _messageErreur(Object error) {
+  if (error is ApiException) return error.messagePourUtilisateur;
+  return ApiConfig.serverUnavailableMessage;
 }

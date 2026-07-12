@@ -3,10 +3,26 @@ import 'service_api.dart';
 class NotesApiService {
   const NotesApiService();
 
+  Future<List<dynamic>> typesEvaluations() async {
+    final data =
+        await ApiDataSource.client.get('/enseignant/types-evaluations');
+    return data['types'] as List<dynamic>? ?? const [];
+  }
+
   Future<List<dynamic>> evaluationsCours(int coursId) async {
     final data = await ApiDataSource.client
         .get('/enseignant/cours/$coursId/evaluations');
     return data['evaluations'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> apercuResultatsCours(int coursId) async {
+    return ApiDataSource.client
+        .get('/enseignant/cours/$coursId/resultats/apercu');
+  }
+
+  Future<Map<String, dynamic>> publierResultatsCours(int coursId) async {
+    return ApiDataSource.client
+        .post('/enseignant/cours/$coursId/resultats/publier');
   }
 
   Future<Map<String, dynamic>> creerEvaluation({
@@ -62,7 +78,7 @@ class NotesApiService {
   }) async {
     final data = await ApiDataSource.client.post(
       '/enseignant/evaluations/$evaluationId/publier',
-      body: {'autoriser_notes_manquantes': autoriserNotesManquantes},
+      body: {'confirmer_notes_manquantes': autoriserNotesManquantes},
     );
     return data['evaluation'] as Map<String, dynamic>? ?? const {};
   }

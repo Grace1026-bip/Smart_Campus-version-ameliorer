@@ -741,3 +741,133 @@ Le backend repondait correctement depuis l'origine `http://localhost:52100`: pre
 - La relance Flutter ciblee apres correction est restee bloquee avant toute sortie dans l'environnement local; le processus a ete arrete proprement et aucun echec de test n'a ete observe.
 
 Decision: le diagnostic CORS est corrige cote Flutter et la configuration backend existante est confirmee fonctionnelle. Une nouvelle execution Flutter hors de cet etat d'environnement est necessaire pour clore la validation automatique de cette correction.
+
+## Prompt 4A-R - Deblocage Flutter et socle Enseignant - 2026-07-12
+
+### Deblocage de l'environnement
+
+- Le depot est reste sur `ui-theme-beige-marron`; les changements anterieurs non valides n'ont pas ete ecrases.
+- `flutter --version`: Flutter `3.41.9`, Dart `3.11.5`.
+- Le blocage venait d'un `lockfile` orphelin dans le cache du SDK Flutter, alors qu'aucun processus Dart/Flutter ne tournait. Les deux verrous SDK ont ete supprimes avec une autorisation ciblee; Flutter n'a pas ete reinstalle ni mis a jour.
+- `.dart_tool/` et `build/` du frontend ont ete nettoyes; `pubspec.lock` a ete conserve.
+- `flutter pub get` a resolu les dependances, mais retourne un code non nul pour la creation de liens symboliques de plugins Windows, Developer Mode n'etant pas active. Les tests Dart et le build Web fonctionnent malgre cette restriction.
+
+### Implementation backend
+
+- Ajout de `backend/app/routes/enseignants.py`.
+- Ajout de `backend/app/services/enseignants.py`.
+- Inclusion du routeur dedie avant les routes academiques generiques afin que `/enseignants/moi` ne soit pas capture par `/enseignants/{enseignant_id}`.
+- Les requetes utilisent le role actif enseignant, `Enseignant.utilisateur_id` et `CoursEnseignant.enseignant_id`.
+- Le chargement SQLAlchemy des collections utilise `selectinload` pour eviter les doublons et les conflits de strategie.
+
+### Implementation Flutter
+
+- `EnseignantApiService` appelle uniquement les routes `/enseignants/moi` dans l'espace Enseignant.
+- Ajout du profil enseignant distant en lecture seule.
+- Dashboard recentre sur les cours et donnees disponibles; les statistiques fictives de notes et de risques ont ete retirees du socle.
+- Ajout de l'etat vide explicite pour un enseignant sans cours.
+- Les erreurs d'API utilisent les messages utilisateur existants, notamment acces refuse et serveur inaccessible.
+- Aucun developpement complet de la Valve, des Notes ou des Presences.
+
+### Tests
+
+- Ajout de `backend/tests/test_enseignants.py`: autorisations, profil, multi-role, compte inactif, filtrage entre enseignants, detail, liste vide, donnees sensibles et coherence promotion/annee.
+- Ajout de `frontend/test/enseignant_service_test.dart`: profil, liste vide et detail des routes dediees.
+- Tests Flutter fichier par fichier: tous reussis.
+- Suite Flutter complete avec concurrence minimale: `28 passed`, 0 echec.
+- `flutter analyze`: 6 informations historiques `dart:html`, aucune nouvelle alerte.
+- `flutter build web --release`: reussi.
+- Suite backend officielle: `68 passed` lors de deux executions, uniquement sur `smart_faculty_test`.
+
+### Verification manuelle et securite
+
+- Connexion avec le compte enseignant de demonstration: dashboard ouvert sur `#/teacher`.
+- Dashboard: 3 cours et 2 etudiants reels affiches.
+- Navigation Mes cours, profil et deconnexion verifiees en desktop.
+- Aucun `enseignant_id` libre n'est accepte par les nouvelles routes.
+- Aucun token, mot de passe ou hash n'est retourne par le profil.
+- Aucune migration, aucune ecriture de test dans `smart_faculty` et aucun changement de theme n'ont ete effectues.
+
+Decision: le Prompt 4A-R est valide. Le socle Enseignant est fonctionnel, le profil est securise, les cours sont filtres par le backend et le projet est pret pour le Prompt 4B. La suite mobile reste a refaire dans un navigateur de verification qui accepte le viewport reduit; elle n'a revele aucun defaut de compilation ou de test.
+
+## Prompt 4B - Valve Enseignant - 2026-07-12
+
+### Audit et decision
+
+Le depot possedait deja un module Valve actif: modele SQLAlchemy, routes FastAPI, service, tests de cycle, stockage de pieces jointes et ecran Flutter. Aucun doublon, aucune migration et aucune modification de la base principale n'ont donc ete introduits.
+
+L'audit a releve deux ecarts fonctionnels. Le formulaire Flutter forcait `publier_maintenant=true` et ne permettait pas de publier un brouillon. De plus, le backend verifiait seulement l'affectation au cours pour les mutations, ce qui autorisait un collegue affecte au meme cours a modifier ou archiver une publication d'un autre auteur.
+
+### Corrections
+
+- `EnseignantApiService` transmet maintenant le choix brouillon ou publication immediate et expose la publication d'un brouillon;
+- l'ecran Valve affiche l'action `Publier` seulement pour un brouillon dont l'utilisateur est auteur;
+- le backend derive `auteur_id` du contexte authentifie et controle l'auteur pour modifier, publier, archiver et gerer les pieces jointes;
+- `est_auteur` est retourne dans la liste enseignant pour aligner l'interface sur l'autorisation backend;
+- les types de creation restent bornes par le schema et `publication_notes` est refuse dans le perimetre 4B;
+- les donnees de Notes, evaluations, presences, reclamations et statistiques ne sont pas touchees.
+
+### Tests et securite
+
+Le test backend Valve couvre le brouillon, le type invalide, l'affectation d'un second enseignant au meme cours et le refus de ses mutations. La suite officielle a termine a `69 passed`. La suite Flutter a termine a `31 passed`, dont trois tests du service Valve. `flutter pub get` a resolu les dependances sans upgrade, `flutter analyze` conserve seulement les 6 informations historiques `dart:html`, et le build Web release est reussi.
+
+Aucun mot de passe, token ou secret n'est ajoute dans les reponses ou les logs. La preparation backend utilise uniquement `smart_faculty_test`; aucune ecriture de `smart_faculty` n'a ete effectuee. Aucun commit ni push automatique n'a ete realise.
+
+Decision: le Prompt 4B est techniquement valide sur les tests automatises. La Valve enseignant permet maintenant de creer, lister, modifier, publier et archiver dans le perimetre securise des cours affectes, avec mutations reservees a l'auteur. Les modules Notes et les autres valves fonctionnelles restent hors perimetre.
+
+## Prompt 4C-A - Evaluations et saisie des notes - 2026-07-12
+
+### Audit de l'existant
+
+Les tables et routes Notes existaient deja, mais l'ecran enseignant actif restait partiellement visuel: il encodeait trois colonnes fixes et appelait des methodes Flutter qui levaient volontairement une exception car elles ne correspondaient plus aux routes Notes par evaluation. Le backend, lui, gerait deja le cycle brouillon, saisie, publication et verrouillage.
+
+Les documents officiels imposent qu'un enseignant ne gere que ses cours attribues, qu'une note brouillon ne soit pas visible, qu'une note publiee soit protegee et que les resultats soient alimentes apres publication. Les types retenus depuis les donnees initiales sont `interrogation`, `travail_pratique`, `examen` et `autre`.
+
+### Corrections realisees
+
+- ajout de `GET /enseignant/types-evaluations` pour alimenter Flutter depuis les types actifs;
+- ajout du type d'evaluation dans les reponses de liste et detail;
+- verification de l'annee academique active et du statut academique actif dans le roster;
+- restriction des mutations au createur de l'evaluation, y compris saisie, publication, archivage et verrouillage;
+- verification transactionnelle de la somme des ponderations, plafonnee a 100 %;
+- retour d'un roster minimal securise pour une evaluation;
+- remplacement de l'ecran enseignant fixe par `TeacherEvaluationsScreen`, avec creation/modification, liste des evaluations, ponderation, saisie par evaluation, zero distinct d'une absence et lecture seule apres publication;
+- correction du nom de champ Flutter `confirmer_notes_manquantes` attendu par FastAPI.
+
+### Tests et limites
+
+Les tests backend couvrent types, creation, titre vide, type absent, ponderations, modification, roster, confidentiality, note zero, note negative, note hors bareme, doublon, modification d'une note, et autre enseignant. La suite officielle est a `71 passed`. Flutter est a `34 passed`, dont trois tests Notes du service API. L'analyse conserve seulement les 6 informations historiques `dart:html`; le build Web release est reussi.
+
+Aucune migration n'a ete creee. Les tests utilisent uniquement `smart_faculty_test`; aucune donnee de `smart_faculty` n'a ete modifiee. Aucun mot de passe, hash, token ou email d'etudiant n'est expose par le roster.
+
+Le calcul de resultat et la notification declenches historiquement par la route de publication existaient avant 4C-A et n'ont pas ete etendus. Leur formalisation, la moyenne semestrielle/annuelle, les releves, les reclamations, l'affichage Etudiant complet et Campus Analytics sont reportes au Prompt 4C-B.
+
+Decision: le socle Evaluations et saisie des notes est valide techniquement pour 4C-A. Le projet est pret pour une intervention 4C-B centree sur le calcul, la publication et les resultats, sous reserve de conserver ces limites.
+
+## Prompt 4C-B1 - Calcul et publication des resultats d'un cours - 2026-07-12
+
+### Audit
+
+Le code actif calculait deja un `ResultatCours` lors de la publication d'une evaluation. Ce calcul historique produisait une valeur sur 100, mais ignorait une note manquante dans la contribution et renseignait aussi les credits et la reussite/echec. Ces effets ne sont pas etendus dans B1, car ils appartiennent au traitement global des resultats prevu en B2.
+
+Les regles documentaires confirment qu'une absence ou une note manquante ne doit pas devenir automatiquement un zero. Le nouveau calcul distingue donc explicitement note zero, note absente et resultat incomplet.
+
+### Implementation
+
+- ajout de l'aperçu backend `GET /enseignant/cours/{cours_id}/resultats/apercu`;
+- ajout de la publication backend `POST /enseignant/cours/{cours_id}/resultats/publier`;
+- calcul Decimal sur 100, arrondi final a deux decimales;
+- blocage si ponderation differente de 100 %, evaluation active en brouillon ou note manquante;
+- filtrage par affectation enseignant, inscription active, annee active et statut etudiant actif;
+- publication transactionnelle, dates renseignees, verrouillage des evaluations et comportement idempotent;
+- annonce Valve `publication_notes` sans notes individuelles;
+- aperçu Flutter avec etat, total ponderation, notes manquantes, resultats provisoires et confirmation de publication;
+- lecture seule maintenue apres verrouillage.
+
+### Tests et limites
+
+Les tests B1 couvrent calcul mono/multi-evaluation, ponderation complete, note zero, note absente, arrondi, aperçu, refus cours etranger, refus autre role/enseignant, publication incomplete, publication complete, date/statut/verrouillage, idempotence et absence de notes individuelles dans la Valve. La suite backend complete est a `73 passed` et la suite Flutter a `35 passed`.
+
+`flutter analyze` conserve seulement les 6 informations historiques `dart:html`; le build Web release est reussi. Les tests utilisent uniquement `smart_faculty_test`. Aucune migration, aucune modification de `smart_faculty`, aucun credit, aucune decision reussite/echec et aucune moyenne semestrielle ou annuelle n'ont ete ajoutes.
+
+Decision: le Prompt 4C-B1 est valide techniquement pour le calcul a la demande et la publication/verrouillage des notes d'un cours. Le projet est pret pour le Prompt 4C-B2, qui devra traiter separement les resultats persistes, credits et decisions globales.

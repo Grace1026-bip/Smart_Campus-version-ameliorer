@@ -505,10 +505,6 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
                             child: Text('Support'),
                           ),
                           DropdownMenuItem(
-                            value: 'publication_notes',
-                            child: Text('Notes'),
-                          ),
-                          DropdownMenuItem(
                             value: 'changement_horaire',
                             child: Text('Horaire'),
                           ),
@@ -588,6 +584,7 @@ class _PublicationFormState extends State<_PublicationForm> {
   String? _pickedFileBase64;
   int? _pickedFileSize;
   bool _important = false;
+  bool _publishNow = true;
   bool _pickingFile = false;
   bool _saving = false;
 
@@ -683,6 +680,15 @@ class _PublicationFormState extends State<_PublicationForm> {
                   onChanged: (value) => setState(() => _important = value),
                 ),
               ),
+              SizedBox(
+                width: 240,
+                child: SwitchListTile(
+                  value: _publishNow,
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Publier maintenant'),
+                  onChanged: (value) => setState(() => _publishNow = value),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -723,7 +729,13 @@ class _PublicationFormState extends State<_PublicationForm> {
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.publish_rounded),
-              label: Text(_saving ? 'Publication...' : 'Publier'),
+              label: Text(
+                _saving
+                    ? 'Enregistrement...'
+                    : _publishNow
+                        ? 'Publier'
+                        : 'Enregistrer brouillon',
+              ),
             ),
           ),
         ],
@@ -765,6 +777,7 @@ class _PublicationFormState extends State<_PublicationForm> {
         pieceJointeNom: _pickedFileName,
         pieceJointeBase64: _pickedFileBase64,
         estImportant: _important,
+        publierMaintenant: _publishNow,
       );
       if (!mounted) return;
       _titleController.clear();
@@ -772,6 +785,7 @@ class _PublicationFormState extends State<_PublicationForm> {
       _attachmentController.clear();
       setState(() {
         _important = false;
+        _publishNow = true;
         _clearPickedFile(setStateNeeded: false);
       });
       widget.onSaved();
@@ -923,7 +937,9 @@ class _TeacherPublicationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locked = publication['est_verrouille'] == true;
+    final status = '${publication['statut'] ?? '-'}';
+    final ownPublication = publication['est_auteur'] == true;
+    final locked = status == 'archivee';
     final color = publication['est_important'] == true
         ? AppColors.danger
         : AppColors.primary;
@@ -978,8 +994,7 @@ class _TeacherPublicationCard extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               StatusBadge(
-                label:
-                    locked ? 'Verrouillee' : '${publication['statut'] ?? '-'}',
+                label: locked ? 'Archivee' : status,
                 color: locked ? AppColors.primary : color,
               ),
             ],
@@ -1026,7 +1041,15 @@ class _TeacherPublicationCard extends StatelessWidget {
               label: Text(_shortAttachmentLabel(attachment)),
             ),
           ],
-          if (!locked) ...[
+          if (ownPublication && status == 'brouillon') ...[
+            const SizedBox(height: 10),
+            ElevatedButton.icon(
+              onPressed: () => _publish(context),
+              icon: const Icon(Icons.publish_rounded),
+              label: const Text('Publier'),
+            ),
+          ],
+          if (ownPublication && !locked) ...[
             const SizedBox(height: 10),
             Wrap(
               spacing: 8,
@@ -1082,6 +1105,19 @@ class _TeacherPublicationCard extends StatelessWidget {
       await EnseignantDataSource.service.modifierPublication(
         publicationId: _asInt(publication['id']),
         contenu: content,
+      );
+      onChanged();
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
+    }
+  }
+
+  Future<void> _publish(BuildContext context) async {
+    try {
+      await EnseignantDataSource.service.publierPublication(
+        _asInt(publication['id']),
       );
       onChanged();
     } catch (error) {

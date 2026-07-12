@@ -1,16 +1,16 @@
 from __future__ import annotations
 
 from datetime import datetime
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from fastapi import status
-from sqlalchemy import func, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, selectinload
 
 from app.configuration.parametres import obtenir_parametres
 from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, ErreurApplication, RessourceIntrouvable
-from app.modeles.academique import Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours
+from app.modeles.academique import AnneeAcademique, Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours
 from app.modeles.audit import JournalAudit
 from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
 from app.modeles.notifications import Notification
@@ -69,27 +69,67 @@ def _evaluation_enseignant(session: Session, utilisateur_id: int, evaluation_id:
     return evaluation, enseignant
 
 
+def _evaluation_auteur(session: Session, utilisateur_id: int, evaluation_id: int) -> Evaluation:
+    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    if evaluation.cree_par != utilisateur_id:
+        raise AccesInterdit("Cette evaluation appartient a un autre enseignant")
+    return evaluation
+
+
 def _verifier_etudiant_inscrit(session: Session, etudiant_id: int, cours_id: int) -> None:
     inscription = session.scalar(
-        select(InscriptionCours).where(
+        select(InscriptionCours)
+        .join(InscriptionCours.etudiant)
+        .join(InscriptionCours.annee_academique)
+        .where(
             InscriptionCours.etudiant_id == etudiant_id,
             InscriptionCours.cours_id == cours_id,
             InscriptionCours.statut == "active",
+            Etudiant.statut_academique == "actif",
+            AnneeAcademique.est_active.is_(True),
         )
     )
     if inscription is None:
         raise ErreurApplication("Etudiant non inscrit a ce cours", status.HTTP_400_BAD_REQUEST)
 
 
-def _ids_etudiants_inscrits(session: Session, cours_id: int) -> list[int]:
+def _inscriptions_actives(session: Session, cours_id: int) -> list[InscriptionCours]:
     return list(
         session.scalars(
-            select(InscriptionCours.etudiant_id).where(
+            select(InscriptionCours)
+            .options(
+                selectinload(InscriptionCours.etudiant).selectinload(Etudiant.utilisateur),
+                selectinload(InscriptionCours.etudiant).selectinload(Etudiant.promotion),
+            )
+            .where(
                 InscriptionCours.cours_id == cours_id,
                 InscriptionCours.statut == "active",
+                Etudiant.statut_academique == "actif",
+                AnneeAcademique.est_active.is_(True),
             )
+            .join(InscriptionCours.etudiant)
+            .join(InscriptionCours.annee_academique)
         ).all()
     )
+
+
+def _ids_etudiants_inscrits(session: Session, cours_id: int) -> list[int]:
+    return [inscription.etudiant_id for inscription in _inscriptions_actives(session, cours_id)]
+
+
+def _serialiser_etudiant(etudiant: Etudiant) -> dict:
+    utilisateur = etudiant.utilisateur
+    nom = " ".join(
+        morceau
+        for morceau in (utilisateur.prenom, utilisateur.nom, utilisateur.postnom)
+        if morceau
+    )
+    return {
+        "id": etudiant.id,
+        "matricule": etudiant.matricule,
+        "nom": nom,
+        "promotion": etudiant.promotion.nom if etudiant.promotion else None,
+    }
 
 
 def _serialiser_evaluation(evaluation: Evaluation) -> dict:
@@ -97,6 +137,13 @@ def _serialiser_evaluation(evaluation: Evaluation) -> dict:
         "id": evaluation.id,
         "cours_id": evaluation.cours_id,
         "type_evaluation_id": evaluation.type_evaluation_id,
+        "type_evaluation": {
+            "id": evaluation.type_evaluation.id,
+            "nom": evaluation.type_evaluation.nom,
+            "description": evaluation.type_evaluation.description,
+        }
+        if evaluation.type_evaluation
+        else None,
         "titre": evaluation.titre,
         "note_maximale": evaluation.note_maximale,
         "ponderation": evaluation.ponderation,
@@ -136,14 +183,14 @@ def _serialiser_resultat(resultat: ResultatCours) -> dict:
 
 
 def _ponderation_future(session: Session, cours_id: int, ponderation: Decimal, evaluation_id: int | None = None) -> Decimal:
-    requete = select(func.coalesce(func.sum(Evaluation.ponderation), 0)).where(
+    requete = select(Evaluation.ponderation).where(
         Evaluation.cours_id == cours_id,
         Evaluation.statut != "archivee",
-    )
+    ).with_for_update()
     if evaluation_id is not None:
         requete = requete.where(Evaluation.id != evaluation_id)
-    total = session.scalar(requete) or Decimal("0")
-    return Decimal(str(total)) + ponderation
+    total = sum((Decimal(str(valeur)) for (valeur,) in session.execute(requete)), Decimal("0"))
+    return total + ponderation
 
 
 def _verifier_ponderation(session: Session, cours_id: int, ponderation: Decimal, evaluation_id: int | None = None) -> None:
@@ -181,10 +228,194 @@ def lister_evaluations_enseignant(session: Session, utilisateur_id: int, cours_i
     _verifier_enseignant_du_cours(session, utilisateur_id, cours_id)
     evaluations = session.scalars(
         select(Evaluation)
+        .options(selectinload(Evaluation.type_evaluation))
         .where(Evaluation.cours_id == cours_id, Evaluation.statut != "archivee")
         .order_by(Evaluation.cree_le.desc())
     ).all()
     return [_serialiser_evaluation(evaluation) for evaluation in evaluations]
+
+
+def lister_types_evaluation(session: Session) -> list[dict]:
+    types = session.scalars(select(TypeEvaluation).order_by(TypeEvaluation.id)).all()
+    return [
+        {
+            "id": type_evaluation.id,
+            "nom": type_evaluation.nom,
+            "description": type_evaluation.description,
+        }
+        for type_evaluation in types
+    ]
+
+
+def _evaluations_actives(session: Session, cours_id: int) -> list[Evaluation]:
+    return list(
+        session.scalars(
+            select(Evaluation)
+            .options(selectinload(Evaluation.type_evaluation))
+            .where(Evaluation.cours_id == cours_id, Evaluation.statut != "archivee")
+            .order_by(Evaluation.id)
+        ).all()
+    )
+
+
+def _arrondir_resultat(valeur: Decimal) -> Decimal:
+    return valeur.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _apercu_resultats(
+    session: Session,
+    utilisateur_id: int,
+    cours_id: int,
+) -> dict:
+    _verifier_enseignant_du_cours(session, utilisateur_id, cours_id)
+    evaluations = _evaluations_actives(session, cours_id)
+    inscriptions = _inscriptions_actives(session, cours_id)
+    evaluation_ids = [evaluation.id for evaluation in evaluations]
+    notes = (
+        session.scalars(select(Note).where(Note.evaluation_id.in_(evaluation_ids))).all()
+        if evaluation_ids
+        else []
+    )
+    notes_par_cle = {(note.etudiant_id, note.evaluation_id): note for note in notes}
+    total_ponderation = sum(
+        (Decimal(str(evaluation.ponderation)) for evaluation in evaluations),
+        Decimal("0"),
+    )
+    poids_complet = total_ponderation == Decimal("100")
+    evaluations_publiees = bool(evaluations) and all(
+        evaluation.statut == "publiee" for evaluation in evaluations
+    )
+    evaluations_verrouillees = evaluations_publiees and all(
+        evaluation.est_verrouillee for evaluation in evaluations
+    )
+
+    etudiants = []
+    total_notes_manquantes = 0
+    for inscription in inscriptions:
+        etudiant = inscription.etudiant
+        contributions = []
+        manquantes = []
+        provisoire = Decimal("0")
+        for evaluation in evaluations:
+            note = notes_par_cle.get((etudiant.id, evaluation.id))
+            contribution = None
+            if note is None:
+                manquantes.append(
+                    {
+                        "evaluation_id": evaluation.id,
+                        "titre": evaluation.titre,
+                    }
+                )
+            else:
+                contribution = (
+                    Decimal(str(note.note_obtenue))
+                    / Decimal(str(evaluation.note_maximale))
+                    * Decimal(str(evaluation.ponderation))
+                )
+                provisoire += contribution
+            contributions.append(
+                {
+                    "evaluation_id": evaluation.id,
+                    "note_obtenue": note.note_obtenue if note else None,
+                    "contribution_sur_100": _arrondir_resultat(contribution)
+                    if contribution is not None
+                    else None,
+                }
+            )
+
+        total_notes_manquantes += len(manquantes)
+        complet = poids_complet and evaluations_publiees and not manquantes
+        etudiants.append(
+            {
+                **_serialiser_etudiant(etudiant),
+                "contributions": contributions,
+                "notes_manquantes": manquantes,
+                "resultat_provisoire_sur_100": _arrondir_resultat(provisoire),
+                "resultat_officiel_sur_100": _arrondir_resultat(provisoire)
+                if complet
+                else None,
+                "etat": "verrouille"
+                if complet and evaluations_verrouillees
+                else "publie"
+                if complet
+                else "incomplet",
+            }
+        )
+
+    completude = (
+        bool(evaluations)
+        and poids_complet
+        and evaluations_publiees
+        and total_notes_manquantes == 0
+    )
+    etat = "verrouille" if completude and evaluations_verrouillees else "publie" if completude else "incomplet"
+    return {
+        "cours_id": cours_id,
+        "etat": etat,
+        "total_ponderation": total_ponderation,
+        "ponderation_restante": max(Decimal("0"), Decimal("100") - total_ponderation),
+        "evaluations": [_serialiser_evaluation(evaluation) for evaluation in evaluations],
+        "etudiants": etudiants,
+        "notes_manquantes": total_notes_manquantes,
+        "peut_publier": bool(evaluations) and poids_complet and total_notes_manquantes == 0,
+        "evaluations_publiees": evaluations_publiees,
+        "evaluations_verrouillees": evaluations_verrouillees,
+    }
+
+
+def apercu_resultats_cours(session: Session, utilisateur_id: int, cours_id: int) -> dict:
+    return _apercu_resultats(session, utilisateur_id, cours_id)
+
+
+def publier_resultats_cours(session: Session, utilisateur_id: int, cours_id: int) -> dict:
+    _verifier_enseignant_du_cours(session, utilisateur_id, cours_id)
+    evaluations = list(
+        session.scalars(
+            select(Evaluation)
+            .where(Evaluation.cours_id == cours_id, Evaluation.statut != "archivee")
+            .with_for_update()
+        ).all()
+    )
+    apercu = _apercu_resultats(session, utilisateur_id, cours_id)
+    if apercu["etat"] == "verrouille":
+        return apercu
+    if not apercu["peut_publier"]:
+        raise ErreurApplication(
+            "Les resultats du cours sont incomplets et ne peuvent pas etre publies",
+            status.HTTP_400_BAD_REQUEST,
+            erreurs=[
+                {
+                    "etat": apercu["etat"],
+                    "total_ponderation": str(apercu["total_ponderation"]),
+                    "notes_manquantes": apercu["notes_manquantes"],
+                }
+            ],
+        )
+
+    moment = _maintenant()
+    try:
+        for evaluation in evaluations:
+            evaluation.statut = "publiee"
+            evaluation.date_publication = evaluation.date_publication or moment
+            evaluation.est_verrouillee = True
+        publication = PublicationValve(
+            cours_id=cours_id,
+            auteur_id=utilisateur_id,
+            type_publication="publication_notes",
+            titre="Resultats du cours disponibles",
+            contenu="Les resultats du cours sont disponibles dans l'espace academique.",
+            est_importante=True,
+            statut="publiee",
+            publie_le=moment,
+        )
+        session.add(publication)
+        _journaliser(session, utilisateur_id, "publication_resultats_cours", "cours", cours_id)
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
+
+    return _apercu_resultats(session, utilisateur_id, cours_id)
 
 
 def creer_evaluation(session: Session, utilisateur_id: int, cours_id: int, donnees: EvaluationCreation) -> dict:
@@ -225,7 +456,7 @@ def obtenir_evaluation_enseignant(session: Session, utilisateur_id: int, evaluat
 
 
 def modifier_evaluation(session: Session, utilisateur_id: int, evaluation_id: int, donnees: EvaluationModification) -> dict:
-    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    evaluation = _evaluation_auteur(session, utilisateur_id, evaluation_id)
     if evaluation.statut != "brouillon" or evaluation.est_verrouillee:
         raise AccesInterdit("Seule une evaluation en brouillon non verrouillee peut etre modifiee")
 
@@ -249,7 +480,7 @@ def modifier_evaluation(session: Session, utilisateur_id: int, evaluation_id: in
 
 
 def archiver_evaluation(session: Session, utilisateur_id: int, evaluation_id: int) -> None:
-    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    evaluation = _evaluation_auteur(session, utilisateur_id, evaluation_id)
     if evaluation.est_verrouillee:
         raise AccesInterdit("Une evaluation verrouillee ne peut pas etre archivee")
     evaluation.statut = "archivee"
@@ -261,10 +492,12 @@ def lister_notes_evaluation(session: Session, utilisateur_id: int, evaluation_id
     evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
     notes = session.scalars(select(Note).where(Note.evaluation_id == evaluation.id)).all()
     ids_notes = {note.etudiant_id for note in notes}
-    inscrits = _ids_etudiants_inscrits(session, evaluation.cours_id)
+    inscriptions = _inscriptions_actives(session, evaluation.cours_id)
+    inscrits = [inscription.etudiant_id for inscription in inscriptions]
     return {
         "evaluation": _serialiser_evaluation(evaluation),
         "notes": [_serialiser_note(note) for note in notes],
+        "etudiants": [_serialiser_etudiant(inscription.etudiant) for inscription in inscriptions],
         "etudiants_sans_note": [etudiant_id for etudiant_id in inscrits if etudiant_id not in ids_notes],
     }
 
@@ -275,7 +508,7 @@ def enregistrer_notes_evaluation(
     evaluation_id: int,
     donnees: NotesEvaluationModification,
 ) -> dict:
-    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    evaluation = _evaluation_auteur(session, utilisateur_id, evaluation_id)
     if evaluation.statut != "brouillon" or evaluation.est_verrouillee:
         raise AccesInterdit("Les notes d'une evaluation publiee ou verrouillee ne peuvent pas etre modifiees")
 
@@ -330,7 +563,7 @@ def publier_evaluation(
     evaluation_id: int,
     donnees: PublicationEvaluationRequete,
 ) -> dict:
-    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    evaluation = _evaluation_auteur(session, utilisateur_id, evaluation_id)
     if evaluation.statut == "archivee":
         raise AccesInterdit("Une evaluation archivee ne peut pas etre publiee")
     if evaluation.statut == "publiee":
@@ -400,7 +633,7 @@ def publier_evaluation(
 
 
 def verrouiller_evaluation(session: Session, utilisateur_id: int, evaluation_id: int) -> dict:
-    evaluation, _enseignant = _evaluation_enseignant(session, utilisateur_id, evaluation_id)
+    evaluation = _evaluation_auteur(session, utilisateur_id, evaluation_id)
     if evaluation.statut != "publiee":
         raise AccesInterdit("Seule une evaluation publiee peut etre verrouillee")
     evaluation.est_verrouillee = True

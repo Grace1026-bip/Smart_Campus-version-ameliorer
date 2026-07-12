@@ -357,3 +357,73 @@ Verification reelle depuis `http://localhost:52100` vers `http://127.0.0.1:8000/
 - aucun secret ni corps sensible n'est affiche dans les logs ou le rapport.
 
 La politique CORS n'a pas ete modifiee pendant ce diagnostic. Les tests backend restent a `61 passed`; la derniere suite Flutter validee avant cette correction comptait `24 passed`. Le test Flutter cible lance apres correction est reste bloque avant toute sortie dans l'environnement local, sans echec de test exploitable.
+
+## Compte Enseignant - Prompt 4A-R
+
+Le compte Enseignant utilise maintenant des routes dediees et securisees par le role actif confirme dans le JWT:
+
+- `GET /api/v1/enseignants/moi` pour le profil professionnel;
+- `GET /api/v1/enseignants/moi/cours` pour les cours attribues;
+- `GET /api/v1/enseignants/moi/cours/{cours_id}` pour le detail d'un cours attribue.
+
+Le backend determine l'enseignant depuis l'utilisateur courant et filtre directement par `CoursEnseignant`. Flutter ne fournit aucun `enseignant_id` d'autorite et ne recupere plus la liste generale `/cours` dans l'espace Enseignant. Les reponses de profil excluent mot de passe, hash, tokens et secrets.
+
+Le frontend couvre le dashboard, le profil enseignant en lecture, les cours, le detail, le chargement, les erreurs d'autorisation, la session expiree et l'etat vide `Aucun cours ne vous est actuellement attribue.`. La Valve, les Notes et les Presences restent hors du socle 4A.
+
+Validation 4A-R:
+
+- Flutter: `28 tests reussis`, 0 echec;
+- `flutter analyze`: 6 informations historiques `dart:html`, aucune nouvelle alerte;
+- `flutter build web --release`: reussi;
+- backend: `68 tests reussis` lors de chacune des deux executions officielles;
+- build Web controle en desktop: connexion enseignant, dashboard, Mes cours, profil et deconnexion verifies.
+
+## Valve Enseignant - Prompt 4B
+
+Le Prompt 4B reutilise le module Valve existant (`PublicationValve`, ses routes et son stockage de pieces jointes). Il couvre uniquement les publications liees aux cours attribues a l'enseignant:
+
+- creation d'une publication en brouillon ou publication immediate;
+- consultation des publications des cours affectes;
+- modification, publication et archivage par leur auteur;
+- types autorises: annonce, communique, devoir, support, changement horaire, consigne d'examen et rappel;
+- rejet backend des types arbitraires et de `publication_notes`, reserve au module Notes;
+- affichage Flutter des statuts brouillon, publiee et archivee, avec action de publication d'un brouillon.
+
+Le backend determine le cours depuis l'affectation de l'utilisateur courant et ne recoit jamais un auteur libre fourni par Flutter. Les publications des collegues restent consultables dans le perimetre du cours, mais leurs mutations sont refusees. Les pieces jointes restent limitees aux extensions et a la taille deja configurees; aucune nouvelle strategie de stockage n'a ete ajoutee.
+
+Validation 4B:
+
+- backend: `69 tests reussis` sur `smart_faculty_test`;
+- Flutter: `31 tests reussis`, dont 3 tests du service Valve;
+- `flutter pub get`: dependances resolues sans upgrade;
+- `flutter analyze`: 0 erreur et 6 informations historiques `dart:html`;
+- `flutter build web --release`: reussi;
+- aucune migration, aucune modification de `smart_faculty`, aucun changement Notes, evaluations, presences ou theme.
+
+## Evaluations et saisie des notes - Prompt 4C-A
+
+Le module Notes reutilise les tables actives `types_evaluations`, `evaluations`, `notes`, `inscriptions_cours`, `etudiants`, `promotions` et `cours_enseignants`. Les types fournis par les donnees initiales sont `interrogation`, `travail_pratique`, `examen` et `autre`.
+
+Le workflow enseignant est limite au cours affecte et au role actif `enseignant`:
+
+- liste et creation d'evaluations en brouillon;
+- note maximale et ponderation strictement positives;
+- somme des ponderations actives limitee a 100 %, verifiee par le backend avec verrouillage transactionnel;
+- modification et saisie des notes reservees au createur de l'evaluation;
+- roster limite aux inscriptions actives de l'annee active et aux etudiants academiquement actifs;
+- note zero conservee comme une saisie, champ vide conserve comme absence;
+- publication et verrouillage distincts de la saisie brouillon.
+
+Flutter utilise `TeacherEvaluationsScreen`, `NotesApiService` et les routes Notes existantes. Les resultats finaux, la moyenne annuelle, les releves, les reclamations, l'affichage Etudiant complet et Campus Analytics restent reportes au Prompt 4C-B. Le calcul historique declenche par la publication backend n'a pas ete etendu dans ce prompt.
+
+Validation 4C-A: backend `71 passed` sur `smart_faculty_test`, Flutter `34 passed`, `flutter analyze` sans erreur avec 6 informations historiques `dart:html`, build Web release reussi. Aucune migration n'a ete creee et `smart_faculty` n'a pas ete utilisee par les tests.
+
+## Calcul et publication des resultats d'un cours - Prompt 4C-B1
+
+Le calcul B1 est realise a la demande par FastAPI via `GET /api/v1/enseignant/cours/{cours_id}/resultats/apercu`. La formule est celle deja active dans le projet: `note_obtenue / note_maximale * ponderation`, additionnee sur une echelle de 100. Les valeurs sont calculees en Decimal et arrondies a deux decimales uniquement au resultat et aux contributions affichees.
+
+Une note manquante n'est jamais convertie en zero. Une note zero reste une note saisie. Un cours est `incomplet` si une evaluation active est en brouillon, si la ponderation totale n'est pas 100 % ou si un etudiant inscrit n'a pas toutes ses notes. L'aperçu fournit les contributions, le resultat provisoire, les notes manquantes et le resultat officiel uniquement lorsque les conditions sont remplies.
+
+La publication explicite `POST /api/v1/enseignant/cours/{cours_id}/resultats/publier` verrouille la transaction, publie les evaluations actives, enregistre leur date et les verrouille. Elle est idempotente apres publication. Une annonce Valve `publication_notes` est creee sans inclure de notes individuelles. Les credits, decisions de reussite/echec, moyennes semestrielles et annuelles restent hors perimetre.
+
+Validation B1: backend `73 passed` sur `smart_faculty_test`, tests Flutter `35 passed`, analyse sans erreur avec 6 informations historiques `dart:html`, build Web release reussi. Aucune migration et aucune ecriture dans `smart_faculty`.

@@ -8,6 +8,7 @@ import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_etudiant.dart';
 import '../../../donnees/services/service_session.dart';
+import 'ecran_evaluations_enseignant.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
 import '../../../commun/composants/panneau_section.dart';
@@ -25,7 +26,7 @@ class GradesScreen extends StatelessWidget {
     final role = SessionService.currentRole;
     if (role == UserRole.student) return const _StudentApiGradesScreen();
     if (role == UserRole.teacher) {
-      return _TeacherApiGradesScreen(initialCourseId: initialCourseId);
+      return TeacherEvaluationsScreen(initialCourseId: initialCourseId);
     }
 
     return SmartFacultyShell(
@@ -169,12 +170,15 @@ class _StudentApiGradesScreen extends StatelessWidget {
 }
 
 class _TeacherApiGradesScreen extends StatefulWidget {
+  // Legacy widget retained for non-API history screens; teacher routing uses TeacherEvaluationsScreen.
+  // ignore: unused_element_parameter
   const _TeacherApiGradesScreen({this.initialCourseId});
 
   final int? initialCourseId;
 
   @override
-  State<_TeacherApiGradesScreen> createState() => _TeacherApiGradesScreenState();
+  State<_TeacherApiGradesScreen> createState() =>
+      _TeacherApiGradesScreenState();
 }
 
 class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
@@ -229,7 +233,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
             children: [
               SectionPanel(
                 title: 'Cours a encoder',
-                subtitle: 'Vous ne voyez que les cours qui vous sont attribues.',
+                subtitle:
+                    'Vous ne voyez que les cours qui vous sont attribues.',
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 12,
@@ -244,7 +249,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
                           for (final course in courses)
                             DropdownMenuItem<int>(
                               value: _asInt(course['id']),
-                              child: Text('${course['code']} - ${course['nom']}'),
+                              child:
+                                  Text('${course['code']} - ${course['nom']}'),
                             ),
                         ],
                         onChanged: (value) =>
@@ -260,7 +266,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
                       ),
                     if (selectedCourse != null)
                       StatusBadge(
-                        label: '${selectedCourse['nombre_etudiants'] ?? 0} etudiants',
+                        label:
+                            '${selectedCourse['nombre_etudiants'] ?? 0} etudiants',
                         color: AppColors.primary,
                       ),
                   ],
@@ -412,8 +419,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
 
     for (final student in widget.data.students) {
       final id = _asInt(student['id']);
-      _interrogations[id] =
-          TextEditingController(text: _formatEditable(values[id]?['interrogation']));
+      _interrogations[id] = TextEditingController(
+          text: _formatEditable(values[id]?['interrogation']));
       _tps[id] = TextEditingController(
           text: _formatEditable(values[id]?['travail_pratique']));
       _examens[id] =
@@ -492,7 +499,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
         const SizedBox(height: 22),
         SectionPanel(
           title: 'Pilotage de l encodage',
-          subtitle: '${filteredStudents.length} etudiant(s) affiche(s) sur ${widget.data.students.length}.',
+          subtitle:
+              '${filteredStudents.length} etudiant(s) affiche(s) sur ${widget.data.students.length}.',
           child: Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -532,16 +540,14 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
             spacing: 8,
             children: [
               ElevatedButton.icon(
-                onPressed: _saving || widget.data.students.isEmpty
-                    ? null
-                    : _saveDraft,
+                onPressed:
+                    _saving || widget.data.students.isEmpty ? null : _saveDraft,
                 icon: const Icon(Icons.save_rounded),
                 label: const Text('Enregistrer'),
               ),
               ElevatedButton.icon(
-                onPressed: _saving || widget.data.students.isEmpty
-                    ? null
-                    : _publish,
+                onPressed:
+                    _saving || widget.data.students.isEmpty ? null : _publish,
                 icon: const Icon(Icons.publish_rounded),
                 label: const Text('Publier'),
               ),
@@ -665,7 +671,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
       for (final student in widget.data.students)
         {
           'etudiant_id': _asInt(student['id']),
-          'interrogation': _parseNote(_interrogations[_asInt(student['id'])]!.text),
+          'interrogation':
+              _parseNote(_interrogations[_asInt(student['id'])]!.text),
           'travail_pratique': _parseNote(_tps[_asInt(student['id'])]!.text),
           'examen': _parseNote(_examens[_asInt(student['id'])]!.text),
         },
@@ -696,7 +703,8 @@ class _LoadWarningPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionPanel(
       title: 'Chargement partiel',
-      subtitle: 'L encodage reste accessible, certaines donnees seront rechargees ensuite.',
+      subtitle:
+          'L encodage reste accessible, certaines donnees seront rechargees ensuite.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -706,7 +714,8 @@ class _LoadWarningPanel extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.warning),
                   const SizedBox(width: 8),
                   Expanded(child: Text(message)),
                 ],

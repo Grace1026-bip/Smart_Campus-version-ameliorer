@@ -4,6 +4,7 @@ import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_api.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -29,7 +30,7 @@ class TeacherCoursesScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return _ErrorPanel(message: snapshot.error.toString());
+            return _ErrorPanel(message: _messageErreur(snapshot.error!));
           }
 
           final courses = snapshot.data ?? [];
@@ -69,6 +70,15 @@ class _CoursesCatalogState extends State<_CoursesCatalog> {
 
       return queryOk && statusOk;
     }).toList();
+
+    if (widget.courses.isEmpty) {
+      return const SectionPanel(
+        title: 'Aucun cours attribue',
+        subtitle:
+            'Votre compte ne possede actuellement aucune affectation active.',
+        child: Text('Aucun cours ne vous est actuellement attribue.'),
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -142,7 +152,8 @@ class _CoursesCatalogState extends State<_CoursesCatalog> {
                 width: 260,
                 child: DropdownButtonFormField<String?>(
                   initialValue: _status,
-                  decoration: const InputDecoration(labelText: 'Etat des notes'),
+                  decoration:
+                      const InputDecoration(labelText: 'Etat des notes'),
                   items: const [
                     DropdownMenuItem<String?>(
                       value: null,
@@ -207,7 +218,7 @@ class TeacherCourseDetailScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return _ErrorPanel(message: snapshot.error.toString());
+            return _ErrorPanel(message: _messageErreur(snapshot.error!));
           }
 
           final course = snapshot.data ?? {};
@@ -321,7 +332,8 @@ class _CourseCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          _InfoLine(label: 'Annee academique', value: course['annee_academique']),
+          _InfoLine(
+              label: 'Annee academique', value: course['annee_academique']),
           _InfoLine(label: 'Assistants', value: _join(course['assistants'])),
           _InfoLine(
             label: 'Derniere valve',
@@ -787,6 +799,11 @@ class _ErrorPanel extends StatelessWidget {
       child: const Text(ApiConfig.serverUnavailableMessage),
     );
   }
+}
+
+String _messageErreur(Object error) {
+  if (error is ApiException) return error.messagePourUtilisateur;
+  return ApiConfig.serverUnavailableMessage;
 }
 
 StatusBadge _notesBadge(String status) {
