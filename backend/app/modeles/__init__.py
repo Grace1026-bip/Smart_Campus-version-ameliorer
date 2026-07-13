@@ -17,6 +17,7 @@ from app.modeles.inscriptions import DemandeInscription
 from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
 from app.modeles.notifications import Notification
 from app.modeles.projets import EncadrementProjet, ProjetAcademique
+from app.modeles.specialites import SpecialiteEncadrementEnseignant
 from app.modeles.reclamations import HistoriqueReclamation, MessageReclamation, Reclamation
 from app.modeles.securite import JetonActualisation, Permission, Role, RolePermission, Utilisateur, UtilisateurRole
 from app.modeles.suivi import EvaluationRisque, Presence
@@ -56,6 +57,7 @@ __all__ = [
     "RolePermission",
     "Semestre",
     "SessionDeliberation",
+    "SpecialiteEncadrementEnseignant",
     "TypeEvaluation",
     "Utilisateur",
     "UtilisateurRole",

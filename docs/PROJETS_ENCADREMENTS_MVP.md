@@ -7,6 +7,12 @@ projet. L'enseignant consulte les etudiants et projets qui lui sont attribues.
 L'etudiant consulte les enseignants qui encadrent son projet. La partie
 appariteur et la consultation etudiante sont reservees aux modules suivants.
 
+Pour le Prompt 5B, la regle de gestion est precisee ainsi: l'appariteur gere
+les projets academiques et attribue les enseignants encadreurs selon le domaine
+du projet. Les enseignants consultent uniquement les projets qui leur sont
+attribues. Les etudiants consulteront ensuite les encadreurs affectes a leur
+projet.
+
 ## Types de projets controles
 
 Les valeurs techniques acceptees par le backend sont:
@@ -62,3 +68,22 @@ erreur avec 6 informations historiques; build Web release reussi.
 L'attribution appariteur, la consultation etudiante des encadreurs, les
 fichiers, la messagerie, les reunions et l'evaluation du projet restent hors
 perimetre.
+
+## Gestion appariteur - Prompt 5B
+
+L'appariteur peut creer et gerer un projet pour un etudiant disposant d'un
+enrolement academique `valide` pour l'annee concernee. Un etudiant ne peut
+avoir qu'un seul projet actif par annee academique. Le type reste limite aux
+quatre valeurs techniques controlees ci-dessus.
+
+Les specialites d'encadrement sont des declarations explicites de l'appariteur
+pour un enseignant actif. Elles sont filtrees par type de projet, ne sont pas
+deduites du nom, du grade ou de l'adresse email, et leur desactivation conserve
+l'historique. Un projet accepte un encadreur `principal` et plusieurs
+`coencadreurs`; le remplacement ou la desactivation ne supprime jamais
+l'ancien encadrement.
+
+La gestion est reservee a un compte actif dont le role actif est
+`appariteur`. Les routes de lecture Enseignant restent separees et continuent
+de filtrer par l'enseignant issu du token. La consultation des encadreurs par
+l'Etudiant et la fiche PDF restent reportees.

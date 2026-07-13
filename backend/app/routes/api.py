@@ -11,6 +11,7 @@ from app.routes.enrolements import routeur_enrolements
 from app.routes.inscriptions import routeur_inscriptions
 from app.routes.notes import routeur_notes
 from app.routes.notifications import routeur_notifications
+from app.routes.projets import routeur_projets_appariteur
 from app.routes.reclamations import routeur_reclamations
 from app.routes.resultats import routeur_resultats
 from app.routes.risques import routeur_risques
@@ -32,6 +33,7 @@ routeur_api.include_router(routeur_resultats)
 routeur_api.include_router(routeur_deliberations)
 routeur_api.include_router(routeur_risques)
 routeur_api.include_router(routeur_enrolements)
+routeur_api.include_router(routeur_projets_appariteur)
 
 
 @routeur_api.get("/statut", tags=["systeme"])

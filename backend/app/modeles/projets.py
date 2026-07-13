@@ -60,8 +60,12 @@ class EncadrementProjet(Base):
     date_attribution: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     actif: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
     date_fin: Mapped[datetime | None] = mapped_column(DateTime)
+    desactive_par_utilisateur_id: Mapped[int | None] = mapped_column(
+        BIGINT(unsigned=True),
+        ForeignKey("utilisateurs.id", ondelete="RESTRICT"),
+    )
 
     projet: Mapped[ProjetAcademique] = relationship(back_populates="encadrements")
     enseignant = relationship("Enseignant")
     attribue_par = relationship("Utilisateur", foreign_keys=[attribue_par_utilisateur_id])
-
+    desactive_par = relationship("Utilisateur", foreign_keys=[desactive_par_utilisateur_id])
