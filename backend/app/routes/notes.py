@@ -26,6 +26,34 @@ def route_lister_evaluations_enseignant(
     return reponse_succes("Evaluations recuperees", {"evaluations": donnees})
 
 
+@routeur_notes.get("/enseignant/types-evaluations")
+def route_lister_types_evaluation(
+    _contexte: ContexteUtilisateur = Depends(exiger_un_des_roles("enseignant")),
+    session: Session = Depends(obtenir_session),
+):
+    return reponse_succes("Types d'evaluation recuperes", {"types": service.lister_types_evaluation(session)})
+
+
+@routeur_notes.get("/enseignant/cours/{cours_id}/resultats/apercu")
+def route_apercu_resultats_cours(
+    cours_id: int,
+    contexte: ContexteUtilisateur = Depends(exiger_un_des_roles("enseignant")),
+    session: Session = Depends(obtenir_session),
+):
+    apercu = service.apercu_resultats_cours(session, contexte.utilisateur.id, cours_id)
+    return reponse_succes("Apercu des resultats recupere", apercu)
+
+
+@routeur_notes.post("/enseignant/cours/{cours_id}/resultats/publier")
+def route_publier_resultats_cours(
+    cours_id: int,
+    contexte: ContexteUtilisateur = Depends(exiger_un_des_roles("enseignant")),
+    session: Session = Depends(obtenir_session),
+):
+    resultats = service.publier_resultats_cours(session, contexte.utilisateur.id, cours_id)
+    return reponse_succes("Resultats du cours publies", resultats)
+
+
 @routeur_notes.post("/enseignant/cours/{cours_id}/evaluations", status_code=status.HTTP_201_CREATED)
 def route_creer_evaluation(
     cours_id: int,

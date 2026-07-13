@@ -1,26 +1,34 @@
 import 'package:shared_preferences/shared_preferences.dart';
 
-class SessionPersistenceService {
-  static const _accessTokenKey = 'smart_faculty_access_token';
-  static const _refreshTokenKey = 'smart_faculty_refresh_token';
-  static const _roleActifKey = 'smart_faculty_role_actif';
+abstract class SessionStorage {
+  Future<Map<String, String>?> readSession();
 
-  static Future<void> saveSession({
+  Future<void> writeSession({
     required String accessToken,
     required String refreshToken,
     required String roleActif,
-  }) async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.setString(_accessTokenKey, accessToken);
-    await preferences.setString(_refreshTokenKey, refreshToken);
-    await preferences.setString(_roleActifKey, roleActif);
-  }
+  });
 
-  static Future<Map<String, String>?> restoreSession() async {
-    final preferences = await SharedPreferences.getInstance();
-    final accessToken = preferences.getString(_accessTokenKey);
-    final refreshToken = preferences.getString(_refreshTokenKey);
-    final roleActif = preferences.getString(_roleActifKey);
+  Future<void> clearSession();
+}
+
+class SharedPreferencesSessionStorage implements SessionStorage {
+  SharedPreferencesSessionStorage({
+    Future<SharedPreferences> Function()? getPreferences,
+  }) : _getPreferences = getPreferences ?? SharedPreferences.getInstance;
+
+  final Future<SharedPreferences> Function() _getPreferences;
+
+  static const accessTokenKey = 'smart_faculty_access_token';
+  static const refreshTokenKey = 'smart_faculty_refresh_token';
+  static const roleActifKey = 'smart_faculty_role_actif';
+
+  @override
+  Future<Map<String, String>?> readSession() async {
+    final preferences = await _getPreferences();
+    final accessToken = preferences.getString(accessTokenKey);
+    final refreshToken = preferences.getString(refreshTokenKey);
+    final roleActif = preferences.getString(roleActifKey);
 
     if (accessToken == null || refreshToken == null || roleActif == null) {
       return null;
@@ -33,10 +41,67 @@ class SessionPersistenceService {
     };
   }
 
+  @override
+  Future<void> writeSession({
+    required String accessToken,
+    required String refreshToken,
+    required String roleActif,
+  }) async {
+    final preferences = await _getPreferences();
+    await preferences.setString(accessTokenKey, accessToken);
+    await preferences.setString(refreshTokenKey, refreshToken);
+    await preferences.setString(roleActifKey, roleActif);
+  }
+
+  @override
+  Future<void> clearSession() async {
+    final preferences = await _getPreferences();
+    await preferences.remove(accessTokenKey);
+    await preferences.remove(refreshTokenKey);
+    await preferences.remove(roleActifKey);
+  }
+}
+
+class SessionPersistenceService {
+  static SessionStorage _storage = SharedPreferencesSessionStorage();
+
+  static void configureStorage(SessionStorage storage) {
+    _storage = storage;
+  }
+
+  static void resetStorage() {
+    _storage = SharedPreferencesSessionStorage();
+  }
+
+  static Future<void> saveSession({
+    required String accessToken,
+    required String refreshToken,
+    required String roleActif,
+  }) async {
+    try {
+      await _storage.writeSession(
+        accessToken: accessToken,
+        refreshToken: refreshToken,
+        roleActif: roleActif,
+      );
+    } catch (_) {
+      // A storage failure must not invalidate an otherwise valid API session.
+    }
+  }
+
+  static Future<Map<String, String>?> restoreSession() async {
+    try {
+      return await _storage.readSession();
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<void> clearSession() async {
-    final preferences = await SharedPreferences.getInstance();
-    await preferences.remove(_accessTokenKey);
-    await preferences.remove(_refreshTokenKey);
-    await preferences.remove(_roleActifKey);
+    try {
+      await _storage.clearSession();
+    } catch (_) {
+      // Logout still clears the in-memory session when local storage is down.
+    }
   }
 }

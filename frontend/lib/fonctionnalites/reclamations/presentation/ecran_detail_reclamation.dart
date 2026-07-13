@@ -171,6 +171,7 @@ String _readOnlyMessage(UserRole role) {
     case UserRole.promotionChief:
       return 'Vous suivez l avancement de la demande collective pour informer la promotion.';
     case UserRole.dean:
+    case UserRole.viceDean:
       return 'Cette vue sert au pilotage. Les actions operationnelles restent aux services concernes.';
     case UserRole.apparitor:
       return 'Vous pouvez suivre le dossier et relancer le service concerne.';

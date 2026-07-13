@@ -1,5 +1,88 @@
 # Smart Faculty - Journal de developpement
 
+## 2026-07-13 - Prompt 4C-B2B-RDC - Decisions LMD avant implementation
+
+### Decisions documentees
+
+- Ajout de `docs/REGLES_LMD_RDC.md` comme reference permanente des regles LMD
+  retenues par la maitrise d'ouvrage.
+- Seuil d'acquisition: 10/20, equivalent a 50/100 dans la valeur historique
+  de `ResultatCours`.
+- Moyenne semestrielle ponderee par les credits avec `Decimal`, sans arrondi
+  intermediaire; semestre normal de 30 credits et annee normale de 60 credits.
+- Decisions de jury: `ADM`, `COMP`, `DEF`, `AJ`.
+- Convention MVP: le `Cours` portant ses credits est traite comme une UE
+  autonome; l'architecture EC-UE-BCC est reportee.
+- Le jury valide la decision. L'appariteur prepare et publie apres cloture,
+  sans pouvoir decider, modifier les calculs ou contourner le jury.
+- La cloture genere un snapshot officiel versionne et immuable; toute
+  correction conserve l'ancienne version.
+
+### Sources
+
+Les sources reglementaires communiquees sont le Decret n°22/39 du 8 decembre
+2022, les arretes n°093/2023 et n°401/2023, et l'Instruction academique n°027
+pour 2025-2026. La reference et la portee sont detaillees dans
+`docs/REGLES_LMD_RDC.md`.
+
+## 2026-07-13 - Prompt 4D - Regle projets et encadrements
+
+La maitrise d'ouvrage confirme que l'appariteur attribue les enseignants
+encadreurs selon le type de projet, que l'enseignant consulte ses projets et
+etudiants attribues et que l'etudiant consultera les encadreurs dans un module
+ulterieur. Les quatre types MVP controles sont `reseaux`,
+`systemes_embarques`, `intelligence_artificielle` et `genie_logiciel`.
+La consultation enseignant est prioritaire dans ce prompt; attribution et
+consultation etudiante restent reportees.
+
+## 2026-07-13 - Prompt 4C-B2B-RDC - Implementation et validation
+
+### Fichiers crees
+
+- `docs/REGLES_LMD_RDC.md`;
+- `backend/app/modeles/deliberations.py`;
+- `backend/app/schemas/deliberations.py`;
+- `backend/app/routes/deliberations.py`;
+- `backend/app/services/deliberations.py`;
+- `backend/alembic/versions/20260713_0004_deliberations_lmd.py`;
+- `backend/tests/test_deliberations.py`;
+- `frontend/lib/fonctionnalites/notes/presentation/ecran_deliberation.dart`.
+
+### Fichiers modifies
+
+- `backend/app/services/resultats_academiques.py` et les tests B2A: moyenne
+  ponderee par credits, conversion source 100 vers officiel 20 et proposition
+  `ADM`, `COMP`, `DEF`, `AJ`;
+- routes API, exports de modeles et service Flutter des deliberations;
+- routage Flutter, role `vice_doyen`, affichage du snapshot officiel et etat
+  « resultat en attente de deliberation »;
+- README et cahier technique.
+
+### Migration et base
+
+La revision `20260713_0004` a ete appliquee sur `smart_faculty_test`, puis
+testee par downgrade vers `20260711_0003` et upgrade vers `20260713_0004`.
+La base `smart_faculty` n'a pas ete migree et aucune donnee de demonstration
+n'y a ete ecrite.
+
+### Resultats
+
+- backend: `107 passed` lors de la seconde execution complete;
+- Flutter: `37 passed` lors des executions completes;
+- `flutter analyze`: 0 erreur, 0 avertissement, 6 informations historiques
+  liees a `dart:html`;
+- `flutter build web --release`: reussi;
+- health checks FastAPI `/` et `/api/v1/statut`: HTTP 200;
+- build Web servi localement: HTTP 200.
+
+### Securite et limites
+
+Aucun mot de passe, token reel ou contenu sensible n'est expose dans les
+snapshots ou notifications. Le snapshot ne supprime pas l'historique. La
+progression annuelle, la seconde session, les releves PDF et la decomposition
+EC-UE-BCC restent hors perimetre. `.vscode/settings.json` conserve sa
+modification preexistante.
+
 ## 2026-07-10 - Prompt 1 - Audit general du projet
 
 ### Module concerne
@@ -565,3 +648,457 @@ Decision: le backend du Prompt 3A est valide avec 41/41 tests. La validation glo
 - Le test de JWT modifie a ete rendu deterministe en alterant le premier caractere de la signature Base64URL plutot que son dernier caractere de remplissage.
 
 Decision: la communication HTTP Flutter-FastAPI, CORS, la classification des erreurs et les scenarios de connexion/deconnexion sont valides. Le Prompt 3B peut commencer apres une confirmation visuelle locale de la redirection dans la fenetre Chrome deja utilisee par le developpeur.
+
+## Audit de reprise Copilot avant le Prompt 3C - 2026-07-11
+
+### Sauvegarde et historique Git
+
+- Branche active: `main`.
+- Branche locale de securite creee: `sauvegarde-avant-audit-copilot`, pointee sur `2fd8e45`.
+- Aucun push, reset, suppression de commit ou reecriture d'historique n'a ete effectue.
+- Les commits recents sont `2fd8e45` (`ah pardon`), `a36c3a4` (checkpoint VS Code), `4724657` (`modification eeeh`) et `614751c` (`moi`).
+- `shared_preferences` a ete ajoute dans `2fd8e45`, signe par l'auteur Git `Grace1026-bip`.
+- `service_persistence.dart` a ete ajoute dans ce meme commit. Aucun commit distinct attribuable a Copilot n'est identifiable dans Git; Git permet de constater l'auteur du commit, pas l'outil qui a produit chaque ligne.
+- Le dernier commit avant l'ajout de la persistance est anterieur a `2fd8e45` (`a36c3a4`/`4e52452`). Le resultat historique de 15 tests Flutter est consigne dans les rapports precedents, mais aucun commit ne permet d'en prouver seul la provenance exacte.
+
+### Etat Copilot et correction
+
+- Avant l'audit, les changements non committes concernaient `service_session.dart`, `pubspec.yaml`, `pubspec.lock` et le registrant macOS genere.
+- `service_persistence.dart`, `shared_preferences`, ainsi que les premiers changements de `service_api.dart` et `service_api_test.dart`, etaient deja dans `HEAD`; ils n'ont donc pas ete restaures globalement.
+- La cause de `Binding has not yet been initialized` etait l'appel asynchrone a `SharedPreferences.getInstance()` depuis `ApiService.configurerSession()` et `ApiService.viderSession()` pendant les tests, sans binding Flutter.
+- La correction conserve `shared_preferences`, mais rend l'acces paresseux, injectable via `SessionStorage`, tolerant aux erreurs et sans appel plateforme a l'import. `SessionService.clear()` ne lance plus une seconde suppression concurrente.
+
+### Authorization et persistance
+
+- Le code de transport actuel construisait deja `Authorization: Bearer <access_token>`; aucune valeur litterale masquee n'est envoyee.
+- Les tests verifient l'absence du header sans token, la valeur Bearer exacte avec des valeurs fictives, le remplacement apres refresh et l'absence de `******` dans la requete capturee.
+- La persistance ne contient que `access_token`, `refresh_token` et `role_actif`. Aucun mot de passe n'est accepte par le contrat de stockage; les tests verifient aussi la suppression complete et les erreurs de lecture/ecriture.
+- `shared_preferences` est un stockage de preferences, pas un coffre-fort. Ses valeurs sont plus exposees que dans Keychain/Keystore; le Web n'offre pas d'equivalent natif. Une evolution vers `flutter_secure_storage` sur mobile ou vers des cookies HttpOnly sur le Web devra etre decidee dans un prompt ulterieur coordonne avec le backend.
+
+### Resultats de stabilisation
+
+- `flutter pub get`: reussi.
+- `flutter test --reporter expanded`: `18 passed`, `0 failed`, sans erreur de binding.
+- `flutter analyze`: aucune erreur ni nouvelle alerte; les 6 informations historiques `dart:html` restent presentes.
+- Backend: `scripts\\test_backend.bat` a cible `smart_faculty_test`; `57 passed`, `0 failed`. Aucun code backend ni aucune donnee de `smart_faculty` n'a ete modifie.
+
+### Decision
+
+L'etat Flutter est stable, l'en-tete Authorization est correct et la persistance minimale est testable sans dependance de mock supplementaire. Les changements Copilot sont acceptables apres cette reparation. Le Prompt 3C complet n'est pas termine; son volet 3C-A peut reprendre a partir de cet etat valide.
+
+## Prompt 3C-A - Persistance et restauration de session Flutter - 2026-07-11
+
+### Perimetre
+
+Cette intervention a porte uniquement sur la sauvegarde apres connexion, la restauration au redemarrage, la verification de session par FastAPI, le nettoyage d'une session invalide et la navigation selon le role actif confirme. Aucun changement de theme, de couleur, de design, de backend ou de base `smart_faculty` n'a ete effectue.
+
+### Implementation
+
+- `ApiService.configurerSession` attend maintenant l'ecriture locale avant de terminer; `viderSession` attend la suppression des trois valeurs.
+- `ApiAuthService.login` sauvegarde la session seulement apres validation de `role_actif` et de sa presence dans les roles retournes.
+- `ApiAuthService.restoreSession` recharge les donnees persistantes, appelle `/auth/moi`, reconstruit l'utilisateur a partir du role backend confirme et laisse `SmartFacultyApp` ouvrir `AppRoutes.dashboardForRole`.
+- Une session absente, incomplete ou refusee est effacee de la memoire et du stockage avant le retour a `AppRoutes.login`.
+- Le bouton de deconnexion attend le nettoyage local avant de remplacer la route.
+
+### Tests ajoutes
+
+- restauration d'une session sauvegardee et verification de l'appel `/auth/moi`;
+- navigation vers le tableau de bord correspondant au role confirme par l'API;
+- suppression complete d'une session refusee;
+- absence de session sans appel API;
+- sauvegarde deterministe apres connexion et gestion des erreurs du stockage.
+
+### Validation finale
+
+- `flutter pub get`: reussi;
+- `flutter analyze`: 0 erreur, 0 nouvelle alerte, 6 informations historiques `dart:html`;
+- `flutter test --reporter expanded`: 22 passed, 0 echec;
+- `scripts\\test_backend.bat`: 57 passed sur `smart_faculty_test`, revision Alembic `20260711_0003`;
+- aucune donnee de `smart_faculty` modifiee.
+
+Decision: le Prompt 3C-A est valide. Le Prompt 3C complet n'est pas declare termine; la prochaine intervention UI pourra traiter separement le theme beige et marron.
+
+## Prompt UI-1 - Theme global beige et marron - 2026-07-12
+
+### Audit initial
+
+- Branche de travail creee et activee: `ui-theme-beige-marron`.
+- Etat avant UI-1: 22 tests Flutter reussis, 57 tests backend reussis, authentification et session stables.
+- L'ancien theme etait centralise, mais bleu: `#0B3D91`, `#2563EB`, fonds `#F3F7FC` / `#F8FAFC`, accents cyan et violet.
+- Un seul fichier contenait les codes hexadecimaux: `couleurs_application.dart`; les ecrans consommaient majoritairement `AppColors`.
+- Les blancs et transparences de la connexion et de la sidebar etaient des couleurs de contraste sur fond sombre, pas des palettes concurrentes.
+
+### Correctif visuel
+
+- Palette officielle beige/marron centralisee dans `couleurs_application.dart`.
+- `ColorScheme` et `ThemeData` mis en coherence avec les surfaces creme, le marron profond et le terracotta.
+- Ajout/configuration des themes AppBar, cartes, boutons, champs, icones, diviseurs, drawer, dialogues, SnackBar, progression, chips et tableaux.
+- Connexion: fond creme, panneau marron, formulaire beige, focus terracotta, bouton marron, liens terracotta.
+- Demande d'inscription: carte beige, bordures marron clair, champs et bouton alignes sur la connexion.
+- Navigation laterale: fond marron profond, texte beige, selection claire et sorties preservees.
+- Cyan et violet remplaces par des variantes desaturees uniquement pour les graphiques/categories; les couleurs semantiques de succes, avertissement et erreur restent distinctes.
+
+### Verification visuelle
+
+- `flutter build web --release`: reussi.
+- `flutter run -d chrome` ne rendait pas le canvas dans l'environnement de debug, le canal Dart restant en attente; la build statique Web a donc ete servie localement.
+- Connexion controlee en desktop 1280x720 et mobile 390x844.
+- Demande d'inscription controlee en desktop et mobile.
+- Aucun texte coupe, bouton inaccessible, debordement ou perte de contraste observe.
+
+### Tests et securite fonctionnelle
+
+- `flutter pub get`: reussi, sans `flutter upgrade` ni `flutter pub upgrade`.
+- `flutter analyze`: aucune erreur ni nouvelle alerte; 6 informations historiques `dart:html`.
+- `flutter test --reporter expanded`: 24 passed, 0 echec;
+- `scripts\\test_backend.bat`: 57 passed sur `127.0.0.1:3307/smart_faculty_test`.
+- Aucun backend, route, service fonctionnel, modele, API ou base `smart_faculty` n'a ete modifie.
+- L'authentification et la persistance de session restent couvertes par les tests precedents.
+
+Decision: le Prompt UI-1 est valide. Le theme beige et marron est applique et coherent sur les surfaces controlees. Les ajustements visuels plus fins des dashboards pourront etre traites ulterieurement sans remettre en cause la logique fonctionnelle.
+
+## Correction CORS Flutter Web / FastAPI - 2026-07-12
+
+### Diagnostic
+
+- URL backend Flutter: `http://127.0.0.1:8000/api/v1`.
+- Origine navigateur Flutter observee pour le test: `http://localhost:52100`; Flutter peut aussi utiliser `http://127.0.0.1:<port>` ou un port local dynamique.
+- Ancienne configuration: liste de ports fixes, `allow_credentials=True`, `allow_methods=["*"]`, `allow_headers=["*"]`.
+- Cause du blocage: une origine locale dynamique non presente dans `FRONTEND_ORIGINS` recevait `Disallowed CORS origin` lors du preflight `OPTIONS`.
+
+### Correction appliquee
+
+- `backend/app/main.py` utilise la regex locale uniquement pour `development`, `dev` et `test`: `^http://(localhost|127\\.0\\.0\\.1)(:\\d+)?$`.
+- La production utilise toujours la liste explicite `parametres.frontend_origins`.
+- Methodes autorisees: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`, `OPTIONS`.
+- Headers autorises: `Authorization`, `Content-Type`, `Accept`.
+- `allow_credentials=False`, car les jetons Smart Faculty ne sont pas des cookies inter-origines.
+- Aucun wildcard d'origine, aucun secret et aucun middleware CORS concurrent n'ont ete ajoutes.
+
+### Tests CORS ajoutes
+
+- preflight localhost avec port `3000`;
+- preflight `127.0.0.1` avec port dynamique;
+- refus d'une origine externe;
+- requete simple locale sans header credentials.
+
+### Verification reelle
+
+- `OPTIONS /api/v1/auth/connexion`: HTTP 200, `Access-Control-Allow-Origin: http://localhost:52100`;
+- `POST /api/v1/auth/connexion`: HTTP 200;
+- `GET /api/v1/auth/moi` avec Bearer: HTTP 200;
+- identifiants invalides: HTTP 401 provenant de l'API, sans erreur navigateur CORS;
+- origine externe: preflight refuse.
+
+### Validation finale
+
+- `scripts\\test_backend.bat`: `61 passed` sur `smart_faculty_test`;
+- `flutter analyze`: aucune erreur ni nouvelle alerte, 6 informations historiques `dart:html`;
+- `flutter test --reporter expanded`: `24 passed`;
+- aucune logique d'authentification, écran, thème, route métier, migration ou base de données modifiee.
+
+Decision: la correction CORS ciblée est valide. Flutter Web peut communiquer avec FastAPI sur les origines locales autorisees, tandis que la production conserve une liste explicite d'origines.
+
+## Correction ciblee du diagnostic CORS Flutter Web - 2026-07-12
+
+### Constat
+
+Le backend repondait correctement depuis l'origine `http://localhost:52100`: preflight `OPTIONS 200`, connexion `POST 200`, verification `/auth/moi 200` et identifiants fictifs invalides `401`. Le message Flutter « connexion bloquee par CORS » etait donc trop generique pour conclure a un blocage CORS.
+
+### Correction Flutter
+
+- `service_api.dart` mappe les erreurs HTTP 401, 403, 422 et 500 vers des messages utilisateur distincts.
+- Le timeout affiche `La connexion a expire.`.
+- Une indisponibilite ou erreur reseau inattendue affiche `Le serveur FastAPI est inaccessible.`.
+- Le message `Requete refusee par le navigateur.` est reserve au type de transport CORS emis apres un probe `no-cors` reussi vers la meme URL API.
+- `client_api_web.dart` ne sonde plus la racine generique du serveur: il sonde l'URL API demandee, ce qui evite de conclure a tort a partir d'un endpoint different.
+- L'ecran de connexion utilise le message utilisateur mappe par `ApiException`, sans afficher d'exception technique brute.
+
+### Controle et limites
+
+- Aucun changement de politique CORS pendant cette intervention.
+- Aucun changement de logique d'authentification, role, session, backend, base de donnees ou theme.
+- Aucun token, mot de passe ou corps sensible n'a ete affiche.
+- `scripts\\test_backend.bat`: `61 passed` sur `smart_faculty_test` lors de la validation CORS.
+- Derniere suite Flutter validee avant cette correction: `24 passed`, `flutter analyze` sans erreur ni nouvelle alerte et 6 informations historiques `dart:html`.
+- La relance Flutter ciblee apres correction est restee bloquee avant toute sortie dans l'environnement local; le processus a ete arrete proprement et aucun echec de test n'a ete observe.
+
+Decision: le diagnostic CORS est corrige cote Flutter et la configuration backend existante est confirmee fonctionnelle. Une nouvelle execution Flutter hors de cet etat d'environnement est necessaire pour clore la validation automatique de cette correction.
+
+## Prompt 4A-R - Deblocage Flutter et socle Enseignant - 2026-07-12
+
+### Deblocage de l'environnement
+
+- Le depot est reste sur `ui-theme-beige-marron`; les changements anterieurs non valides n'ont pas ete ecrases.
+- `flutter --version`: Flutter `3.41.9`, Dart `3.11.5`.
+- Le blocage venait d'un `lockfile` orphelin dans le cache du SDK Flutter, alors qu'aucun processus Dart/Flutter ne tournait. Les deux verrous SDK ont ete supprimes avec une autorisation ciblee; Flutter n'a pas ete reinstalle ni mis a jour.
+- `.dart_tool/` et `build/` du frontend ont ete nettoyes; `pubspec.lock` a ete conserve.
+- `flutter pub get` a resolu les dependances, mais retourne un code non nul pour la creation de liens symboliques de plugins Windows, Developer Mode n'etant pas active. Les tests Dart et le build Web fonctionnent malgre cette restriction.
+
+### Implementation backend
+
+- Ajout de `backend/app/routes/enseignants.py`.
+- Ajout de `backend/app/services/enseignants.py`.
+- Inclusion du routeur dedie avant les routes academiques generiques afin que `/enseignants/moi` ne soit pas capture par `/enseignants/{enseignant_id}`.
+- Les requetes utilisent le role actif enseignant, `Enseignant.utilisateur_id` et `CoursEnseignant.enseignant_id`.
+- Le chargement SQLAlchemy des collections utilise `selectinload` pour eviter les doublons et les conflits de strategie.
+
+### Implementation Flutter
+
+- `EnseignantApiService` appelle uniquement les routes `/enseignants/moi` dans l'espace Enseignant.
+- Ajout du profil enseignant distant en lecture seule.
+- Dashboard recentre sur les cours et donnees disponibles; les statistiques fictives de notes et de risques ont ete retirees du socle.
+- Ajout de l'etat vide explicite pour un enseignant sans cours.
+- Les erreurs d'API utilisent les messages utilisateur existants, notamment acces refuse et serveur inaccessible.
+- Aucun developpement complet de la Valve, des Notes ou des Presences.
+
+### Tests
+
+- Ajout de `backend/tests/test_enseignants.py`: autorisations, profil, multi-role, compte inactif, filtrage entre enseignants, detail, liste vide, donnees sensibles et coherence promotion/annee.
+- Ajout de `frontend/test/enseignant_service_test.dart`: profil, liste vide et detail des routes dediees.
+- Tests Flutter fichier par fichier: tous reussis.
+- Suite Flutter complete avec concurrence minimale: `28 passed`, 0 echec.
+- `flutter analyze`: 6 informations historiques `dart:html`, aucune nouvelle alerte.
+- `flutter build web --release`: reussi.
+- Suite backend officielle: `68 passed` lors de deux executions, uniquement sur `smart_faculty_test`.
+
+### Verification manuelle et securite
+
+- Connexion avec le compte enseignant de demonstration: dashboard ouvert sur `#/teacher`.
+- Dashboard: 3 cours et 2 etudiants reels affiches.
+- Navigation Mes cours, profil et deconnexion verifiees en desktop.
+- Aucun `enseignant_id` libre n'est accepte par les nouvelles routes.
+- Aucun token, mot de passe ou hash n'est retourne par le profil.
+- Aucune migration, aucune ecriture de test dans `smart_faculty` et aucun changement de theme n'ont ete effectues.
+
+Decision: le Prompt 4A-R est valide. Le socle Enseignant est fonctionnel, le profil est securise, les cours sont filtres par le backend et le projet est pret pour le Prompt 4B. La suite mobile reste a refaire dans un navigateur de verification qui accepte le viewport reduit; elle n'a revele aucun defaut de compilation ou de test.
+
+## Prompt 4B - Valve Enseignant - 2026-07-12
+
+### Audit et decision
+
+Le depot possedait deja un module Valve actif: modele SQLAlchemy, routes FastAPI, service, tests de cycle, stockage de pieces jointes et ecran Flutter. Aucun doublon, aucune migration et aucune modification de la base principale n'ont donc ete introduits.
+
+L'audit a releve deux ecarts fonctionnels. Le formulaire Flutter forcait `publier_maintenant=true` et ne permettait pas de publier un brouillon. De plus, le backend verifiait seulement l'affectation au cours pour les mutations, ce qui autorisait un collegue affecte au meme cours a modifier ou archiver une publication d'un autre auteur.
+
+### Corrections
+
+- `EnseignantApiService` transmet maintenant le choix brouillon ou publication immediate et expose la publication d'un brouillon;
+- l'ecran Valve affiche l'action `Publier` seulement pour un brouillon dont l'utilisateur est auteur;
+- le backend derive `auteur_id` du contexte authentifie et controle l'auteur pour modifier, publier, archiver et gerer les pieces jointes;
+- `est_auteur` est retourne dans la liste enseignant pour aligner l'interface sur l'autorisation backend;
+- les types de creation restent bornes par le schema et `publication_notes` est refuse dans le perimetre 4B;
+- les donnees de Notes, evaluations, presences, reclamations et statistiques ne sont pas touchees.
+
+### Tests et securite
+
+Le test backend Valve couvre le brouillon, le type invalide, l'affectation d'un second enseignant au meme cours et le refus de ses mutations. La suite officielle a termine a `69 passed`. La suite Flutter a termine a `31 passed`, dont trois tests du service Valve. `flutter pub get` a resolu les dependances sans upgrade, `flutter analyze` conserve seulement les 6 informations historiques `dart:html`, et le build Web release est reussi.
+
+Aucun mot de passe, token ou secret n'est ajoute dans les reponses ou les logs. La preparation backend utilise uniquement `smart_faculty_test`; aucune ecriture de `smart_faculty` n'a ete effectuee. Aucun commit ni push automatique n'a ete realise.
+
+Decision: le Prompt 4B est techniquement valide sur les tests automatises. La Valve enseignant permet maintenant de creer, lister, modifier, publier et archiver dans le perimetre securise des cours affectes, avec mutations reservees a l'auteur. Les modules Notes et les autres valves fonctionnelles restent hors perimetre.
+
+## Prompt 4C-A - Evaluations et saisie des notes - 2026-07-12
+
+### Audit de l'existant
+
+Les tables et routes Notes existaient deja, mais l'ecran enseignant actif restait partiellement visuel: il encodeait trois colonnes fixes et appelait des methodes Flutter qui levaient volontairement une exception car elles ne correspondaient plus aux routes Notes par evaluation. Le backend, lui, gerait deja le cycle brouillon, saisie, publication et verrouillage.
+
+Les documents officiels imposent qu'un enseignant ne gere que ses cours attribues, qu'une note brouillon ne soit pas visible, qu'une note publiee soit protegee et que les resultats soient alimentes apres publication. Les types retenus depuis les donnees initiales sont `interrogation`, `travail_pratique`, `examen` et `autre`.
+
+### Corrections realisees
+
+- ajout de `GET /enseignant/types-evaluations` pour alimenter Flutter depuis les types actifs;
+- ajout du type d'evaluation dans les reponses de liste et detail;
+- verification de l'annee academique active et du statut academique actif dans le roster;
+- restriction des mutations au createur de l'evaluation, y compris saisie, publication, archivage et verrouillage;
+- verification transactionnelle de la somme des ponderations, plafonnee a 100 %;
+- retour d'un roster minimal securise pour une evaluation;
+- remplacement de l'ecran enseignant fixe par `TeacherEvaluationsScreen`, avec creation/modification, liste des evaluations, ponderation, saisie par evaluation, zero distinct d'une absence et lecture seule apres publication;
+- correction du nom de champ Flutter `confirmer_notes_manquantes` attendu par FastAPI.
+
+### Tests et limites
+
+Les tests backend couvrent types, creation, titre vide, type absent, ponderations, modification, roster, confidentiality, note zero, note negative, note hors bareme, doublon, modification d'une note, et autre enseignant. La suite officielle est a `71 passed`. Flutter est a `34 passed`, dont trois tests Notes du service API. L'analyse conserve seulement les 6 informations historiques `dart:html`; le build Web release est reussi.
+
+Aucune migration n'a ete creee. Les tests utilisent uniquement `smart_faculty_test`; aucune donnee de `smart_faculty` n'a ete modifiee. Aucun mot de passe, hash, token ou email d'etudiant n'est expose par le roster.
+
+Le calcul de resultat et la notification declenches historiquement par la route de publication existaient avant 4C-A et n'ont pas ete etendus. Leur formalisation, la moyenne semestrielle/annuelle, les releves, les reclamations, l'affichage Etudiant complet et Campus Analytics sont reportes au Prompt 4C-B.
+
+Decision: le socle Evaluations et saisie des notes est valide techniquement pour 4C-A. Le projet est pret pour une intervention 4C-B centree sur le calcul, la publication et les resultats, sous reserve de conserver ces limites.
+
+## Prompt 4C-B1 - Calcul et publication des resultats d'un cours - 2026-07-12
+
+### Audit
+
+Le code actif calculait deja un `ResultatCours` lors de la publication d'une evaluation. Ce calcul historique produisait une valeur sur 100, mais ignorait une note manquante dans la contribution et renseignait aussi les credits et la reussite/echec. Ces effets ne sont pas etendus dans B1, car ils appartiennent au traitement global des resultats prevu en B2.
+
+Les regles documentaires confirment qu'une absence ou une note manquante ne doit pas devenir automatiquement un zero. Le nouveau calcul distingue donc explicitement note zero, note absente et resultat incomplet.
+
+### Implementation
+
+- ajout de l'aperçu backend `GET /enseignant/cours/{cours_id}/resultats/apercu`;
+- ajout de la publication backend `POST /enseignant/cours/{cours_id}/resultats/publier`;
+- calcul Decimal sur 100, arrondi final a deux decimales;
+- blocage si ponderation differente de 100 %, evaluation active en brouillon ou note manquante;
+- filtrage par affectation enseignant, inscription active, annee active et statut etudiant actif;
+- publication transactionnelle, dates renseignees, verrouillage des evaluations et comportement idempotent;
+- annonce Valve `publication_notes` sans notes individuelles;
+- aperçu Flutter avec etat, total ponderation, notes manquantes, resultats provisoires et confirmation de publication;
+- lecture seule maintenue apres verrouillage.
+
+### Tests et limites
+
+Les tests B1 couvrent calcul mono/multi-evaluation, ponderation complete, note zero, note absente, arrondi, aperçu, refus cours etranger, refus autre role/enseignant, publication incomplete, publication complete, date/statut/verrouillage, idempotence et absence de notes individuelles dans la Valve. La suite backend complete est a `73 passed` et la suite Flutter a `35 passed`.
+
+`flutter analyze` conserve seulement les 6 informations historiques `dart:html`; le build Web release est reussi. Les tests utilisent uniquement `smart_faculty_test`. Aucune migration, aucune modification de `smart_faculty`, aucun credit, aucune decision reussite/echec et aucune moyenne semestrielle ou annuelle n'ont ete ajoutes.
+
+Decision: le Prompt 4C-B1 est valide techniquement pour le calcul a la demande et la publication/verrouillage des notes d'un cours. Le projet est pret pour le Prompt 4C-B2, qui devra traiter separement les resultats persistes, credits et decisions globales.
+
+## Prompt 4C-B2A - Consolidation academique semestrielle - 2026-07-13
+
+### Audit documentaire et decision de formule
+
+Les documents `00.01`, `00.02`, `00.03`, `00.04`, `01.01`, `01.02`, `01.04`, `01.06`, `01.07`, `02.01`, `02.02`, `02.03`, `02.04`, le Cahier technique et le Journal ont ete relus. Ils imposent le calcul des moyennes et credits, le seuil cours de 50/100 et l'acquisition des credits pour un cours reussi. Ils ne fixent pas la formule d'une moyenne semestrielle, la compensation, le rattrapage ni une decision officielle de semestre.
+
+Le code actif calculait `moyenne_generale` par moyenne simple des `ResultatCours`. B2A conserve cette formule sur 100, avec `Decimal` et arrondi final a deux decimales, en la marquant provisoire. Une formule ponderee par credits ne sera pas introduite sans confirmation documentaire. La decision semestrielle reste `en_attente_de_validation`; aucune valeur `admis`, `ajourne` ou `echec` globale n'est produite.
+
+### Implementation backend
+
+- creation de `backend/app/services/resultats_academiques.py` comme service unique de consolidation;
+- ajout de `backend/app/routes/resultats.py` et inclusion dans l'API;
+- lecture a la demande des `ResultatCours` publies avec evaluations publiees et verrouillees;
+- persistance du `ResultatCours` central lors de la publication complete d'un cours B1;
+- verification de l'etudiant actif, de la promotion, de l'inscription active, de l'annee active, du semestre, des cours actifs, des credits et des statuts;
+- calcul des credits prevus, acquis et non acquis;
+- blocage explicite des resultats manquants, brouillons, non verrouilles, incoherents ou hors periode;
+- autorisation etudiant sur ses propres resultats et responsables `appariteur`, `doyen`, `administrateur` sur leur apercu;
+- aucune ecriture de consolidation, aucune table nouvelle, aucun effet de bord pendant la consultation.
+
+Un cours echoue ne rend pas le semestre incomplet: il n'acquiert simplement aucun credit. Un resultat absent ou encore `en_attente` rend le semestre incomplet. Une note zero est conservee comme un resultat et ne devient jamais une absence.
+
+### Implementation Flutter
+
+`NotesApiService` expose les routes de semestres, la liste responsable securisee et l'apercu. `AcademicResultsScreen` affiche l'etudiant, l'annee, le semestre, les cours, les resultats publies, les credits, la moyenne, les blocages et la mention `Resultat provisoire - non encore valide officiellement`. Les roles enseignant et chef de promotion ne sont pas autorises par cette vue semestrielle.
+
+### Tests et verification
+
+- preconditions backend: `73 passed` avant modification;
+- preconditions Flutter: `35 passed` avant modification;
+- tests B2A dedies: 24 fonctions, dont un cas parametre, soit 25 scenarios executes;
+- suite backend officielle execution 1: `97 passed` sur `smart_faculty_test`;
+- suite backend officielle execution 2: `97 passed` sur `smart_faculty_test`;
+- suite Flutter execution 1: `36 passed` avec `--concurrency=1`;
+- suite Flutter execution 2: `36 passed` avec `--concurrency=1`;
+- `flutter analyze`: 0 erreur et 0 avertissement, 6 informations historiques `dart:html`;
+- `flutter build web --release`: reussi;
+- `GET /` et `GET /api/v1/statut`: reponses nominales depuis FastAPI local;
+- aucun test n'a utilise ou modifie `smart_faculty`.
+
+### Limites et transmission B2B
+
+Le modele ne contient pas encore de drapeau cours obligatoire, d'unite d'enseignement, d'annulation, de compensation ou de validation administrative. B2A traite donc tous les cours actifs du programme comme requis et refuse les incoherences plutot que d'inventer une regle. La validation officielle, la deliberation, la publication etudiante, la moyenne annuelle, le releve PDF, les reclamations, la correction post-deliberation et les decisions manuelles sont reportes au Prompt 4C-B2B.
+
+Decision: le Prompt 4C-B2A est valide techniquement pour une consolidation semestrielle provisoire, securisee et idempotente. Le projet est pret pour le Prompt 4C-B2B sous reserve de confirmer la formule semestrielle officielle et les regles administratives.
+
+## Prompt 4C-B2B - Audit de validation administrative - 2026-07-13
+
+### Preconditions
+
+- branche active: `moteur-resultats-academiques`;
+- modification preexistante conservee: `.vscode/settings.json`;
+- backend: `97 passed` sur `smart_faculty_test`;
+- Flutter: `36 passed` avec `--concurrency=1`;
+- `flutter analyze`: 0 erreur, 0 avertissement, 6 informations historiques `dart:html`;
+- `GET /` et `GET /api/v1/statut`: reponses nominales depuis FastAPI local.
+
+### Regles verifiees
+
+Les documents `00.04 - Organigramme des utilisateurs.docx`, `01.02 - Besoins fonctionnels.docx`, `01.04 - Cas d'utilisation.docx`, `01.06 - Scenarios d'utilisation.docx`, `01.07 - Regles metier.docx`, `02.01 - Architecture generale.docx`, `02.02 - Conception de la base de donnees.docx`, `02.04 - Architecture des API REST.docx`, le Cahier technique et le Journal ont ete relus.
+
+La seule regle numerique confirmee est le seuil de cours `>= 50 %`; les credits sont acquis lorsqu'un cours est reussi. L'enseignant publie les resultats de ses cours. L'appariteur valide certaines inscriptions. Le doyen consulte les notes publiees. Aucun texte ne confirme une formule semestrielle, un seuil de semestre, un validateur officiel ou un responsable de publication officielle.
+
+### Audit du workflow
+
+Le code actif ne comporte pas de validation semestrielle ni de publication officielle. `ResultatCours` ne stocke ni snapshot, ni statut administratif, ni validateur, ni dates de validation/publication, ni motif de correction. `JournalAudit` existe pour les traces techniques, mais ne peut pas porter seul l'etat officiel. Les migrations existantes ne contiennent pas de structure adaptee.
+
+### Decision
+
+Aucune modification fonctionnelle n'a ete faite pendant B2B. La validation administrative, la demande de correction, le verrouillage officiel et la publication etudiante sont bloques pour eviter d'inventer une regle ou un role. Aucune migration, aucun test ecrivant dans `smart_faculty`, aucune route B2B et aucun statut officiel n'ont ete ajoutes. Le theme, la Valve, les presences et le fichier `.vscode/settings.json` n'ont pas ete modifies.
+
+Le prochain passage doit fournir une confirmation metier explicite de la formule semestrielle, du seuil semestriel, du role validateur, du role de publication et des transitions de correction. Apres cette confirmation seulement, un snapshot officiel et une migration non destructive pourront etre concus.
+
+## 2026-07-13 - Prompt 4D - Espace enseignant des encadrements
+
+Audit: aucune structure active FastAPI ne permettait la consultation des
+projets encadres; l'ancien schema SQL et l'ecran Flutter de projets etaient
+historiques ou fictifs. Une architecture minimale a donc ete ajoutee, sans
+interface d'attribution appariteur.
+
+Implementation: ajout des modeles `ProjetAcademique` et `EncadrementProjet`,
+des routes `GET /api/v1/enseignants/moi/encadrements` et leur detail, du
+service de filtrage securise par enseignant actif et de la migration additive
+`20260713_0005`. Le backend valide les quatre types controles et exclut les
+doublons actifs. Flutter ajoute la route protegee `/teacher/supervisions` et
+l'ecran `Mes encadrements`.
+
+Verification: la migration a ete retrogradee puis rehaussee sur
+`smart_faculty_test`; les deux suites backend ont donne `120 passed`, les
+deux suites Flutter `39 passed`, l'analyse conserve seulement les 6
+informations historiques `dart:html`, et le build Web release a reussi. Les
+endpoints FastAPI `/` et `/api/v1/statut` ont repondu HTTP 200. Aucun test n'a
+ecrit dans `smart_faculty`; `.vscode/settings.json` a ete conserve intact.
+
+Transmission: l'espace enseignant est pret pour le module d'attribution
+appariteur. La consultation etudiante des encadreurs, les fichiers, la
+messagerie, les reunions et l'evaluation des projets restent a implementer.
+
+## 2026-07-13 - Prompt 5A - Gestion des enrolements academiques
+
+### Sauvegarde et migration
+
+La branche active est `moteur-resultats-academiques`. Une sauvegarde de
+`smart_faculty` a ete creee avant verification de la chaine Alembic. La base
+principale etait a `20260711_0003`; les migrations `20260713_0004` et
+`20260713_0005` ont ete appliquees pour aligner la structure existante avec
+les fonctionnalites deja validees. Une incompatibilite MySQL liee aux tables
+parentes MyISAM a ete corrigee dans la migration de deliberation en convertissant
+uniquement les parents necessaires vers InnoDB; aucune table n'a ete supprimee.
+
+La migration `20260713_0006` ajoute `enrolements_academiques`. Elle a ete
+testee sur `smart_faculty_test` avec downgrade puis upgrade. La base
+`smart_faculty` n'a pas ete migree a `0006`, n'a recu aucune donnee de test et
+reste a `20260713_0005`.
+
+### Audit et implementation
+
+Le modele actif distinguait deja les comptes, les etudiants, les promotions,
+les annees et les inscriptions de cours, mais ne possedait pas de fiche
+d'enrolement academique. Le nouveau modele rattache l'etudiant, la promotion
+et l'annee, genere une reference unique et garde les statuts
+`en_attente`, `valide`, `annule`. Le doublon actif est refuse; l'annulation
+conserve l'historique et permet un nouvel enrolement du meme triplet.
+
+Les routes appariteur listent, creent, modifient avant validation, valident,
+annulent et consultent les donnees de fiche. Le backend derive toujours
+l'autorite du token et filtre les comptes actifs. Aucun mot de passe, hash,
+token, paiement ou renseignement personnel inutile n'est retourne.
+
+Flutter ajoute l'entree `Enrolements` dans l'espace Appariteur, avec filtres,
+creation, detail et actions de validation ou annulation. L'interface reutilise
+le theme existant et ne cree ni PDF, ni attribution d'encadrement, ni logique
+de notes ou de presence.
+
+### Verification et transmission
+
+Les deux executions de la suite backend ont donne `128 passed`. Les deux
+executions Flutter ont donne `42 passed`. `flutter analyze` a donne 0 erreur
+et 0 avertissement, avec 6 informations historiques liees a `dart:html`.
+`flutter build web --release` a reussi. FastAPI a repondu HTTP 200 sur `/`,
+`/api/v1/statut` et le health check de la base; Flutter Web a ete servi sur
+`http://localhost:52100`.
+
+Le Prompt 5A est valide techniquement. La migration `20260713_0006` est prete
+pour un deploiement controle ulterieur sur la base principale. Le prochain
+module peut traiter l'attribution des encadreurs par l'appariteur, sans
+melanger cette fonctionnalite avec l'enrolement academique.

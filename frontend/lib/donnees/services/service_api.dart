@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
@@ -22,6 +21,21 @@ class ApiException implements Exception {
   final int? statusCode;
   final Map<String, dynamic> errors;
 
+  String get messagePourUtilisateur {
+    switch (statusCode) {
+      case 401:
+        return 'Identifiants incorrects.';
+      case 403:
+        return 'Compte non autorise ou acces refuse.';
+      case 422:
+        return 'Requete invalide. Verifiez les donnees saisies.';
+      case 500:
+        return 'Le serveur FastAPI a rencontre une erreur.';
+      default:
+        return message;
+    }
+  }
+
   @override
   String toString() => message;
 }
@@ -40,28 +54,26 @@ class ApiService {
   String? get roleActif => _roleActif;
   bool get estConnecte => _accessToken != null && _refreshToken != null;
 
-  void configurerSession({
+  Future<void> configurerSession({
     required String accessToken,
     required String refreshToken,
     required String roleActif,
-  }) {
+  }) async {
     _accessToken = accessToken;
     _refreshToken = refreshToken;
     _roleActif = roleActif;
-    unawaited(
-      SessionPersistenceService.saveSession(
-        accessToken: accessToken,
-        refreshToken: refreshToken,
-        roleActif: roleActif,
-      ),
+    await SessionPersistenceService.saveSession(
+      accessToken: accessToken,
+      refreshToken: refreshToken,
+      roleActif: roleActif,
     );
   }
 
-  void viderSession() {
+  Future<void> viderSession() async {
     _accessToken = null;
     _refreshToken = null;
     _roleActif = null;
-    unawaited(SessionPersistenceService.clearSession());
+    await SessionPersistenceService.clearSession();
   }
 
   Future<Map<String, dynamic>> get(
@@ -95,6 +107,19 @@ class ApiService {
   }) async {
     final response = await _requestWithRefresh(
       methode: 'PUT',
+      uri: _uri(path),
+      headers: _headers(json: true),
+      body: jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic> body = const {},
+  }) async {
+    final response = await _requestWithRefresh(
+      methode: 'PATCH',
       uri: _uri(path),
       headers: _headers(json: true),
       body: jsonEncode(body),
@@ -191,13 +216,9 @@ class ApiService {
         case TypeErreurTransport.serveurInaccessible:
           throw ApiException(ApiConfig.serverUnavailableMessage);
         case TypeErreurTransport.delaiDepasse:
-          throw ApiException(
-            'Le serveur FastAPI ne repond pas dans le delai attendu.',
-          );
+          throw ApiException('La connexion a expire.');
         case TypeErreurTransport.cors:
-          throw ApiException(
-            'Connexion bloquee par la politique CORS du backend FastAPI.',
-          );
+          throw ApiException('Requete refusee par le navigateur.');
       }
     } on ApiException {
       rethrow;
@@ -222,7 +243,7 @@ class ApiService {
       );
 
       if (response.statusCode >= 400) {
-        viderSession();
+        await viderSession();
         return false;
       }
 
@@ -232,18 +253,18 @@ class ApiService {
       final roleActif = data['role_actif']?.toString() ?? _roleActif;
 
       if (accessToken == null || refreshToken == null || roleActif == null) {
-        viderSession();
+        await viderSession();
         return false;
       }
 
-      configurerSession(
+      await configurerSession(
         accessToken: accessToken,
         refreshToken: refreshToken,
         roleActif: roleActif,
       );
       return true;
     } catch (_) {
-      viderSession();
+      await viderSession();
       return false;
     }
   }
@@ -341,6 +362,3 @@ class ApiService {
 class ApiDataSource {
   static ApiService client = ApiService();
 }
-
-
-

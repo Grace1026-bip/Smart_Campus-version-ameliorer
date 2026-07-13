@@ -165,6 +165,100 @@ def test_valve_refuse_enseignant_non_affecte(client: TestClient, token_admin: st
     assert reponse.status_code == 403
 
 
+def test_valve_reserve_les_mutations_auteur_et_refuse_type_invalide(
+    client: TestClient,
+    token_admin: str,
+    suffixe: str,
+):
+    token_auteur = _connexion(client, "enseignant@smartfaculty.test", "enseignant")
+    headers_auteur = {"Authorization": f"Bearer {token_auteur}"}
+    headers_admin = {"Authorization": f"Bearer {token_admin}"}
+    cours_id = _cours_id()
+
+    creation = client.post(
+        "/api/v1/enseignant/valve/publications",
+        json={
+            "cours_id": cours_id,
+            "type_publication": "annonce",
+            "titre": f"Brouillon auteur {suffixe}",
+            "contenu": "Publication reservee a son auteur.",
+        },
+        headers=headers_auteur,
+    )
+    assert creation.status_code == 201
+    publication = creation.json()["donnees"]["publication"]
+    publication_id = publication["id"]
+    assert publication["statut"] == "brouillon"
+    assert publication["est_auteur"] is True
+
+    enseignant = client.post(
+        "/api/v1/enseignants",
+        json={
+            "utilisateur": {
+                "nom": "Valve",
+                "postnom": "Auteur",
+                "prenom": "Second",
+                "email": f"second.valve.{suffixe}@smartfaculty.test",
+                "mot_de_passe": "Smart@123456",
+            },
+            "matricule_agent": f"ENS-VALVE-{suffixe}",
+            "grade": "Assistant",
+            "departement": "Informatique",
+        },
+        headers=headers_admin,
+    )
+    assert enseignant.status_code == 201
+    enseignant_id = enseignant.json()["donnees"]["id"]
+
+    affectation = client.post(
+        f"/api/v1/cours/{cours_id}/enseignants",
+        json={
+            "enseignant_id": enseignant_id,
+            "type_intervenant": "assistant",
+            "est_responsable": False,
+        },
+        headers=headers_admin,
+    )
+    assert affectation.status_code == 201
+
+    token_second = _connexion(
+        client,
+        f"second.valve.{suffixe}@smartfaculty.test",
+        "enseignant",
+    )
+    headers_second = {"Authorization": f"Bearer {token_second}"}
+    liste = client.get("/api/v1/enseignant/valve", headers=headers_second)
+    assert liste.status_code == 200
+    publication_second = next(
+        item for item in liste.json()["donnees"]["elements"] if item["id"] == publication_id
+    )
+    assert publication_second["est_auteur"] is False
+
+    for methode, chemin, json_body in (
+        ("put", f"/api/v1/enseignant/valve/publications/{publication_id}", {"contenu": "Interdit"}),
+        ("post", f"/api/v1/enseignant/valve/publications/{publication_id}/publier", None),
+        ("delete", f"/api/v1/enseignant/valve/publications/{publication_id}", None),
+    ):
+        reponse = getattr(client, methode)(
+            chemin,
+            json=json_body,
+            headers=headers_second,
+        ) if json_body is not None else getattr(client, methode)(chemin, headers=headers_second)
+        assert reponse.status_code == 403
+
+    type_invalide = client.post(
+        "/api/v1/enseignant/valve/publications",
+        json={
+            "cours_id": cours_id,
+            "type_publication": "publication_notes",
+            "titre": "Type hors perimetre",
+            "contenu": "Les notes ont leur module dedie.",
+        },
+        headers=headers_auteur,
+    )
+    assert type_invalide.status_code == 422
+
+
 def test_valve_refuse_etudiant_non_inscrit(client: TestClient, token_admin: str, suffixe: str):
     token_enseignant = _connexion(client, "enseignant@smartfaculty.test", "enseignant")
     cours_id = _cours_id()

@@ -5,6 +5,7 @@ import '../../../coeur/constantes/constantes_application.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_etudiant.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
@@ -21,6 +22,9 @@ class ProfileScreen extends StatelessWidget {
     final role = SessionService.currentRole;
     if (role == UserRole.student) {
       return const _StudentApiProfileScreen();
+    }
+    if (role == UserRole.teacher) {
+      return const _TeacherApiProfileScreen();
     }
 
     final user = SessionService.currentUser;
@@ -268,6 +272,124 @@ class _StudentApiProfileScreenState extends State<_StudentApiProfileScreen> {
                   _StudentProfileForm(profil: profil, onSaved: _refresh),
                   const _StudentSecurityPanel(),
                 ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _TeacherApiProfileScreen extends StatefulWidget {
+  const _TeacherApiProfileScreen();
+
+  @override
+  State<_TeacherApiProfileScreen> createState() =>
+      _TeacherApiProfileScreenState();
+}
+
+class _TeacherApiProfileScreenState extends State<_TeacherApiProfileScreen> {
+  late final Future<Map<String, dynamic>> _future =
+      EnseignantDataSource.service.profil();
+
+  @override
+  Widget build(BuildContext context) {
+    return SmartFacultyShell(
+      role: UserRole.teacher,
+      selectedRoute: AppRoutes.profile,
+      title: 'Profil enseignant',
+      subtitle: 'Identite professionnelle et rattachement academique.',
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _future,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Profil indisponible',
+              subtitle: snapshot.error.toString(),
+              child: const Text(ApiConfig.serverUnavailableMessage),
+            );
+          }
+
+          final profil = snapshot.data ?? {};
+          final roles =
+              (profil['roles'] as List<dynamic>? ?? const []).join(', ');
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SectionPanel(
+                title: '${profil['nom_complet'] ?? '-'}',
+                subtitle:
+                    '${profil['grade'] ?? '-'} - ${profil['departement'] ?? '-'}',
+                trailing: StatusBadge(
+                  label: '${profil['statut'] ?? '-'}',
+                  color: AppColors.primary,
+                  icon: Icons.verified_user_rounded,
+                ),
+                child: Wrap(
+                  spacing: 18,
+                  runSpacing: 14,
+                  children: [
+                    _Info(label: 'Email', value: '${profil['email'] ?? '-'}'),
+                    _Info(
+                      label: 'Matricule agent',
+                      value: '${profil['matricule_agent'] ?? '-'}',
+                    ),
+                    _Info(
+                        label: 'Telephone',
+                        value: '${profil['telephone'] ?? '-'}'),
+                    _Info(label: 'Roles', value: roles.isEmpty ? '-' : roles),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              ResponsiveGrid(
+                children: [
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Role actif',
+                      value: '${profil['role_actif'] ?? '-'}',
+                      trend: 'confirme par FastAPI',
+                      description: 'autorisation courante',
+                    ),
+                    icon: Icons.verified_user_rounded,
+                    color: AppColors.primary,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Grade',
+                      value: '${profil['grade'] ?? '-'}',
+                      trend: 'profil enseignant',
+                      description: 'donnee professionnelle',
+                    ),
+                    icon: Icons.school_rounded,
+                    color: AppColors.success,
+                  ),
+                  StatCard(
+                    metric: KpiMetric(
+                      title: 'Departement',
+                      value: '${profil['departement'] ?? '-'}',
+                      trend: 'rattachement',
+                      description: 'faculte ou departement',
+                    ),
+                    icon: Icons.account_balance_rounded,
+                    color: AppColors.cyan,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 22),
+              const SectionPanel(
+                title: 'Acces du compte',
+                subtitle:
+                    'Les cours affiches sont limites aux affectations confirmees par FastAPI.',
+                child: _PermissionLine(
+                  icon: Icons.lock_rounded,
+                  text:
+                      'Aucun mot de passe, token ou secret n est retourne dans le profil.',
+                ),
               ),
             ],
           );

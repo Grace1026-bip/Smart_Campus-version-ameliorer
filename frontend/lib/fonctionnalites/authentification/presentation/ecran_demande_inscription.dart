@@ -57,123 +57,139 @@ class _RegistrationRequestScreenState extends State<RegistrationRequestScreen> {
             constraints: const BoxConstraints(maxWidth: 560),
             child: Form(
               key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  SegmentedButton<TypeDemandeInscription>(
-                    segments: TypeDemandeInscription.values
-                        .map(
-                          (type) => ButtonSegment(
-                            value: type,
-                            label: Text(type.label),
-                            icon: Icon(
-                              type == TypeDemandeInscription.etudiant
-                                  ? Icons.school_rounded
-                                  : Icons.badge_rounded,
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    selected: {_type},
-                    onSelectionChanged: (value) {
-                      setState(() => _type = value.single);
-                    },
-                  ),
-                  const SizedBox(height: 18),
-                  TextFormField(
-                    controller: _nom,
-                    decoration: const InputDecoration(labelText: 'Nom'),
-                    validator: _required,
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _prenom,
-                    decoration: const InputDecoration(labelText: 'Prenom'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _email,
-                    decoration: const InputDecoration(labelText: 'Email'),
-                    keyboardType: TextInputType.emailAddress,
-                    validator: (value) {
-                      final text = value?.trim() ?? '';
-                      if (!text.contains('@')) return 'Email invalide.';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _password,
-                    decoration:
-                        const InputDecoration(labelText: 'Mot de passe'),
-                    obscureText: true,
-                    validator: (value) {
-                      if ((value ?? '').length < 8) {
-                        return 'Minimum 8 caracteres.';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  if (_type == TypeDemandeInscription.etudiant) ...[
-                    TextFormField(
-                      controller: _matricule,
-                      decoration: const InputDecoration(labelText: 'Matricule'),
-                      validator: _required,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _promotionId,
-                      decoration:
-                          const InputDecoration(labelText: 'ID promotion'),
-                      keyboardType: TextInputType.number,
-                      validator: _required,
-                    ),
-                  ] else ...[
-                    TextFormField(
-                      controller: _matriculeAgent,
-                      decoration:
-                          const InputDecoration(labelText: 'Matricule agent'),
-                      validator: _required,
-                    ),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: _departement,
-                      decoration:
-                          const InputDecoration(labelText: 'Departement'),
-                      validator: _required,
+              child: Container(
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.brownPrimary.withValues(alpha: 0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 14),
                     ),
                   ],
-                  const SizedBox(height: 18),
-                  ElevatedButton.icon(
-                    onPressed: _loading ? null : _submit,
-                    icon: _loading
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SegmentedButton<TypeDemandeInscription>(
+                      segments: TypeDemandeInscription.values
+                          .map(
+                            (type) => ButtonSegment(
+                              value: type,
+                              label: Text(type.label),
+                              icon: Icon(
+                                type == TypeDemandeInscription.etudiant
+                                    ? Icons.school_rounded
+                                    : Icons.badge_rounded,
+                              ),
+                            ),
                           )
-                        : const Icon(Icons.send_rounded),
-                    label: Text(_loading ? 'Envoi...' : 'Envoyer'),
-                  ),
-                  if (_resultat != null) ...[
+                          .toList(),
+                      selected: {_type},
+                      onSelectionChanged: (value) {
+                        setState(() => _type = value.single);
+                      },
+                    ),
                     const SizedBox(height: 18),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.success.withValues(alpha: 0.08),
-                        border: Border.all(color: AppColors.success),
-                        borderRadius: BorderRadius.circular(8),
+                    TextFormField(
+                      controller: _nom,
+                      decoration: const InputDecoration(labelText: 'Nom'),
+                      validator: _required,
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _prenom,
+                      decoration: const InputDecoration(labelText: 'Prenom'),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _email,
+                      decoration: const InputDecoration(labelText: 'Email'),
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        final text = value?.trim() ?? '';
+                        if (!text.contains('@')) return 'Email invalide.';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _password,
+                      decoration:
+                          const InputDecoration(labelText: 'Mot de passe'),
+                      obscureText: true,
+                      validator: (value) {
+                        if ((value ?? '').length < 8) {
+                          return 'Minimum 8 caracteres.';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 12),
+                    if (_type == TypeDemandeInscription.etudiant) ...[
+                      TextFormField(
+                        controller: _matricule,
+                        decoration:
+                            const InputDecoration(labelText: 'Matricule'),
+                        validator: _required,
                       ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(14),
-                        child: Text(
-                          'Reference ${_resultat!.reference} - ${_resultat!.statut}',
-                          style: const TextStyle(fontWeight: FontWeight.w800),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _promotionId,
+                        decoration:
+                            const InputDecoration(labelText: 'ID promotion'),
+                        keyboardType: TextInputType.number,
+                        validator: _required,
+                      ),
+                    ] else ...[
+                      TextFormField(
+                        controller: _matriculeAgent,
+                        decoration:
+                            const InputDecoration(labelText: 'Matricule agent'),
+                        validator: _required,
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _departement,
+                        decoration:
+                            const InputDecoration(labelText: 'Departement'),
+                        validator: _required,
+                      ),
+                    ],
+                    const SizedBox(height: 18),
+                    ElevatedButton.icon(
+                      onPressed: _loading ? null : _submit,
+                      icon: _loading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send_rounded),
+                      label: Text(_loading ? 'Envoi...' : 'Envoyer'),
+                    ),
+                    if (_resultat != null) ...[
+                      const SizedBox(height: 18),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withValues(alpha: 0.08),
+                          border: Border.all(color: AppColors.success),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: Text(
+                            'Reference ${_resultat!.reference} - ${_resultat!.statut}',
+                            style: const TextStyle(fontWeight: FontWeight.w800),
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),

@@ -1,23 +1,34 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primaryDark = Color(0xFF0B3D91);
-  static const Color primary = Color(0xFF2563EB);
-  static const Color primarySoft = Color(0xFFEFF6FF);
-  static const Color background = Color(0xFFF3F7FC);
-  static const Color scaffold = Color(0xFFF8FAFC);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFE2E8F0);
-  static const Color border = Color(0xFFDCE5F1);
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF64748B);
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF97316);
-  static const Color danger = Color(0xFFEF4444);
-  static const Color info = Color(0xFF2563EB);
-  static const Color cyan = Color(0xFF0891B2);
-  static const Color secondary = cyan;
-  static const Color violet = Color(0xFF7C3AED);
-  static const Color sidebarText = Color(0xFFEAF2FF);
-  static const Color sidebarMuted = Color(0xFFBBD0F6);
+  static const Color brownPrimary = Color(0xFF5D4037);
+  static const Color brownSecondary = Color(0xFF795548);
+  static const Color beigePrimary = Color(0xFFF5EFE6);
+  static const Color creamBackground = Color(0xFFFFFDF8);
+  static const Color surface = Color(0xFFFAF4EA);
+  static const Color terracotta = Color(0xFFC47A5A);
+  static const Color textPrimary = Color(0xFF2F2522);
+  static const Color textSecondary = Color(0xFF6D625D);
+  static const Color border = Color(0xFFD8C8B8);
+  static const Color success = Color(0xFF4F7A5A);
+  static const Color warning = Color(0xFFC48A2A);
+  static const Color danger = Color(0xFFB94A48);
+  static const Color disabledBackground = Color(0xFFE7DDD2);
+  static const Color disabledText = Color(0xFF9B8E87);
+
+  // Aliases kept so existing widgets continue to use one central palette.
+  static const Color primaryDark = brownPrimary;
+  static const Color primary = brownSecondary;
+  static const Color primarySoft = beigePrimary;
+  static const Color background = creamBackground;
+  static const Color scaffold = creamBackground;
+  static const Color surfaceMuted = disabledBackground;
+  static const Color info = terracotta;
+  static const Color secondary = brownSecondary;
+
+  // Muted category colors retained for charts and non-status comparisons.
+  static const Color cyan = Color(0xFF6F8A8A);
+  static const Color violet = Color(0xFF8A6F8A);
+  static const Color sidebarText = Color(0xFFF9F1E7);
+  static const Color sidebarMuted = Color(0xFFD8C8B8);
 }

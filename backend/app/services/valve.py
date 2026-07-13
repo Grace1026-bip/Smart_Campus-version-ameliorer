@@ -100,6 +100,17 @@ def _publication_enseignant(session: Session, utilisateur_id: int, publication_i
     return publication
 
 
+def _publication_de_enseignant(
+    session: Session,
+    utilisateur_id: int,
+    publication_id: int,
+) -> PublicationValve:
+    publication = _publication_enseignant(session, utilisateur_id, publication_id)
+    if publication.auteur_id != utilisateur_id:
+        raise AccesInterdit("Cette publication appartient a un autre enseignant")
+    return publication
+
+
 def _journaliser(
     session: Session,
     utilisateur_id: int,
@@ -176,6 +187,7 @@ def _serialiser_publication(
         "cours": _serialiser_cours(publication.cours) if publication.cours else None,
         "auteur_id": publication.auteur_id,
         "auteur": _nom_utilisateur(publication.auteur),
+        "est_auteur": utilisateur_id is not None and publication.auteur_id == utilisateur_id,
         "type_publication": publication.type_publication,
         "titre": publication.titre,
         "contenu": publication.contenu,
@@ -313,7 +325,7 @@ def lister_valve_enseignant(
         requete.order_by(PublicationValve.modifie_le.desc()).offset(pagination.offset).limit(pagination.taille)
     ).all()
     return construire_page(
-        [_serialiser_publication(session, publication) for publication in publications],
+        [_serialiser_publication(session, publication, utilisateur_id) for publication in publications],
         total,
         pagination.page,
         pagination.taille,
@@ -360,7 +372,7 @@ def creer_publication(session: Session, utilisateur_id: int, donnees: Publicatio
 
 def obtenir_publication_enseignant(session: Session, utilisateur_id: int, publication_id: int) -> dict:
     publication = _publication_enseignant(session, utilisateur_id, publication_id)
-    return _serialiser_publication(session, publication)
+    return _serialiser_publication(session, publication, utilisateur_id)
 
 
 def modifier_publication(
@@ -369,7 +381,7 @@ def modifier_publication(
     publication_id: int,
     donnees: PublicationValveModification,
 ) -> dict:
-    publication = _publication_enseignant(session, utilisateur_id, publication_id)
+    publication = _publication_de_enseignant(session, utilisateur_id, publication_id)
     if publication.statut == "archivee":
         raise AccesInterdit("Une publication archivee ne peut pas etre modifiee")
 
@@ -394,7 +406,7 @@ def modifier_publication(
 
 
 def publier_publication(session: Session, utilisateur_id: int, publication_id: int) -> dict:
-    publication = _publication_enseignant(session, utilisateur_id, publication_id)
+    publication = _publication_de_enseignant(session, utilisateur_id, publication_id)
     if publication.statut == "archivee":
         raise AccesInterdit("Une publication archivee ne peut pas etre publiee")
     if publication.statut == "publiee":
@@ -414,7 +426,7 @@ def publier_publication(session: Session, utilisateur_id: int, publication_id: i
 
 
 def archiver_publication(session: Session, utilisateur_id: int, publication_id: int) -> dict:
-    publication = _publication_enseignant(session, utilisateur_id, publication_id)
+    publication = _publication_de_enseignant(session, utilisateur_id, publication_id)
     publication.statut = "archivee"
     moment = _maintenant()
     for piece in publication.pieces_jointes:
@@ -475,7 +487,7 @@ def ajouter_piece_jointe(
     publication_id: int,
     fichier: UploadFile,
 ) -> dict:
-    publication = _publication_enseignant(session, utilisateur_id, publication_id)
+    publication = _publication_de_enseignant(session, utilisateur_id, publication_id)
     if publication.statut == "archivee":
         raise AccesInterdit("Impossible d'ajouter un document a une publication archivee")
 
@@ -520,7 +532,7 @@ def archiver_piece_jointe(session: Session, utilisateur_id: int, piece_id: int) 
     piece = session.get(PieceJointePublication, piece_id)
     if piece is None or piece.est_archivee:
         raise RessourceIntrouvable("Piece jointe introuvable")
-    publication = _publication_enseignant(session, utilisateur_id, piece.publication_id)
+    publication = _publication_de_enseignant(session, utilisateur_id, piece.publication_id)
     if publication.statut == "archivee":
         raise AccesInterdit("La publication est deja archivee")
 

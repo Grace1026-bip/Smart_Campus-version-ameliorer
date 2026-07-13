@@ -144,6 +144,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.apparitorPromotions,
           ),
           SmartNavItem(
+            label: 'Enrolements',
+            icon: Icons.assignment_rounded,
+            route: AppRoutes.apparitorEnrollments,
+          ),
+          SmartNavItem(
             label: 'Cours',
             icon: Icons.menu_book_rounded,
             route: AppRoutes.apparitorCourses,
@@ -235,6 +240,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.teacherCourses,
           ),
           SmartNavItem(
+            label: 'Mes encadrements',
+            icon: Icons.assignment_ind_rounded,
+            route: AppRoutes.teacherSupervisions,
+          ),
+          SmartNavItem(
             label: 'Valve',
             icon: Icons.campaign_rounded,
             route: AppRoutes.notifications,
@@ -304,6 +314,7 @@ class SmartFacultyShell extends StatelessWidget {
           ),
         ];
       case UserRole.dean:
+      case UserRole.viceDean:
         return const [
           SmartNavItem(
             label: 'Decisionnel',
@@ -474,8 +485,9 @@ class _Sidebar extends StatelessWidget {
                   route: AppRoutes.login,
                 ),
                 selected: false,
-                onTap: () {
-                  SessionService.clear();
+                onTap: () async {
+                  await SessionService.clear();
+                  if (!context.mounted) return;
                   Navigator.of(
                     context,
                   ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false);

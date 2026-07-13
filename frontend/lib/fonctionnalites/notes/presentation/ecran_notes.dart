@@ -8,6 +8,9 @@ import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_etudiant.dart';
 import '../../../donnees/services/service_session.dart';
+import 'ecran_evaluations_enseignant.dart';
+import 'ecran_deliberation.dart';
+import 'ecran_resultats_academiques.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
 import '../../../commun/composants/panneau_section.dart';
@@ -23,9 +26,17 @@ class GradesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
-    if (role == UserRole.student) return const _StudentApiGradesScreen();
+    if ({
+      UserRole.student,
+      UserRole.administrator,
+    }.contains(role)) {
+      return const AcademicResultsScreen();
+    }
+    if ({UserRole.apparitor, UserRole.dean, UserRole.viceDean}.contains(role)) {
+      return const DeliberationScreen();
+    }
     if (role == UserRole.teacher) {
-      return _TeacherApiGradesScreen(initialCourseId: initialCourseId);
+      return TeacherEvaluationsScreen(initialCourseId: initialCourseId);
     }
 
     return SmartFacultyShell(
@@ -59,6 +70,8 @@ class GradesScreen extends StatelessWidget {
   }
 }
 
+// Legacy notes table retained for historical navigation screens.
+// ignore: unused_element
 class _StudentApiGradesScreen extends StatelessWidget {
   const _StudentApiGradesScreen();
 
@@ -169,12 +182,15 @@ class _StudentApiGradesScreen extends StatelessWidget {
 }
 
 class _TeacherApiGradesScreen extends StatefulWidget {
+  // Legacy widget retained for non-API history screens; teacher routing uses TeacherEvaluationsScreen.
+  // ignore: unused_element_parameter
   const _TeacherApiGradesScreen({this.initialCourseId});
 
   final int? initialCourseId;
 
   @override
-  State<_TeacherApiGradesScreen> createState() => _TeacherApiGradesScreenState();
+  State<_TeacherApiGradesScreen> createState() =>
+      _TeacherApiGradesScreenState();
 }
 
 class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
@@ -229,7 +245,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
             children: [
               SectionPanel(
                 title: 'Cours a encoder',
-                subtitle: 'Vous ne voyez que les cours qui vous sont attribues.',
+                subtitle:
+                    'Vous ne voyez que les cours qui vous sont attribues.',
                 child: Wrap(
                   spacing: 12,
                   runSpacing: 12,
@@ -244,7 +261,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
                           for (final course in courses)
                             DropdownMenuItem<int>(
                               value: _asInt(course['id']),
-                              child: Text('${course['code']} - ${course['nom']}'),
+                              child:
+                                  Text('${course['code']} - ${course['nom']}'),
                             ),
                         ],
                         onChanged: (value) =>
@@ -260,7 +278,8 @@ class _TeacherApiGradesScreenState extends State<_TeacherApiGradesScreen> {
                       ),
                     if (selectedCourse != null)
                       StatusBadge(
-                        label: '${selectedCourse['nombre_etudiants'] ?? 0} etudiants',
+                        label:
+                            '${selectedCourse['nombre_etudiants'] ?? 0} etudiants',
                         color: AppColors.primary,
                       ),
                   ],
@@ -412,8 +431,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
 
     for (final student in widget.data.students) {
       final id = _asInt(student['id']);
-      _interrogations[id] =
-          TextEditingController(text: _formatEditable(values[id]?['interrogation']));
+      _interrogations[id] = TextEditingController(
+          text: _formatEditable(values[id]?['interrogation']));
       _tps[id] = TextEditingController(
           text: _formatEditable(values[id]?['travail_pratique']));
       _examens[id] =
@@ -492,7 +511,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
         const SizedBox(height: 22),
         SectionPanel(
           title: 'Pilotage de l encodage',
-          subtitle: '${filteredStudents.length} etudiant(s) affiche(s) sur ${widget.data.students.length}.',
+          subtitle:
+              '${filteredStudents.length} etudiant(s) affiche(s) sur ${widget.data.students.length}.',
           child: Wrap(
             spacing: 12,
             runSpacing: 12,
@@ -532,16 +552,14 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
             spacing: 8,
             children: [
               ElevatedButton.icon(
-                onPressed: _saving || widget.data.students.isEmpty
-                    ? null
-                    : _saveDraft,
+                onPressed:
+                    _saving || widget.data.students.isEmpty ? null : _saveDraft,
                 icon: const Icon(Icons.save_rounded),
                 label: const Text('Enregistrer'),
               ),
               ElevatedButton.icon(
-                onPressed: _saving || widget.data.students.isEmpty
-                    ? null
-                    : _publish,
+                onPressed:
+                    _saving || widget.data.students.isEmpty ? null : _publish,
                 icon: const Icon(Icons.publish_rounded),
                 label: const Text('Publier'),
               ),
@@ -665,7 +683,8 @@ class _TeacherGradeEditorState extends State<_TeacherGradeEditor> {
       for (final student in widget.data.students)
         {
           'etudiant_id': _asInt(student['id']),
-          'interrogation': _parseNote(_interrogations[_asInt(student['id'])]!.text),
+          'interrogation':
+              _parseNote(_interrogations[_asInt(student['id'])]!.text),
           'travail_pratique': _parseNote(_tps[_asInt(student['id'])]!.text),
           'examen': _parseNote(_examens[_asInt(student['id'])]!.text),
         },
@@ -696,7 +715,8 @@ class _LoadWarningPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionPanel(
       title: 'Chargement partiel',
-      subtitle: 'L encodage reste accessible, certaines donnees seront rechargees ensuite.',
+      subtitle:
+          'L encodage reste accessible, certaines donnees seront rechargees ensuite.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -706,7 +726,8 @@ class _LoadWarningPanel extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.warning),
                   const SizedBox(width: 8),
                   Expanded(child: Text(message)),
                 ],
@@ -1166,6 +1187,7 @@ List<Widget> _statCardsFor(UserRole role) {
     case UserRole.administrator:
     case UserRole.apparitor:
     case UserRole.dean:
+    case UserRole.viceDean:
       return [
         StatCard(
           metric: MockFacultyData.decisionKpis[0],
@@ -1223,6 +1245,8 @@ String _titleFor(UserRole role) {
       return 'Resultats de la promotion';
     case UserRole.dean:
       return 'Synthese des resultats';
+    case UserRole.viceDean:
+      return 'Synthese des resultats';
     case UserRole.apparitor:
       return 'Suivi des notes et credits';
     case UserRole.administrator:
@@ -1240,6 +1264,8 @@ String _subtitleFor(UserRole role) {
       return 'Lire les tendances utiles pour accompagner la promotion.';
     case UserRole.dean:
       return 'Analyser les resultats finaux et les cours sensibles.';
+    case UserRole.viceDean:
+      return 'Analyser les resultats finaux et les cours sensibles.';
     case UserRole.apparitor:
       return 'Verifier les publications, credits, moyennes et verrouillages.';
     case UserRole.administrator:
@@ -1254,6 +1280,8 @@ String _tableSubtitle(UserRole role) {
     case UserRole.promotionChief:
       return 'Lecture synthetique des cours suivis par la promotion.';
     case UserRole.dean:
+      return 'Cours qui alimentent la lecture decisionnelle.';
+    case UserRole.viceDean:
       return 'Cours qui alimentent la lecture decisionnelle.';
     case UserRole.apparitor:
       return 'Lecture par promotion et par cours pour suivi apparitorat.';
@@ -1274,6 +1302,8 @@ String _scopeText(UserRole role) {
       return 'Vous consultez les resultats de votre promotion sans modification.';
     case UserRole.dean:
       return 'Vous disposez d une lecture consolidee pour la decision.';
+    case UserRole.viceDean:
+      return 'Vous disposez d une lecture consolidee pour la decision.';
     case UserRole.apparitor:
       return 'Vous controlez les notes publiees par promotion et par cours.';
     case UserRole.administrator:
@@ -1291,6 +1321,8 @@ String _permissionText(UserRole role) {
       return 'Lecture promotion';
     case UserRole.dean:
       return 'Lecture faculte';
+    case UserRole.viceDean:
+      return 'Lecture faculte';
     case UserRole.apparitor:
       return 'Lecture apparitorat';
     case UserRole.administrator:
@@ -1307,6 +1339,8 @@ String _decisionText(UserRole role) {
     case UserRole.promotionChief:
       return 'Relais etudiant';
     case UserRole.dean:
+      return 'Pilotage decisionnel';
+    case UserRole.viceDean:
       return 'Pilotage decisionnel';
     case UserRole.apparitor:
       return 'Relance des publications';
@@ -1335,6 +1369,8 @@ List<CourseGrade> _gradesForRole(UserRole role) {
     case UserRole.apparitor:
     case UserRole.administrator:
     case UserRole.dean:
+      return MockFacultyData.grades;
+    case UserRole.viceDean:
       return MockFacultyData.grades;
   }
 }

@@ -6,6 +6,7 @@ import '../../fonctionnalites/administration/presentation/ecran_tableau_bord_adm
 import '../../fonctionnalites/administration/presentation/ecran_gestion_administration.dart';
 import '../../fonctionnalites/analyses/presentation/ecran_analyses.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_assistant_appariteur.dart';
+import '../../fonctionnalites/apparitorat/presentation/ecran_enrolements_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_supervision_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_tableau_bord_apparitorat.dart';
 import '../../fonctionnalites/authentification/presentation/ecran_mot_de_passe_oublie.dart';
@@ -15,6 +16,7 @@ import '../../fonctionnalites/reclamations/presentation/ecran_detail_reclamation
 import '../../fonctionnalites/reclamations/presentation/ecran_reclamations.dart';
 import '../../fonctionnalites/doyen/presentation/ecran_tableau_bord_doyen.dart';
 import '../../fonctionnalites/notes/presentation/ecran_notes.dart';
+import '../../fonctionnalites/notes/presentation/ecran_deliberation.dart';
 import '../../fonctionnalites/stages/presentation/ecran_stages.dart';
 import '../../fonctionnalites/notifications/presentation/ecran_notifications.dart';
 import '../../fonctionnalites/profil/presentation/ecran_profil.dart';
@@ -26,6 +28,7 @@ import '../../fonctionnalites/etudiant/presentation/ecran_cours_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_tableau_bord_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_valve_etudiant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_cours_enseignant.dart';
+import '../../fonctionnalites/enseignant/presentation/ecran_encadrements_enseignant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_tableau_bord_enseignant.dart';
 
 class AppRoutes {
@@ -47,6 +50,7 @@ class AppRoutes {
   static const apparitorProjects = '/apparitorat/projets';
   static const apparitorInternships = '/apparitorat/stages';
   static const apparitorReports = '/apparitorat/rapports';
+  static const apparitorEnrollments = '/apparitorat/enrolements';
   static const studentDashboard = '/student';
   static const studentCourses = '/student/courses';
   static const studentCourseDetail = '/student/courses/detail';
@@ -56,6 +60,7 @@ class AppRoutes {
   static const teacherDashboard = '/teacher';
   static const teacherCourses = '/teacher/courses';
   static const teacherCourseDetail = '/teacher/courses/detail';
+  static const teacherSupervisions = '/teacher/supervisions';
   static const promotionChiefDashboard = '/promotion-chief';
   static const deanDashboard = '/dean';
   static const complaints = '/complaints';
@@ -64,6 +69,7 @@ class AppRoutes {
   static const projects = '/projects';
   static const internships = '/internships';
   static const grades = '/grades';
+  static const deliberations = '/deliberations';
   static const riskStudents = '/risk-students';
   static const notifications = '/notifications';
   static const profile = '/profile';
@@ -81,6 +87,8 @@ class AppRoutes {
       case UserRole.promotionChief:
         return promotionChiefDashboard;
       case UserRole.dean:
+        return deanDashboard;
+      case UserRole.viceDean:
         return deanDashboard;
     }
   }
@@ -119,6 +127,8 @@ class AppRoutes {
         return _route(settings, const ApparitorDashboardScreen());
       case apparitorAssistant:
         return _route(settings, const ApparitorAssistantScreen());
+      case apparitorEnrollments:
+        return _route(settings, const ApparitorEnrollmentsScreen());
       case apparitorStudents:
         return _route(settings, const ApparitorStudentsScreen());
       case apparitorTeachers:
@@ -195,10 +205,14 @@ class AppRoutes {
                 ? (args['id'] as num?)?.toInt() ?? 0
                 : 0;
         return _route(settings, TeacherCourseDetailScreen(courseId: courseId));
+      case teacherSupervisions:
+        return _route(settings, const TeacherSupervisionsScreen());
       case promotionChiefDashboard:
         return _route(settings, const PromotionChiefDashboardScreen());
       case deanDashboard:
         return _route(settings, const DeanDashboardScreen());
+      case deliberations:
+        return _route(settings, const DeliberationScreen());
       case complaints:
         return _route(settings, const ComplaintsScreen());
       case complaintDetail:
@@ -284,6 +298,7 @@ class AppRoutes {
           projects,
           internships,
           grades,
+          deliberations,
           riskStudents,
         }.contains(normalizedRoute);
       case UserRole.apparitor:
@@ -299,6 +314,9 @@ class AppRoutes {
           apparitorProjects,
           apparitorInternships,
           apparitorReports,
+          apparitorEnrollments,
+          grades,
+          deliberations,
         }.contains(normalizedRoute);
       case UserRole.student:
         return const {
@@ -314,8 +332,10 @@ class AppRoutes {
           teacherDashboard,
           teacherCourses,
           teacherCourseDetail,
+          teacherSupervisions,
           complaints,
           grades,
+          deliberations,
           riskStudents,
         }.contains(normalizedRoute);
       case UserRole.promotionChief:
@@ -336,6 +356,18 @@ class AppRoutes {
           projects,
           internships,
           grades,
+          deliberations,
+          riskStudents,
+        }.contains(normalizedRoute);
+      case UserRole.viceDean:
+        return const {
+          deanDashboard,
+          analytics,
+          complaints,
+          projects,
+          internships,
+          grades,
+          deliberations,
           riskStudents,
         }.contains(normalizedRoute);
     }
@@ -354,6 +386,8 @@ class AppRoutes {
       case UserRole.promotionChief:
         return const PromotionChiefDashboardScreen();
       case UserRole.dean:
+        return const DeanDashboardScreen();
+      case UserRole.viceDean:
         return const DeanDashboardScreen();
     }
   }

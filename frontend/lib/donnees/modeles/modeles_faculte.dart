@@ -5,6 +5,7 @@ enum UserRole {
   teacher,
   promotionChief,
   dean,
+  viceDean,
 }
 
 extension UserRoleLabel on UserRole {
@@ -22,6 +23,8 @@ extension UserRoleLabel on UserRole {
         return 'Chef de promotion';
       case UserRole.dean:
         return 'Doyen';
+      case UserRole.viceDean:
+        return 'Vice-doyen';
     }
   }
 
@@ -38,6 +41,8 @@ extension UserRoleLabel on UserRole {
       case UserRole.promotionChief:
         return 'Espace promotion';
       case UserRole.dean:
+        return 'Pilotage decisionnel';
+      case UserRole.viceDean:
         return 'Pilotage decisionnel';
     }
   }
@@ -56,6 +61,8 @@ extension UserRoleLabel on UserRole {
         return 'chef_promotion';
       case UserRole.dean:
         return 'doyen';
+      case UserRole.viceDean:
+        return 'vice_doyen';
     }
   }
 }

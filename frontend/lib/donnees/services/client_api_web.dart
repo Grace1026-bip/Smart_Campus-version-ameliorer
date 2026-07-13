@@ -36,7 +36,7 @@ Future<ReponseHttp> envoyerRequeteHttp({
   });
   request.onError.listen((_) async {
     if (resultat.isCompleted) return;
-    final accessible = await _serveurAccessibleSansCors(uri);
+    final accessible = await _serveurJoignableSansCors(uri);
     if (resultat.isCompleted) return;
     resultat.completeError(
       ErreurTransportHttp(
@@ -51,11 +51,12 @@ Future<ReponseHttp> envoyerRequeteHttp({
   return resultat.future;
 }
 
-Future<bool> _serveurAccessibleSansCors(Uri uri) async {
-  final racine = uri.replace(path: '/', query: null, fragment: null);
+Future<bool> _serveurJoignableSansCors(Uri uri) async {
   try {
+    // A successful no-cors probe only proves that this API origin is reachable.
+    // The browser refusal of the original XHR is the separate signal reported.
     await html.window.fetch(
-      racine.toString(),
+      uri.toString(),
       {'mode': 'no-cors', 'cache': 'no-store'},
     ).timeout(const Duration(seconds: 3));
     return true;

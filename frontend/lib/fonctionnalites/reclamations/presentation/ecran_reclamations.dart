@@ -340,7 +340,8 @@ class _StudentComplaintsScreenState extends State<_StudentComplaintsScreen> {
               const SizedBox(height: 22),
               SectionPanel(
                 title: 'Nouvelle reclamation',
-                subtitle: 'Choisissez le cours concerne et decrivez le probleme.',
+                subtitle:
+                    'Choisissez le cours concerne et decrivez le probleme.',
                 child: _StudentComplaintForm(data: data, onCreated: _refresh),
               ),
               const SizedBox(height: 22),
@@ -609,7 +610,8 @@ class _StudentComplaintFormState extends State<_StudentComplaintForm> {
     if (courseId == null || title.isEmpty || description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Le cours, l objet et la description sont obligatoires.'),
+          content:
+              Text('Le cours, l objet et la description sont obligatoires.'),
         ),
       );
       return;
@@ -670,7 +672,8 @@ class _LoadWarningPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return SectionPanel(
       title: 'Chargement partiel',
-      subtitle: 'La page reste disponible, mais certaines donnees secondaires manquent.',
+      subtitle:
+          'La page reste disponible, mais certaines donnees secondaires manquent.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -680,7 +683,8 @@ class _LoadWarningPanel extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning),
+                  const Icon(Icons.warning_amber_rounded,
+                      color: AppColors.warning),
                   const SizedBox(width: 8),
                   Expanded(child: Text(message)),
                 ],
@@ -749,7 +753,8 @@ class _TeacherComplaintsScreen extends StatefulWidget {
 }
 
 class _TeacherComplaintsScreenState extends State<_TeacherComplaintsScreen> {
-  late Future<List<dynamic>> _future = EnseignantDataSource.service.reclamations();
+  late Future<List<dynamic>> _future =
+      EnseignantDataSource.service.reclamations();
   String? _statusFilter;
   int? _courseFilter;
 
@@ -785,15 +790,16 @@ class _TeacherComplaintsScreenState extends State<_TeacherComplaintsScreen> {
           for (final item in allComplaints) {
             final courseId = _asInt(item['cours_id']);
             if (courseId > 0) {
-              courses[courseId] = '${item['code_cours'] ?? ''} ${item['cours'] ?? ''}'.trim();
+              courses[courseId] =
+                  '${item['code_cours'] ?? ''} ${item['cours'] ?? ''}'.trim();
             }
           }
 
           final complaints = allComplaints.where((item) {
             final statusOk =
                 _statusFilter == null || item['statut'] == _statusFilter;
-            final courseOk =
-                _courseFilter == null || _asInt(item['cours_id']) == _courseFilter;
+            final courseOk = _courseFilter == null ||
+                _asInt(item['cours_id']) == _courseFilter;
             return statusOk && courseOk;
           }).toList();
 
@@ -901,8 +907,8 @@ class _TeacherComplaintsScreenState extends State<_TeacherComplaintsScreen> {
   }
 
   Future<void> _openDetail(dynamic item) async {
-    final detail =
-        await EnseignantDataSource.service.detailReclamation(_asInt(item['id']));
+    final detail = await EnseignantDataSource.service
+        .detailReclamation(_asInt(item['id']));
     if (!mounted) return;
     final saved = await showDialog<bool>(
       context: context,
@@ -971,7 +977,8 @@ class _TeacherComplaintDialogState extends State<_TeacherComplaintDialog> {
                 initialValue: _status,
                 decoration: const InputDecoration(labelText: 'Nouveau statut'),
                 items: const [
-                  DropdownMenuItem(value: 'en_attente', child: Text('En attente')),
+                  DropdownMenuItem(
+                      value: 'en_attente', child: Text('En attente')),
                   DropdownMenuItem(value: 'en_cours', child: Text('En cours')),
                   DropdownMenuItem(value: 'resolue', child: Text('Resolue')),
                   DropdownMenuItem(
@@ -979,7 +986,8 @@ class _TeacherComplaintDialogState extends State<_TeacherComplaintDialog> {
                     child: Text('Transmise apparitorat'),
                   ),
                 ],
-                onChanged: (value) => setState(() => _status = value ?? _status),
+                onChanged: (value) =>
+                    setState(() => _status = value ?? _status),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -990,7 +998,8 @@ class _TeacherComplaintDialogState extends State<_TeacherComplaintDialog> {
               ),
               const SizedBox(height: 16),
               if (responses.isNotEmpty) ...[
-                Text('Historique', style: Theme.of(context).textTheme.titleSmall),
+                Text('Historique',
+                    style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 for (final response in responses)
                   Padding(
@@ -1253,6 +1262,7 @@ _ComplaintRoleConfig _configForRole(UserRole role) {
         listTitle: 'Demandes de la promotion',
       );
     case UserRole.dean:
+    case UserRole.viceDean:
       return const _ComplaintRoleConfig(
         title: 'Suivi des reclamations',
         subtitle: 'Lire les tendances et identifier les points de blocage.',
@@ -1304,6 +1314,8 @@ List<Complaint> _complaintsForRole(UserRole role) {
     case UserRole.administrator:
     case UserRole.dean:
       return complaints;
+    case UserRole.viceDean:
+      return complaints;
   }
 }
 
@@ -1316,6 +1328,8 @@ String _scopeLabel(UserRole role) {
     case UserRole.promotionChief:
       return 'promotion';
     case UserRole.dean:
+      return 'faculte';
+    case UserRole.viceDean:
       return 'faculte';
     case UserRole.apparitor:
       return 'apparitorat';
@@ -1333,6 +1347,7 @@ String _totalTitle(UserRole role) {
     case UserRole.promotionChief:
       return 'Collectives';
     case UserRole.dean:
+    case UserRole.viceDean:
     case UserRole.apparitor:
     case UserRole.administrator:
       return 'Total';

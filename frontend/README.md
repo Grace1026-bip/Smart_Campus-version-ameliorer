@@ -9,8 +9,9 @@ flutter pub get
 flutter run -d chrome --web-port 3000
 ```
 
-Le port web `3000` est conseille parce qu'il est autorise par le CORS du
-backend FastAPI.
+Le port web `3000` est conseille, mais les ports locaux dynamiques sont aussi
+autorises en developpement par la politique CORS FastAPI pour `localhost` et
+`127.0.0.1`. Les origines de production restent explicites.
 
 ## Backend attendu
 

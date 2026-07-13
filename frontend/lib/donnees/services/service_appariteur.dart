@@ -57,6 +57,88 @@ class AppariteurApiService {
     return data['elements'] as List<dynamic>? ?? const [];
   }
 
+  Future<Map<String, dynamic>> enrolements({
+    int page = 1,
+    int taille = 20,
+    String? recherche,
+    int? anneeAcademiqueId,
+    int? promotionId,
+    String? statut,
+  }) async {
+    return ApiDataSource.client.get(
+      '/appariteur/enrolements',
+      query: {
+        'page': page,
+        'taille': taille,
+        if (recherche != null && recherche.trim().isNotEmpty)
+          'recherche': recherche.trim(),
+        if (anneeAcademiqueId != null) 'annee_academique_id': anneeAcademiqueId,
+        if (promotionId != null) 'promotion_id': promotionId,
+        if (statut != null) 'statut': statut,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> creerEnrolement({
+    required int etudiantId,
+    required int promotionId,
+    required int anneeAcademiqueId,
+    required String dateEnrolement,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/enrolements',
+      body: {
+        'etudiant_id': etudiantId,
+        'promotion_id': promotionId,
+        'annee_academique_id': anneeAcademiqueId,
+        'date_enrolement': dateEnrolement,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> detailEnrolement(int id) async {
+    return ApiDataSource.client.get('/appariteur/enrolements/$id');
+  }
+
+  Future<Map<String, dynamic>> modifierEnrolement(
+    int id, {
+    int? etudiantId,
+    int? promotionId,
+    int? anneeAcademiqueId,
+    String? dateEnrolement,
+  }) async {
+    return ApiDataSource.client.patch(
+      '/appariteur/enrolements/$id',
+      body: {
+        if (etudiantId != null) 'etudiant_id': etudiantId,
+        if (promotionId != null) 'promotion_id': promotionId,
+        if (anneeAcademiqueId != null) 'annee_academique_id': anneeAcademiqueId,
+        if (dateEnrolement != null) 'date_enrolement': dateEnrolement,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> validerEnrolement(int id) async {
+    return ApiDataSource.client.post('/appariteur/enrolements/$id/valider');
+  }
+
+  Future<Map<String, dynamic>> annulerEnrolement(
+    int id, {
+    String? motif,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/enrolements/$id/annuler',
+      body: {
+        if (motif != null && motif.trim().isNotEmpty) 'motif': motif.trim()
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> donneesFicheEnrolement(int id) async {
+    return ApiDataSource.client
+        .get('/appariteur/enrolements/$id/fiche/donnees');
+  }
+
   Future<Map<String, dynamic>> detailCours(int id) async {
     return ApiDataSource.client.get('/cours/$id');
   }

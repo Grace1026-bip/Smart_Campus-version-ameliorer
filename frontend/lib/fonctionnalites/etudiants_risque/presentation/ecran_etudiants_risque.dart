@@ -233,13 +233,16 @@ class _TeacherRiskStudentsScreen extends StatelessWidget {
 
 List<Widget> _apiRiskStats(List<dynamic> students) {
   final high = students
-      .where((item) => _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.high)
+      .where((item) =>
+          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.high)
       .length;
   final medium = students
-      .where((item) => _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.medium)
+      .where((item) =>
+          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.medium)
       .length;
   final low = students
-      .where((item) => _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.low)
+      .where((item) =>
+          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.low)
       .length;
 
   return [
@@ -356,6 +359,7 @@ List<RiskStudent> _studentsForRole(UserRole role) {
     case UserRole.apparitor:
     case UserRole.administrator:
     case UserRole.dean:
+    case UserRole.viceDean:
       return students;
   }
 }
@@ -371,6 +375,8 @@ String _titleFor(UserRole role) {
     case UserRole.student:
       return 'Mon accompagnement';
     case UserRole.dean:
+      return 'Etudiants a risque';
+    case UserRole.viceDean:
       return 'Etudiants a risque';
     case UserRole.administrator:
       return 'Suivi des risques';
@@ -388,6 +394,8 @@ String _subtitleFor(UserRole role) {
     case UserRole.student:
       return 'Comprendre les signaux d accompagnement academique.';
     case UserRole.dean:
+      return 'Identifier les priorites d accompagnement facultaires.';
+    case UserRole.viceDean:
       return 'Identifier les priorites d accompagnement facultaires.';
     case UserRole.administrator:
       return 'Suivre moyennes, echecs et niveaux de risque.';
@@ -411,6 +419,7 @@ String _tableTitle(UserRole role) {
     case UserRole.apparitor:
       return 'Etudiants a risque par promotion et cours';
     case UserRole.dean:
+    case UserRole.viceDean:
     case UserRole.administrator:
       return 'Liste des etudiants a risque';
   }

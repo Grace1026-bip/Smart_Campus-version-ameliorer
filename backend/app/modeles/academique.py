@@ -122,6 +122,10 @@ class Enseignant(Base):
 
     utilisateur = relationship("Utilisateur")
     cours_attribues: Mapped[list[CoursEnseignant]] = relationship(back_populates="enseignant")
+    specialites_encadrement: Mapped[list[SpecialiteEncadrementEnseignant]] = relationship(
+        back_populates="enseignant",
+        cascade="all, delete-orphan",
+    )
 
 
 class Cours(Base):
