@@ -398,6 +398,8 @@ def publier_resultats_cours(session: Session, utilisateur_id: int, cours_id: int
             evaluation.statut = "publiee"
             evaluation.date_publication = evaluation.date_publication or moment
             evaluation.est_verrouillee = True
+        for inscription in _inscriptions_actives(session, cours_id):
+            calculer_resultat_cours(session, inscription.etudiant_id, cours_id)
         publication = PublicationValve(
             cours_id=cours_id,
             auteur_id=utilisateur_id,

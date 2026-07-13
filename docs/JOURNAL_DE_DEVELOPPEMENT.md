@@ -1,5 +1,88 @@
 # Smart Faculty - Journal de developpement
 
+## 2026-07-13 - Prompt 4C-B2B-RDC - Decisions LMD avant implementation
+
+### Decisions documentees
+
+- Ajout de `docs/REGLES_LMD_RDC.md` comme reference permanente des regles LMD
+  retenues par la maitrise d'ouvrage.
+- Seuil d'acquisition: 10/20, equivalent a 50/100 dans la valeur historique
+  de `ResultatCours`.
+- Moyenne semestrielle ponderee par les credits avec `Decimal`, sans arrondi
+  intermediaire; semestre normal de 30 credits et annee normale de 60 credits.
+- Decisions de jury: `ADM`, `COMP`, `DEF`, `AJ`.
+- Convention MVP: le `Cours` portant ses credits est traite comme une UE
+  autonome; l'architecture EC-UE-BCC est reportee.
+- Le jury valide la decision. L'appariteur prepare et publie apres cloture,
+  sans pouvoir decider, modifier les calculs ou contourner le jury.
+- La cloture genere un snapshot officiel versionne et immuable; toute
+  correction conserve l'ancienne version.
+
+### Sources
+
+Les sources reglementaires communiquees sont le Decret n°22/39 du 8 decembre
+2022, les arretes n°093/2023 et n°401/2023, et l'Instruction academique n°027
+pour 2025-2026. La reference et la portee sont detaillees dans
+`docs/REGLES_LMD_RDC.md`.
+
+## 2026-07-13 - Prompt 4D - Regle projets et encadrements
+
+La maitrise d'ouvrage confirme que l'appariteur attribue les enseignants
+encadreurs selon le type de projet, que l'enseignant consulte ses projets et
+etudiants attribues et que l'etudiant consultera les encadreurs dans un module
+ulterieur. Les quatre types MVP controles sont `reseaux`,
+`systemes_embarques`, `intelligence_artificielle` et `genie_logiciel`.
+La consultation enseignant est prioritaire dans ce prompt; attribution et
+consultation etudiante restent reportees.
+
+## 2026-07-13 - Prompt 4C-B2B-RDC - Implementation et validation
+
+### Fichiers crees
+
+- `docs/REGLES_LMD_RDC.md`;
+- `backend/app/modeles/deliberations.py`;
+- `backend/app/schemas/deliberations.py`;
+- `backend/app/routes/deliberations.py`;
+- `backend/app/services/deliberations.py`;
+- `backend/alembic/versions/20260713_0004_deliberations_lmd.py`;
+- `backend/tests/test_deliberations.py`;
+- `frontend/lib/fonctionnalites/notes/presentation/ecran_deliberation.dart`.
+
+### Fichiers modifies
+
+- `backend/app/services/resultats_academiques.py` et les tests B2A: moyenne
+  ponderee par credits, conversion source 100 vers officiel 20 et proposition
+  `ADM`, `COMP`, `DEF`, `AJ`;
+- routes API, exports de modeles et service Flutter des deliberations;
+- routage Flutter, role `vice_doyen`, affichage du snapshot officiel et etat
+  « resultat en attente de deliberation »;
+- README et cahier technique.
+
+### Migration et base
+
+La revision `20260713_0004` a ete appliquee sur `smart_faculty_test`, puis
+testee par downgrade vers `20260711_0003` et upgrade vers `20260713_0004`.
+La base `smart_faculty` n'a pas ete migree et aucune donnee de demonstration
+n'y a ete ecrite.
+
+### Resultats
+
+- backend: `107 passed` lors de la seconde execution complete;
+- Flutter: `37 passed` lors des executions completes;
+- `flutter analyze`: 0 erreur, 0 avertissement, 6 informations historiques
+  liees a `dart:html`;
+- `flutter build web --release`: reussi;
+- health checks FastAPI `/` et `/api/v1/statut`: HTTP 200;
+- build Web servi localement: HTTP 200.
+
+### Securite et limites
+
+Aucun mot de passe, token reel ou contenu sensible n'est expose dans les
+snapshots ou notifications. Le snapshot ne supprime pas l'historique. La
+progression annuelle, la seconde session, les releves PDF et la decomposition
+EC-UE-BCC restent hors perimetre. `.vscode/settings.json` conserve sa
+modification preexistante.
+
 ## 2026-07-10 - Prompt 1 - Audit general du projet
 
 ### Module concerne
@@ -871,3 +954,151 @@ Les tests B1 couvrent calcul mono/multi-evaluation, ponderation complete, note z
 `flutter analyze` conserve seulement les 6 informations historiques `dart:html`; le build Web release est reussi. Les tests utilisent uniquement `smart_faculty_test`. Aucune migration, aucune modification de `smart_faculty`, aucun credit, aucune decision reussite/echec et aucune moyenne semestrielle ou annuelle n'ont ete ajoutes.
 
 Decision: le Prompt 4C-B1 est valide techniquement pour le calcul a la demande et la publication/verrouillage des notes d'un cours. Le projet est pret pour le Prompt 4C-B2, qui devra traiter separement les resultats persistes, credits et decisions globales.
+
+## Prompt 4C-B2A - Consolidation academique semestrielle - 2026-07-13
+
+### Audit documentaire et decision de formule
+
+Les documents `00.01`, `00.02`, `00.03`, `00.04`, `01.01`, `01.02`, `01.04`, `01.06`, `01.07`, `02.01`, `02.02`, `02.03`, `02.04`, le Cahier technique et le Journal ont ete relus. Ils imposent le calcul des moyennes et credits, le seuil cours de 50/100 et l'acquisition des credits pour un cours reussi. Ils ne fixent pas la formule d'une moyenne semestrielle, la compensation, le rattrapage ni une decision officielle de semestre.
+
+Le code actif calculait `moyenne_generale` par moyenne simple des `ResultatCours`. B2A conserve cette formule sur 100, avec `Decimal` et arrondi final a deux decimales, en la marquant provisoire. Une formule ponderee par credits ne sera pas introduite sans confirmation documentaire. La decision semestrielle reste `en_attente_de_validation`; aucune valeur `admis`, `ajourne` ou `echec` globale n'est produite.
+
+### Implementation backend
+
+- creation de `backend/app/services/resultats_academiques.py` comme service unique de consolidation;
+- ajout de `backend/app/routes/resultats.py` et inclusion dans l'API;
+- lecture a la demande des `ResultatCours` publies avec evaluations publiees et verrouillees;
+- persistance du `ResultatCours` central lors de la publication complete d'un cours B1;
+- verification de l'etudiant actif, de la promotion, de l'inscription active, de l'annee active, du semestre, des cours actifs, des credits et des statuts;
+- calcul des credits prevus, acquis et non acquis;
+- blocage explicite des resultats manquants, brouillons, non verrouilles, incoherents ou hors periode;
+- autorisation etudiant sur ses propres resultats et responsables `appariteur`, `doyen`, `administrateur` sur leur apercu;
+- aucune ecriture de consolidation, aucune table nouvelle, aucun effet de bord pendant la consultation.
+
+Un cours echoue ne rend pas le semestre incomplet: il n'acquiert simplement aucun credit. Un resultat absent ou encore `en_attente` rend le semestre incomplet. Une note zero est conservee comme un resultat et ne devient jamais une absence.
+
+### Implementation Flutter
+
+`NotesApiService` expose les routes de semestres, la liste responsable securisee et l'apercu. `AcademicResultsScreen` affiche l'etudiant, l'annee, le semestre, les cours, les resultats publies, les credits, la moyenne, les blocages et la mention `Resultat provisoire - non encore valide officiellement`. Les roles enseignant et chef de promotion ne sont pas autorises par cette vue semestrielle.
+
+### Tests et verification
+
+- preconditions backend: `73 passed` avant modification;
+- preconditions Flutter: `35 passed` avant modification;
+- tests B2A dedies: 24 fonctions, dont un cas parametre, soit 25 scenarios executes;
+- suite backend officielle execution 1: `97 passed` sur `smart_faculty_test`;
+- suite backend officielle execution 2: `97 passed` sur `smart_faculty_test`;
+- suite Flutter execution 1: `36 passed` avec `--concurrency=1`;
+- suite Flutter execution 2: `36 passed` avec `--concurrency=1`;
+- `flutter analyze`: 0 erreur et 0 avertissement, 6 informations historiques `dart:html`;
+- `flutter build web --release`: reussi;
+- `GET /` et `GET /api/v1/statut`: reponses nominales depuis FastAPI local;
+- aucun test n'a utilise ou modifie `smart_faculty`.
+
+### Limites et transmission B2B
+
+Le modele ne contient pas encore de drapeau cours obligatoire, d'unite d'enseignement, d'annulation, de compensation ou de validation administrative. B2A traite donc tous les cours actifs du programme comme requis et refuse les incoherences plutot que d'inventer une regle. La validation officielle, la deliberation, la publication etudiante, la moyenne annuelle, le releve PDF, les reclamations, la correction post-deliberation et les decisions manuelles sont reportes au Prompt 4C-B2B.
+
+Decision: le Prompt 4C-B2A est valide techniquement pour une consolidation semestrielle provisoire, securisee et idempotente. Le projet est pret pour le Prompt 4C-B2B sous reserve de confirmer la formule semestrielle officielle et les regles administratives.
+
+## Prompt 4C-B2B - Audit de validation administrative - 2026-07-13
+
+### Preconditions
+
+- branche active: `moteur-resultats-academiques`;
+- modification preexistante conservee: `.vscode/settings.json`;
+- backend: `97 passed` sur `smart_faculty_test`;
+- Flutter: `36 passed` avec `--concurrency=1`;
+- `flutter analyze`: 0 erreur, 0 avertissement, 6 informations historiques `dart:html`;
+- `GET /` et `GET /api/v1/statut`: reponses nominales depuis FastAPI local.
+
+### Regles verifiees
+
+Les documents `00.04 - Organigramme des utilisateurs.docx`, `01.02 - Besoins fonctionnels.docx`, `01.04 - Cas d'utilisation.docx`, `01.06 - Scenarios d'utilisation.docx`, `01.07 - Regles metier.docx`, `02.01 - Architecture generale.docx`, `02.02 - Conception de la base de donnees.docx`, `02.04 - Architecture des API REST.docx`, le Cahier technique et le Journal ont ete relus.
+
+La seule regle numerique confirmee est le seuil de cours `>= 50 %`; les credits sont acquis lorsqu'un cours est reussi. L'enseignant publie les resultats de ses cours. L'appariteur valide certaines inscriptions. Le doyen consulte les notes publiees. Aucun texte ne confirme une formule semestrielle, un seuil de semestre, un validateur officiel ou un responsable de publication officielle.
+
+### Audit du workflow
+
+Le code actif ne comporte pas de validation semestrielle ni de publication officielle. `ResultatCours` ne stocke ni snapshot, ni statut administratif, ni validateur, ni dates de validation/publication, ni motif de correction. `JournalAudit` existe pour les traces techniques, mais ne peut pas porter seul l'etat officiel. Les migrations existantes ne contiennent pas de structure adaptee.
+
+### Decision
+
+Aucune modification fonctionnelle n'a ete faite pendant B2B. La validation administrative, la demande de correction, le verrouillage officiel et la publication etudiante sont bloques pour eviter d'inventer une regle ou un role. Aucune migration, aucun test ecrivant dans `smart_faculty`, aucune route B2B et aucun statut officiel n'ont ete ajoutes. Le theme, la Valve, les presences et le fichier `.vscode/settings.json` n'ont pas ete modifies.
+
+Le prochain passage doit fournir une confirmation metier explicite de la formule semestrielle, du seuil semestriel, du role validateur, du role de publication et des transitions de correction. Apres cette confirmation seulement, un snapshot officiel et une migration non destructive pourront etre concus.
+
+## 2026-07-13 - Prompt 4D - Espace enseignant des encadrements
+
+Audit: aucune structure active FastAPI ne permettait la consultation des
+projets encadres; l'ancien schema SQL et l'ecran Flutter de projets etaient
+historiques ou fictifs. Une architecture minimale a donc ete ajoutee, sans
+interface d'attribution appariteur.
+
+Implementation: ajout des modeles `ProjetAcademique` et `EncadrementProjet`,
+des routes `GET /api/v1/enseignants/moi/encadrements` et leur detail, du
+service de filtrage securise par enseignant actif et de la migration additive
+`20260713_0005`. Le backend valide les quatre types controles et exclut les
+doublons actifs. Flutter ajoute la route protegee `/teacher/supervisions` et
+l'ecran `Mes encadrements`.
+
+Verification: la migration a ete retrogradee puis rehaussee sur
+`smart_faculty_test`; les deux suites backend ont donne `120 passed`, les
+deux suites Flutter `39 passed`, l'analyse conserve seulement les 6
+informations historiques `dart:html`, et le build Web release a reussi. Les
+endpoints FastAPI `/` et `/api/v1/statut` ont repondu HTTP 200. Aucun test n'a
+ecrit dans `smart_faculty`; `.vscode/settings.json` a ete conserve intact.
+
+Transmission: l'espace enseignant est pret pour le module d'attribution
+appariteur. La consultation etudiante des encadreurs, les fichiers, la
+messagerie, les reunions et l'evaluation des projets restent a implementer.
+
+## 2026-07-13 - Prompt 5A - Gestion des enrolements academiques
+
+### Sauvegarde et migration
+
+La branche active est `moteur-resultats-academiques`. Une sauvegarde de
+`smart_faculty` a ete creee avant verification de la chaine Alembic. La base
+principale etait a `20260711_0003`; les migrations `20260713_0004` et
+`20260713_0005` ont ete appliquees pour aligner la structure existante avec
+les fonctionnalites deja validees. Une incompatibilite MySQL liee aux tables
+parentes MyISAM a ete corrigee dans la migration de deliberation en convertissant
+uniquement les parents necessaires vers InnoDB; aucune table n'a ete supprimee.
+
+La migration `20260713_0006` ajoute `enrolements_academiques`. Elle a ete
+testee sur `smart_faculty_test` avec downgrade puis upgrade. La base
+`smart_faculty` n'a pas ete migree a `0006`, n'a recu aucune donnee de test et
+reste a `20260713_0005`.
+
+### Audit et implementation
+
+Le modele actif distinguait deja les comptes, les etudiants, les promotions,
+les annees et les inscriptions de cours, mais ne possedait pas de fiche
+d'enrolement academique. Le nouveau modele rattache l'etudiant, la promotion
+et l'annee, genere une reference unique et garde les statuts
+`en_attente`, `valide`, `annule`. Le doublon actif est refuse; l'annulation
+conserve l'historique et permet un nouvel enrolement du meme triplet.
+
+Les routes appariteur listent, creent, modifient avant validation, valident,
+annulent et consultent les donnees de fiche. Le backend derive toujours
+l'autorite du token et filtre les comptes actifs. Aucun mot de passe, hash,
+token, paiement ou renseignement personnel inutile n'est retourne.
+
+Flutter ajoute l'entree `Enrolements` dans l'espace Appariteur, avec filtres,
+creation, detail et actions de validation ou annulation. L'interface reutilise
+le theme existant et ne cree ni PDF, ni attribution d'encadrement, ni logique
+de notes ou de presence.
+
+### Verification et transmission
+
+Les deux executions de la suite backend ont donne `128 passed`. Les deux
+executions Flutter ont donne `42 passed`. `flutter analyze` a donne 0 erreur
+et 0 avertissement, avec 6 informations historiques liees a `dart:html`.
+`flutter build web --release` a reussi. FastAPI a repondu HTTP 200 sur `/`,
+`/api/v1/statut` et le health check de la base; Flutter Web a ete servi sur
+`http://localhost:52100`.
+
+Le Prompt 5A est valide techniquement. La migration `20260713_0006` est prete
+pour un deploiement controle ulterieur sur la base principale. Le prochain
+module peut traiter l'attribution des encadreurs par l'appariteur, sans
+melanger cette fonctionnalite avec l'enrolement academique.

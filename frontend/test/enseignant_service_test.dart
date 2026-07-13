@@ -66,6 +66,73 @@ void main() {
     expect(cours['credits'], 5);
     expect(fake.requests.single.uri.path, '/api/v1/enseignants/moi/cours/7');
   });
+
+  test('EnseignantApiService liste et normalise les encadrements', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'elements': [
+          {
+            'id': 12,
+            'role_encadrement': 'principal',
+            'projet': {
+              'id': 4,
+              'titre': 'Plateforme campus',
+              'type_projet': 'genie_logiciel',
+              'type_projet_libelle': 'Genie logiciel',
+              'statut': 'en_cours',
+            },
+            'etudiant': {
+              'id': 8,
+              'nom_complet': 'Etudiant Test',
+              'matricule': 'MAT-008',
+            },
+          },
+        ],
+        'total': 1,
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final encadrements = await const EnseignantApiService().encadrements(
+          typeProjet: 'genie_logiciel',
+          statut: 'en_cours',
+          anneeAcademiqueId: 3,
+          recherche: 'campus',
+        );
+
+    expect(encadrements, hasLength(1));
+    expect(encadrements.single['titre'], 'Plateforme campus');
+    expect(encadrements.single['type_projet'], 'genie_logiciel');
+    expect(encadrements.single['etudiant']['matricule'], 'MAT-008');
+    expect(fake.requests.single.uri.path, '/api/v1/enseignants/moi/encadrements');
+    expect(fake.requests.single.uri.queryParameters['type_projet'], 'genie_logiciel');
+    expect(fake.requests.single.uri.queryParameters['statut'], 'en_cours');
+    expect(fake.requests.single.uri.queryParameters['annee_academique_id'], '3');
+    expect(fake.requests.single.uri.queryParameters['recherche'], 'campus');
+  });
+
+  test('EnseignantApiService utilise le detail securise dun encadrement', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'id': 12,
+        'role_encadrement': 'principal',
+        'projet': {
+          'titre': 'Plateforme campus',
+          'type_projet': 'genie_logiciel',
+          'statut': 'en_cours',
+        },
+        'etudiant': {'nom_complet': 'Etudiant Test'},
+        'autres_encadreurs': [],
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final detail = await const EnseignantApiService().detailEncadrement(12);
+
+    expect(detail['titre'], 'Plateforme campus');
+    expect(detail['etudiant']['nom_complet'], 'Etudiant Test');
+    expect(fake.requests.single.uri.path, '/api/v1/enseignants/moi/encadrements/12');
+  });
 }
 
 class _FakeHttp {

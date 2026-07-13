@@ -400,3 +400,182 @@ La publication verrouille les lignes d'evaluation du cours, revalide l'aperçu d
 Le calcul historique de `ResultatCours`, des credits et de la reussite/echec existe encore dans l'ancien flux de publication d'une evaluation; il n'est pas utilise par le nouvel aperçu B1 et n'a pas ete etendu. Sa formalisation appartient au Prompt 4C-B2.
 
 Validation B1: `scripts\\test_backend.bat` a retourne `73 passed` sur `smart_faculty_test`; les tests Flutter sont a `35 passed`; `flutter analyze` conserve uniquement les 6 informations historiques `dart:html`; `flutter build web --release` est reussi. Aucun schema n'a ete migre et `smart_faculty` n'a pas ete modifiee.
+
+## Exigences techniques - Prompt 4C-B2A Consolidation academique semestrielle
+
+### Audit et source de verite
+
+Les documents officiels confirment le calcul automatique des moyennes et credits, le seuil de reussite d'un cours a 50/100 et l'acquisition des credits uniquement lorsqu'un cours est reussi. Ils ne definissent pas de formule semestrielle ponderee par credits, de compensation, de rattrapage ou de decision officielle. Le code actif utilisait une moyenne simple des `ResultatCours`; cette formule est conservee provisoirement et documentee comme une limite a confirmer.
+
+Le moteur B2A reutilise le modele actif `ResultatCours` et le service central `calcul_academique`. La publication d'un cours B1 persiste maintenant le resultat de chaque inscription active apres publication et verrouillage des evaluations. Le service `resultats_academiques.py` ne recalcule pas les notes brutes: il consomme les resultats publies, verifies par les evaluations verrouillees. Aucune seconde table de consolidation et aucune migration ne sont necessaires.
+
+### Consolidation et completude
+
+La consolidation est calculee a la demande pour l'annee academique active. Tous les cours actifs du semestre appartenant a la promotion de l'etudiant sont consideres comme les cours du programme, car le modele actuel ne porte pas de drapeau obligatoire ni d'unites d'enseignement. L'etudiant doit etre actif, sa promotion active et chaque cours doit avoir une inscription active dans la meme annee.
+
+Un cours est exploitable seulement lorsque ses evaluations actives sont publiees et verrouillees et que son `ResultatCours` porte le statut `reussi` ou `echoue`. Les etats exposes sont `incomplet` et `provisoire`. Les blocages retournes sont notamment `resultat_non_publie`, `inscription_cours_invalide`, `credits_incoherents`, `cours_manquant` et `annee_academique_incoherente`. Un cours echoue ne bloque pas la completude: il reste `non_acquis` et ses credits acquis sont zero. Une note zero reste donc un resultat valide et peut conduire a un cours non acquis.
+
+### Formule, credits et precision
+
+La formule actuelle est `moyenne_semestre = somme(resultats_cours) / nombre_de_resultats_cours`, sur 100. Les valeurs internes utilisent `Decimal`; l'arrondi a deux decimales intervient seulement a l'exposition. Cette moyenne simple est un choix de compatibilite avec le code actif, pas une confirmation d'une future ponderation par credits. Les credits prevus sont la somme des credits des cours du semestre, les credits acquis la somme des credits des cours `reussi`, et les credits non acquis la difference. Le seuil de 50/100 est applique au resultat de cours deja publie; aucune compensation n'est appliquee.
+
+### Roles et API
+
+Les routes sont:
+
+- `GET /api/v1/resultats/etudiants` pour la selection securisee des etudiants par les responsables;
+- `GET /api/v1/resultats/etudiants/{etudiant_id}/semestres`;
+- `GET /api/v1/resultats/etudiants/{etudiant_id}/semestres/{semestre_id}/apercu`;
+- `GET /api/v1/resultats/mes-semestres`;
+- `GET /api/v1/resultats/mes-semestres/{semestre_id}/apercu`.
+
+L'etudiant ne voit que son propre identifiant academique. Les roles autorises pour la consultation responsable sont `appariteur`, `doyen` et `administrateur`. Le role actif est valide par le backend a partir du token; Flutter ne peut pas imposer une promotion, une annee ou un role. L'enseignant reste responsable de ses resultats de cours, mais ne valide pas un semestre.
+
+La reponse contient l'etudiant concerne, l'annee, le semestre, les cours, les resultats publies, les credits, la moyenne provisoire, l'etat, les raisons de blocage et `decision_provisoire=en_attente_de_validation` lorsque les donnees sont completes. `decision_officielle=false` et `publie_a_etudiant=false` signalent explicitement les limites de B2A. Aucune decision `admis`, `ajourne` ou `echec` semestriel n'est inventee.
+
+### Flutter et limites reportees
+
+`AcademicResultsScreen` permet a l'etudiant et aux responsables autorises de choisir la periode disponible et de consulter un apercu responsive. Il distingue chargement, aucun etudiant, aucun semestre, incomplet, provisoire et erreur. Il n'affiche pas de releve officiel. La moyenne annuelle, la validation administrative, la deliberation, la publication officielle aux etudiants, les reclamations de resultat, le PDF, la compensation et le rattrapage sont reportes au Prompt 4C-B2B.
+
+Validation B2A: `97 passed` sur `smart_faculty_test` lors de deux executions; `36 passed` Flutter lors de deux executions avec `--concurrency=1`; `flutter analyze` retourne uniquement les 6 informations historiques `dart:html`; `flutter build web --release` reussi. Les tests B2A couvrent moyenne mono et multi-cours, Decimal et arrondi, note zero, absence de resultat, brouillon/non-verrouille, credits, seuil 50, autre annee/semestre, inscription, acces etudiant/responsable, role falsifie, absence de donnees sensibles, idempotence et absence de decision arbitraire. Aucune migration et aucune ecriture dans `smart_faculty`.
+
+## Audit Prompt 4C-B2B - Validation administrative et publication officielle
+
+### Regles confirmees
+
+La lecture de `docs/01_Analyse/01.07 - Regles metier.docx` confirme uniquement qu'un cours est reussi lorsque sa moyenne est superieure ou egale a 50 % et que ses credits sont valides uniquement lorsqu'il est reussi. `docs/01_Analyse/01.04 - Cas d'utilisation.docx` indique que l'enseignant publie les resultats de ses cours, que l'appariteur valide certaines inscriptions et que le doyen consulte les notes publiees.
+
+### Ambiguites bloquantes
+
+Les documents ne confirment pas la formule de moyenne semestrielle, le seuil de validation d'un semestre, le role habilite a valider un semestre, le role habilite a publier officiellement, la compensation, le rattrapage, la seconde session, la correction apres validation ni la publication officielle aux etudiants. Une phrase generale sur la supervision du doyen ne constitue pas une autorisation explicite de validation semestrielle.
+
+### Audit du modele actif
+
+Le modele `ResultatCours` contient uniquement la moyenne du cours, les credits obtenus, le statut `en_attente/reussi/echoue` et la date de calcul. Il ne contient pas le statut administratif, la moyenne snapshot, les credits snapshot, le validateur, la date de validation, le responsable de publication, la date de publication, le motif de correction ou la version de formule. `JournalAudit` permet une trace technique, mais ne remplace pas un snapshot officiel. Les migrations actives ne proposent aucune table de validation semestrielle.
+
+### Decision technique
+
+La validation administrative, le verrouillage officiel, la demande de correction et la publication officielle ont ete volontairement arretes avant modification. Les implementer exigerait d'inventer une regle ou un role, ce que la source documentaire interdit. Aucune route B2B, aucun statut officiel, aucune migration et aucune modification du backend n'ont ete ajoutes. Le moteur B2A reste provisoire et continue de signaler `en_attente_de_validation`.
+
+Les preconditions B2A ont ete verifiees avant cet audit: backend `97 passed`, Flutter `36 passed`, analyse Flutter avec uniquement les 6 informations historiques `dart:html`, et endpoints FastAPI `/` et `/api/v1/statut` operationnels. Le fichier `.vscode/settings.json` conserve sa modification preexistante et n'a pas ete touche.
+
+Pour reprendre B2B, la documentation doit d'abord confirmer explicitement la formule semestrielle, le seuil semestriel, le validateur, le responsable de publication et les transitions de correction. Une migration non destructive pourra alors etre etudiee sur `smart_faculty_test` uniquement.
+
+## Regles academiques LMD appliquees par Smart Faculty
+
+Les decisions LMD du projet sont formalisees dans `docs/REGLES_LMD_RDC.md`.
+Elles s'appuient sur le Decret n°22/39 du 8 decembre 2022, les arretes
+ministeriels n°093/MINESU/CAB.MIN/MNB/RMM/2023 et
+n°401/MINESU/CABMIN/MNB/RMM/MKK/2023, ainsi que l'Instruction academique n°027
+pour l'annee 2025-2026.
+
+Le moteur conserve la valeur historique des cours sur 100 et calcule la valeur
+officielle sur 20 par division par 5. La moyenne semestrielle est ponderee par
+les credits avec `Decimal`; le seuil est 10/20, un semestre normal vaut 30
+credits et une annee 60 credits. Les decisions finales sont `ADM`, `COMP`,
+`DEF` et `AJ`.
+
+Le `Cours` actuel est traite comme une UE autonome pour le MVP. Le jury est la
+seule autorite de decision: le doyen ou vice-doyen organise la session, le
+president enregistre les decisions et l'appariteur assure les operations
+administratives et la publication d'une session deja cloturee. La cloture
+genere un snapshot officiel versionne et immuable; toute correction conserve
+l'historique et passe par une nouvelle deliberation.
+
+La progression annuelle complete, la seconde session et la decomposition
+EC-UE-BCC restent reportees a une evolution ulterieure.
+
+## Projets et encadrements - regle fonctionnelle
+
+L'appariteur attribue les enseignants encadreurs en fonction du type de projet.
+L'enseignant consulte les etudiants et projets qui lui sont attribues.
+L'etudiant consultera les enseignants qui encadrent son projet dans un module
+ulterieur. Le MVP accepte les types `reseaux`, `systemes_embarques`,
+`intelligence_artificielle` et `genie_logiciel`, avec validation backend.
+
+Le modele actif est minimal: un projet reference un etudiant, une promotion,
+une annee et un type; plusieurs encadrements actifs sont possibles, sans
+doublon enseignant-projet. L'enseignant ne consulte que les encadrements
+derives de son token via `/api/v1/enseignants/moi/encadrements`. L'attribution,
+la messagerie, les fichiers, les reunions, l'evaluation et la note de projet
+sont hors perimetre. La reference detaillee est
+`docs/PROJETS_ENCADREMENTS_MVP.md`.
+
+### Implementation Prompt 4C-B2B-RDC
+
+La migration `20260713_0004` cree de maniere additive `sessions_deliberation`,
+`membres_jury`, `decisions_jury` et `resultats_semestre_officiels`. Les
+decisions sont enregistrees par le president affecte et present; la cloture
+recalcule la grille et cree les snapshots dans une transaction. La publication
+est reservee a l'appariteur, au doyen et au vice-doyen apres cloture.
+
+Les routes actives sont sous `/api/v1/deliberations` et la consultation
+etudiante officielle sous `/api/v1/resultats/mes-semestres/{semestre_id}/officiel`.
+Les membres enseignants peuvent consulter leur session; un enseignant non
+membre, un etudiant tiers et un role falsifie sont refuses par le backend.
+
+La correction apres cloture cree une nouvelle version avec motif obligatoire et
+conserve l'ancienne version. Les tests utilisent toujours `smart_faculty_test`.
+La validation finale du prompt a donne 107 tests backend reussis, 37 tests
+Flutter reussis, 0 erreur d'analyse et un build Web release reussi.
+
+## Prompt 4D - Encadrements de projets
+
+Le modele MVP `ProjetAcademique` represente un projet rattache a un etudiant,
+une promotion, une annee academique, un titre, un type controle et un statut.
+`EncadrementProjet` permet plusieurs encadreurs actifs et interdit le doublon
+actif d'un meme enseignant sur un projet. La migration `20260713_0005` est
+additive et se teste uniquement sur `smart_faculty_test`.
+
+Le backend derive l'enseignant actif du token et filtre toutes les lectures
+par cette identite. Les routes de consultation sont
+`/api/v1/enseignants/moi/encadrements` et
+`/api/v1/enseignants/moi/encadrements/{encadrement_id}`. Flutter expose
+`Mes encadrements` avec liste, detail, etats de chargement, vide, erreur,
+acces refuse et session expiree.
+
+La suite de validation 4D compte `120 passed` backend et `39 passed` Flutter,
+avec deux executions de chaque suite, analyse Flutter sans erreur et build
+Web release reussi. L'attribution par appariteur et la vue etudiante des
+encadreurs sont reservees aux modules suivants.
+
+## Prompt 5A - Enrolements academiques appariteur
+
+L'enrolement academique est une operation distincte de la demande d'inscription
+d'un compte et de l'inscription pedagogique a un cours. Pour le MVP, il relie
+un etudiant actif, une promotion et une annee academique, puis conserve une
+fiche administrative avec reference, dates, statut et auteur des operations.
+Le programme affiche est derive des cours actifs de la promotion; aucune
+inscription de cours n'est creee automatiquement.
+
+Le modele `EnrolementAcademique` est porte par la table
+`enrolements_academiques`, introduite par la migration additive
+`20260713_0006`. Les statuts controles sont `en_attente`, `valide` et
+`annule`. Une contrainte logique et une cle unique nullable interdisent deux
+enrolements actifs pour le meme triplet etudiant-promotion-annee, tout en
+conservant les enrolements annules. La reference de fiche est unique.
+
+Le backend expose les routes appariteur sous
+`/api/v1/appariteur/enrolements`. L'utilisateur appariteur est derive du
+token, le compte doit etre actif et le role actif doit etre `appariteur`.
+Les validations controlent l'existence des references, l'appartenance de
+l'etudiant a la promotion, la coherence de l'annee et les transitions de
+statut. La modification des references sensibles est interdite apres
+validation ou annulation. La fiche MVP fournit des donnees structurees, sans
+PDF.
+
+Flutter utilise le service API appariteur et l'ecran `Enrolements` avec liste,
+filtres, creation, detail, validation et annulation. Les etats de chargement,
+liste vide, erreur reseau, acces refuse et session expiree sont traites. Le
+theme et les regles des modules existants ne sont pas modifies.
+
+La migration a ete appliquee sur `smart_faculty_test`, verifiee par downgrade
+vers `20260713_0005` puis upgrade vers `20260713_0006`. La base principale
+`smart_faculty` reste a `20260713_0005` et n'a recu aucune donnee de test.
+L'attribution des encadreurs, les paiements, les notes, les presences, le PDF
+et la consultation etudiante sont reportes aux modules suivants.
+
+Validation: deux suites backend a `128 passed`, deux suites Flutter a
+`42 passed`, analyse Dart avec 0 erreur et 0 avertissement, 6 informations
+historiques `dart:html`, build Web release reussi. Les endpoints FastAPI `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent correctement.

@@ -110,6 +110,92 @@ void main() {
       '/api/v1/enseignant/cours/7/resultats/publier',
     ]);
   });
+
+  test('NotesApiService charge les semestres et l apercu academique', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'semestres': [
+          {'id': 1, 'nom': 'Semestre 1'},
+        ],
+      }),
+      _jsonResponse(200, {
+        'etat': 'provisoire',
+        'moyenne_semestre_sur_100': 67.5,
+        'credits_prevus': 8,
+        'credits_acquis': 5,
+        'credits_non_acquis': 3,
+        'decision_provisoire': 'en_attente_de_validation',
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+    const service = NotesApiService();
+
+    final semestres = await service.semestresEtudiant();
+    final apercu = await service.apercuSemestreEtudiant(1);
+
+    expect(semestres.single['id'], 1);
+    expect(apercu['etat'], 'provisoire');
+    expect(apercu['credits_non_acquis'], 3);
+    expect(fake.requests.map((request) => request.uri.path), [
+      '/api/v1/resultats/mes-semestres',
+      '/api/v1/resultats/mes-semestres/1/apercu',
+    ]);
+  });
+
+  test(
+      'NotesApiService couvre le cycle de deliberation et le resultat officiel',
+      () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'resultats': [
+          {'decision': 'ADM'}
+        ]
+      }),
+      _jsonResponse(200, {
+        'sessions': [
+          {'id': 9, 'statut': 'preparation'}
+        ]
+      }),
+      _jsonResponse(200, {'id': 9, 'statut': 'preparation'}),
+      _jsonResponse(200, {'id': 9, 'statut': 'preparation'}),
+      _jsonResponse(200, {'id': 9, 'statut': 'ouverte'}),
+      _jsonResponse(200, {'decision': 'ADM'}),
+      _jsonResponse(200, {'id': 9, 'statut': 'cloturee'}),
+      _jsonResponse(200, {'id': 9, 'statut': 'publiee'}),
+      _jsonResponse(201, {'id': 10, 'statut': 'preparation'}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+    const service = NotesApiService();
+
+    expect((await service.resultatOfficielSemestreEtudiant(2))['resultats'],
+        isNotEmpty);
+    expect((await service.deliberations()).single['id'], 9);
+    await service.creerDeliberation(
+        promotionId: 1, anneeAcademiqueId: 2, semestreId: 2);
+    await service.ajouterMembreDeliberation(
+        sessionId: 9, utilisateurId: 4, qualite: 'president');
+    await service.ouvrirDeliberation(9);
+    await service.enregistrerDecisionDeliberation(
+        sessionId: 9, etudiantId: 7, decision: 'ADM');
+    await service.cloturerDeliberation(9);
+    await service.publierDeliberation(9);
+    await service.demanderReouvertureDeliberation(
+        sessionId: 9, motif: 'Correction documentee');
+
+    expect(fake.requests.map((request) => request.uri.path), [
+      '/api/v1/resultats/mes-semestres/2/officiel',
+      '/api/v1/deliberations',
+      '/api/v1/deliberations',
+      '/api/v1/deliberations/9/membres',
+      '/api/v1/deliberations/9/ouvrir',
+      '/api/v1/deliberations/9/decisions/7',
+      '/api/v1/deliberations/9/cloturer',
+      '/api/v1/deliberations/9/publier',
+      '/api/v1/deliberations/9/demander-reouverture',
+    ]);
+    expect(jsonDecode(fake.requests[2].body!)['promotion_id'], 1);
+    expect(jsonDecode(fake.requests[3].body!)['qualite'], 'president');
+  });
 }
 
 class _FakeHttp {

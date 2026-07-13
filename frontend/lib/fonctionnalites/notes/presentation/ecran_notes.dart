@@ -9,6 +9,8 @@ import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_etudiant.dart';
 import '../../../donnees/services/service_session.dart';
 import 'ecran_evaluations_enseignant.dart';
+import 'ecran_deliberation.dart';
+import 'ecran_resultats_academiques.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
 import '../../../commun/composants/panneau_section.dart';
@@ -24,7 +26,15 @@ class GradesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
-    if (role == UserRole.student) return const _StudentApiGradesScreen();
+    if ({
+      UserRole.student,
+      UserRole.administrator,
+    }.contains(role)) {
+      return const AcademicResultsScreen();
+    }
+    if ({UserRole.apparitor, UserRole.dean, UserRole.viceDean}.contains(role)) {
+      return const DeliberationScreen();
+    }
     if (role == UserRole.teacher) {
       return TeacherEvaluationsScreen(initialCourseId: initialCourseId);
     }
@@ -60,6 +70,8 @@ class GradesScreen extends StatelessWidget {
   }
 }
 
+// Legacy notes table retained for historical navigation screens.
+// ignore: unused_element
 class _StudentApiGradesScreen extends StatelessWidget {
   const _StudentApiGradesScreen();
 
@@ -1175,6 +1187,7 @@ List<Widget> _statCardsFor(UserRole role) {
     case UserRole.administrator:
     case UserRole.apparitor:
     case UserRole.dean:
+    case UserRole.viceDean:
       return [
         StatCard(
           metric: MockFacultyData.decisionKpis[0],
@@ -1232,6 +1245,8 @@ String _titleFor(UserRole role) {
       return 'Resultats de la promotion';
     case UserRole.dean:
       return 'Synthese des resultats';
+    case UserRole.viceDean:
+      return 'Synthese des resultats';
     case UserRole.apparitor:
       return 'Suivi des notes et credits';
     case UserRole.administrator:
@@ -1249,6 +1264,8 @@ String _subtitleFor(UserRole role) {
       return 'Lire les tendances utiles pour accompagner la promotion.';
     case UserRole.dean:
       return 'Analyser les resultats finaux et les cours sensibles.';
+    case UserRole.viceDean:
+      return 'Analyser les resultats finaux et les cours sensibles.';
     case UserRole.apparitor:
       return 'Verifier les publications, credits, moyennes et verrouillages.';
     case UserRole.administrator:
@@ -1263,6 +1280,8 @@ String _tableSubtitle(UserRole role) {
     case UserRole.promotionChief:
       return 'Lecture synthetique des cours suivis par la promotion.';
     case UserRole.dean:
+      return 'Cours qui alimentent la lecture decisionnelle.';
+    case UserRole.viceDean:
       return 'Cours qui alimentent la lecture decisionnelle.';
     case UserRole.apparitor:
       return 'Lecture par promotion et par cours pour suivi apparitorat.';
@@ -1283,6 +1302,8 @@ String _scopeText(UserRole role) {
       return 'Vous consultez les resultats de votre promotion sans modification.';
     case UserRole.dean:
       return 'Vous disposez d une lecture consolidee pour la decision.';
+    case UserRole.viceDean:
+      return 'Vous disposez d une lecture consolidee pour la decision.';
     case UserRole.apparitor:
       return 'Vous controlez les notes publiees par promotion et par cours.';
     case UserRole.administrator:
@@ -1300,6 +1321,8 @@ String _permissionText(UserRole role) {
       return 'Lecture promotion';
     case UserRole.dean:
       return 'Lecture faculte';
+    case UserRole.viceDean:
+      return 'Lecture faculte';
     case UserRole.apparitor:
       return 'Lecture apparitorat';
     case UserRole.administrator:
@@ -1316,6 +1339,8 @@ String _decisionText(UserRole role) {
     case UserRole.promotionChief:
       return 'Relais etudiant';
     case UserRole.dean:
+      return 'Pilotage decisionnel';
+    case UserRole.viceDean:
       return 'Pilotage decisionnel';
     case UserRole.apparitor:
       return 'Relance des publications';
@@ -1344,6 +1369,8 @@ List<CourseGrade> _gradesForRole(UserRole role) {
     case UserRole.apparitor:
     case UserRole.administrator:
     case UserRole.dean:
+      return MockFacultyData.grades;
+    case UserRole.viceDean:
       return MockFacultyData.grades;
   }
 }

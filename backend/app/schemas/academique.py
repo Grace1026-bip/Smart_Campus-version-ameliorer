@@ -127,3 +127,21 @@ class InscriptionCoursCreation(BaseModel):
 
 class InscriptionCoursModification(BaseModel):
     statut: str = Field(pattern="^(active|retiree|validee|archivee)$")
+
+
+class EnrolementCreation(BaseModel):
+    etudiant_id: int = Field(gt=0)
+    promotion_id: int = Field(gt=0)
+    annee_academique_id: int = Field(gt=0)
+    date_enrolement: date = Field(default_factory=date.today)
+
+
+class EnrolementModification(BaseModel):
+    etudiant_id: int | None = Field(default=None, gt=0)
+    promotion_id: int | None = Field(default=None, gt=0)
+    annee_academique_id: int | None = Field(default=None, gt=0)
+    date_enrolement: date | None = None
+
+
+class EnrolementAnnulation(BaseModel):
+    motif: str | None = Field(default=None, max_length=500)

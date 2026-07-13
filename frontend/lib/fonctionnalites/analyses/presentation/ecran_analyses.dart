@@ -540,6 +540,7 @@ List<Widget> _statsFor(UserRole role) {
     case UserRole.administrator:
     case UserRole.apparitor:
     case UserRole.dean:
+    case UserRole.viceDean:
       return [
         StatCard(
           metric: MockFacultyData.adminKpis[0],
@@ -646,6 +647,8 @@ String _titleFor(UserRole role) {
       return 'Mon suivi academique';
     case UserRole.dean:
       return 'Analytics decisionnels';
+    case UserRole.viceDean:
+      return 'Analytics decisionnels';
     case UserRole.apparitor:
       return 'Analytics apparitorat';
     case UserRole.administrator:
@@ -663,6 +666,8 @@ String _subtitleFor(UserRole role) {
       return 'Comprendre votre progression personnelle.';
     case UserRole.dean:
       return 'Indicateurs academiques, reclamations et performances.';
+    case UserRole.viceDean:
+      return 'Indicateurs academiques, reclamations et performances.';
     case UserRole.apparitor:
       return 'Indicateurs par promotion, cours, notes et risques.';
     case UserRole.administrator:
@@ -679,6 +684,7 @@ String _tableTitleFor(UserRole role) {
     case UserRole.student:
       return 'Mon signal d accompagnement';
     case UserRole.dean:
+    case UserRole.viceDean:
     case UserRole.apparitor:
     case UserRole.administrator:
       return 'Etudiants a risque';

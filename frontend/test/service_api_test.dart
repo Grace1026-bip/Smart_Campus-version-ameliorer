@@ -248,12 +248,13 @@ void main() {
         'enseignant',
         'chef_promotion',
         'doyen',
+        'vice_doyen',
       ],
     );
     expect(userRoleFromApi('icp'), isNull);
     expect(userRoleFromApi('paritaire'), isNull);
     expect(userRoleFromApi('surveillant'), isNull);
-    expect(userRoleFromApi('vice_doyen'), isNull);
+    expect(userRoleFromApi('vice_doyen'), UserRole.viceDean);
   });
 
   test('ApiAuthService utilise uniquement le role actif retourne', () async {

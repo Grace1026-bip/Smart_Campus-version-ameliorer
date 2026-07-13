@@ -114,6 +114,19 @@ class ApiService {
     return _decode(response);
   }
 
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    Map<String, dynamic> body = const {},
+  }) async {
+    final response = await _requestWithRefresh(
+      methode: 'PATCH',
+      uri: _uri(path),
+      headers: _headers(json: true),
+      body: jsonEncode(body),
+    );
+    return _decode(response);
+  }
+
   Future<Map<String, dynamic>> delete(String path) async {
     final response = await _requestWithRefresh(
       methode: 'DELETE',

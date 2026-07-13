@@ -55,6 +55,33 @@ class EnseignantApiService {
     return elements.map(_normaliserCours).toList();
   }
 
+  Future<List<dynamic>> encadrements({
+    String? typeProjet,
+    String? statut,
+    int? anneeAcademiqueId,
+    String? recherche,
+  }) async {
+    final data = await ApiDataSource.client.get(
+      '/enseignants/moi/encadrements',
+      query: {
+        if (typeProjet != null) 'type_projet': typeProjet,
+        if (statut != null) 'statut': statut,
+        if (anneeAcademiqueId != null)
+          'annee_academique_id': anneeAcademiqueId,
+        if (recherche != null && recherche.trim().isNotEmpty)
+          'recherche': recherche.trim(),
+      },
+    );
+    final elements = data['elements'] as List<dynamic>? ?? const [];
+    return elements.map(_normaliserEncadrement).toList();
+  }
+
+  Future<Map<String, dynamic>> detailEncadrement(int encadrementId) async {
+    final data = await ApiDataSource.client
+        .get('/enseignants/moi/encadrements/$encadrementId');
+    return _normaliserEncadrement(data);
+  }
+
   Future<Map<String, dynamic>> detailCours(int id) async {
     final data = await ApiDataSource.client.get('/enseignants/moi/cours/$id');
     return _normaliserCours(data);
@@ -197,6 +224,28 @@ class EnseignantApiService {
       'publishedGrades': item['notes_publiees'] ?? 0,
       'average': item['moyenne'] ?? 0,
       'locked': item['verrouille'] ?? false,
+    };
+  }
+
+  Map<String, dynamic> _normaliserEncadrement(dynamic item) {
+    if (item is! Map<String, dynamic>) return const {};
+    final projet = item['projet'] is Map
+        ? Map<String, dynamic>.from(item['projet'] as Map)
+        : <String, dynamic>{};
+    final etudiant = item['etudiant'] is Map
+        ? Map<String, dynamic>.from(item['etudiant'] as Map)
+        : <String, dynamic>{};
+    return {
+      ...item,
+      'projet': projet,
+      'etudiant': etudiant,
+      'titre': projet['titre'] ?? item['titre'] ?? '',
+      'type_projet': projet['type_projet'] ?? item['type_projet'] ?? '',
+      'type_projet_libelle': projet['type_projet_libelle'] ??
+          item['type_projet_libelle'] ??
+          projet['type_projet'] ??
+          '',
+      'statut': projet['statut'] ?? item['statut'] ?? '',
     };
   }
 
