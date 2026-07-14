@@ -251,13 +251,14 @@ void main() {
         'etudiant',
         'enseignant',
         'chef_promotion',
+        'surveillant',
         'doyen',
         'vice_doyen',
       ],
     );
     expect(userRoleFromApi('icp'), isNull);
     expect(userRoleFromApi('paritaire'), isNull);
-    expect(userRoleFromApi('surveillant'), isNull);
+    expect(userRoleFromApi('surveillant'), UserRole.surveillant);
     expect(userRoleFromApi('vice_doyen'), UserRole.viceDean);
   });
 

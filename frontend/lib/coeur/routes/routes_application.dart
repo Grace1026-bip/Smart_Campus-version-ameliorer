@@ -36,6 +36,8 @@ import '../../fonctionnalites/etudiant/presentation/ecran_valve_etudiant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_cours_enseignant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_encadrements_enseignant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_tableau_bord_enseignant.dart';
+import '../../fonctionnalites/presences/presentation/ecran_confirmation_cours_2_chef.dart';
+import '../../fonctionnalites/presences/presentation/ecran_controle_acces_surveillant.dart';
 
 class AppRoutes {
   static const login = '/';
@@ -73,6 +75,9 @@ class AppRoutes {
   static const teacherCourseDetail = '/teacher/courses/detail';
   static const teacherSupervisions = '/teacher/supervisions';
   static const promotionChiefDashboard = '/promotion-chief';
+  static const promotionChiefAttendance = '/promotion-chief/attendance';
+  static const surveillantDashboard = '/surveillant';
+  static const surveillantAttendance = '/surveillant/attendance';
   static const deanDashboard = '/dean';
   static const complaints = '/complaints';
   static const complaintDetail = '/reclamations/detail';
@@ -97,6 +102,8 @@ class AppRoutes {
         return teacherDashboard;
       case UserRole.promotionChief:
         return promotionChiefDashboard;
+      case UserRole.surveillant:
+        return surveillantDashboard;
       case UserRole.dean:
         return deanDashboard;
       case UserRole.viceDean:
@@ -230,6 +237,11 @@ class AppRoutes {
         return _route(settings, const TeacherSupervisionsScreen());
       case promotionChiefDashboard:
         return _route(settings, const PromotionChiefDashboardScreen());
+      case promotionChiefAttendance:
+        return _route(settings, const ConfirmationCours2ChefScreen());
+      case surveillantDashboard:
+      case surveillantAttendance:
+        return _route(settings, const ControleAccesSurveillantScreen());
       case deanDashboard:
         return _route(settings, const DeanDashboardScreen());
       case deliberations:
@@ -367,6 +379,7 @@ class AppRoutes {
       case UserRole.promotionChief:
         return const {
           promotionChiefDashboard,
+          promotionChiefAttendance,
           complaints,
           analytics,
           projects,
@@ -374,6 +387,9 @@ class AppRoutes {
           grades,
           riskStudents,
         }.contains(normalizedRoute);
+      case UserRole.surveillant:
+        return const {surveillantDashboard, surveillantAttendance}
+            .contains(normalizedRoute);
       case UserRole.dean:
         return const {
           deanDashboard,
@@ -411,6 +427,8 @@ class AppRoutes {
         return const TeacherDashboardScreen();
       case UserRole.promotionChief:
         return const PromotionChiefDashboardScreen();
+      case UserRole.surveillant:
+        return const ControleAccesSurveillantScreen();
       case UserRole.dean:
         return const DeanDashboardScreen();
       case UserRole.viceDean:

@@ -1273,6 +1273,7 @@ _ComplaintRoleConfig _configForRole(UserRole role) {
         listTitle: 'Demandes recentes',
       );
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return const _ComplaintRoleConfig(
         title: 'Reclamations apparitorat',
         subtitle: 'Prioriser, assigner et suivre les demandes academiques.',
@@ -1311,6 +1312,7 @@ List<Complaint> _complaintsForRole(UserRole role) {
           .where((item) => item.author.contains('Promotion'))
           .toList();
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.administrator:
     case UserRole.dean:
       return complaints;
@@ -1332,6 +1334,7 @@ String _scopeLabel(UserRole role) {
     case UserRole.viceDean:
       return 'faculte';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'apparitorat';
     case UserRole.administrator:
       return 'global';
@@ -1349,6 +1352,7 @@ String _totalTitle(UserRole role) {
     case UserRole.dean:
     case UserRole.viceDean:
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.administrator:
       return 'Total';
   }

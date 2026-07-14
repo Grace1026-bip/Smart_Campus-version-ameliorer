@@ -357,6 +357,7 @@ List<RiskStudent> _studentsForRole(UserRole role) {
     case UserRole.student:
       return students.where((student) => student.name == user.name).toList();
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.administrator:
     case UserRole.dean:
     case UserRole.viceDean:
@@ -371,6 +372,7 @@ String _titleFor(UserRole role) {
     case UserRole.teacher:
       return 'Signaux pedagogiques';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Risques par promotion et cours';
     case UserRole.student:
       return 'Mon accompagnement';
@@ -390,6 +392,7 @@ String _subtitleFor(UserRole role) {
     case UserRole.teacher:
       return 'Reperer les etudiants fragiles dans les cours suivis.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Vue apparitorat par promotion, cours et niveau de risque.';
     case UserRole.student:
       return 'Comprendre les signaux d accompagnement academique.';
@@ -417,6 +420,7 @@ String _tableTitle(UserRole role) {
     case UserRole.student:
       return 'Mes alertes academiques';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Etudiants a risque par promotion et cours';
     case UserRole.dean:
     case UserRole.viceDean:

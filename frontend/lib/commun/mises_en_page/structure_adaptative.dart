@@ -298,6 +298,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.promotionChiefDashboard,
           ),
           SmartNavItem(
+            label: 'Cours 2',
+            icon: Icons.fact_check_rounded,
+            route: AppRoutes.promotionChiefAttendance,
+          ),
+          SmartNavItem(
             label: 'Risque',
             icon: Icons.health_and_safety_rounded,
             route: AppRoutes.riskStudents,
@@ -326,6 +331,24 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Stages',
             icon: Icons.business_center_rounded,
             route: AppRoutes.internships,
+          ),
+          SmartNavItem(
+            label: 'Profil',
+            icon: Icons.person_rounded,
+            route: AppRoutes.profile,
+          ),
+        ];
+      case UserRole.surveillant:
+        return const [
+          SmartNavItem(
+            label: 'Accueil',
+            icon: Icons.home_rounded,
+            route: AppRoutes.surveillantDashboard,
+          ),
+          SmartNavItem(
+            label: 'Controle d acces',
+            icon: Icons.how_to_reg_rounded,
+            route: AppRoutes.surveillantAttendance,
           ),
           SmartNavItem(
             label: 'Profil',

@@ -696,3 +696,37 @@ Flutter propose `Mes cours`, `Valve`, `Mes notes`, `Mes resultats`,
 `Historique`, `Mon enrolement`, `Mon projet`, `Profil` et la deconnexion. Le
 dashboard signale l'absence d'inscription active et n'affiche aucun calcul
 academique invente. Aucune migration ni dependance n'a ete ajoutee.
+
+## Prompt 7A - Presences academiques et controle d'acces - 2026-07-14
+
+Le modele historique `Presence` (`presences`) reste utilise par le suivi des
+risques et n'est pas supprime. Le socle de presence par cours est porte par
+`SeanceAcademique` et `PresenceAcademique`, introduits par la migration additive
+`20260714_0008`.
+
+Une seance conserve le cours, la promotion, l'annee, le semestre, les horaires
+configurables, le type `cours_1`/`cours_2`/`autre`, son statut et les acteurs
+d'ouverture et de fermeture. Une presence conserve le statut, la methode
+manuelle par matricule, le motif de refus et le pourcentage de paiement observe.
+La contrainte `(seance_id, etudiant_id)` garantit une seule presence par
+etudiant et par seance.
+
+Le service central verifie compte actif, enrôlement `valide`, promotion
+coherente, inscription active ou validee au cours, seance ouverte et paiement
+administratif superieur ou egal a 50 %. Le champ
+`EnrolementAcademique.pourcentage_paiement` est lu par le controle ; aucun
+paiement en ligne n'est implemente et le module Presence ne peut pas le
+modifier.
+
+Le role actif `surveillant` ouvre et ferme les seances et traite le controle
+manuel. Le chef de promotion agit sur la promotion de son profil Etudiant et
+peut confirmer une seance `cours_2` ouverte. Les actions sont tracees dans
+`JournalAudit`. Flutter expose `Controle d acces` et `Cours 2` sans camera
+simulee. Les routes et limites sont detaillees dans
+`docs/PRESENCES_ACADEMIQUES_MVP.md`.
+
+Validation Prompt 7A : migration downgrade/upgrade reussie sur
+`smart_faculty_test`, deux suites backend a `152 passed`, suite Flutter a `56
+passed`, analyse Flutter sans erreur ni avertissement avec 14 informations
+historiques. La base `smart_faculty` et `.vscode/settings.json` restent hors
+perimetre.

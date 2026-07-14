@@ -539,6 +539,7 @@ List<Widget> _statsFor(UserRole role) {
       ];
     case UserRole.administrator:
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.dean:
     case UserRole.viceDean:
       return [
@@ -650,6 +651,7 @@ String _titleFor(UserRole role) {
     case UserRole.viceDean:
       return 'Analytics decisionnels';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Analytics apparitorat';
     case UserRole.administrator:
       return 'Analytics administratifs';
@@ -669,6 +671,7 @@ String _subtitleFor(UserRole role) {
     case UserRole.viceDean:
       return 'Indicateurs academiques, reclamations et performances.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Indicateurs par promotion, cours, notes et risques.';
     case UserRole.administrator:
       return 'Vue globale pour controler les services academiques.';
@@ -686,6 +689,7 @@ String _tableTitleFor(UserRole role) {
     case UserRole.dean:
     case UserRole.viceDean:
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.administrator:
       return 'Etudiants a risque';
   }

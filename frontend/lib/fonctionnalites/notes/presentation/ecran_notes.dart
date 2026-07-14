@@ -1186,6 +1186,7 @@ List<Widget> _statCardsFor(UserRole role) {
       ];
     case UserRole.administrator:
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.dean:
     case UserRole.viceDean:
       return [
@@ -1248,6 +1249,7 @@ String _titleFor(UserRole role) {
     case UserRole.viceDean:
       return 'Synthese des resultats';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Suivi des notes et credits';
     case UserRole.administrator:
       return 'Suivi academique';
@@ -1267,6 +1269,7 @@ String _subtitleFor(UserRole role) {
     case UserRole.viceDean:
       return 'Analyser les resultats finaux et les cours sensibles.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Verifier les publications, credits, moyennes et verrouillages.';
     case UserRole.administrator:
       return 'Controler la publication et la coherence des resultats.';
@@ -1284,6 +1287,7 @@ String _tableSubtitle(UserRole role) {
     case UserRole.viceDean:
       return 'Cours qui alimentent la lecture decisionnelle.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Lecture par promotion et par cours pour suivi apparitorat.';
     case UserRole.administrator:
       return 'Apercu de controle avant consolidation.';
@@ -1305,6 +1309,7 @@ String _scopeText(UserRole role) {
     case UserRole.viceDean:
       return 'Vous disposez d une lecture consolidee pour la decision.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Vous controlez les notes publiees par promotion et par cours.';
     case UserRole.administrator:
       return 'Vous controlez la coherence des donnees academiques.';
@@ -1324,6 +1329,7 @@ String _permissionText(UserRole role) {
     case UserRole.viceDean:
       return 'Lecture faculte';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Lecture apparitorat';
     case UserRole.administrator:
       return 'Controle global';
@@ -1343,6 +1349,7 @@ String _decisionText(UserRole role) {
     case UserRole.viceDean:
       return 'Pilotage decisionnel';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Relance des publications';
     case UserRole.administrator:
       return 'Preparation jury';
@@ -1367,6 +1374,7 @@ List<CourseGrade> _gradesForRole(UserRole role) {
           .where((grade) => grade.promotion == user.promotion)
           .toList();
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.administrator:
     case UserRole.dean:
       return MockFacultyData.grades;

@@ -174,6 +174,7 @@ String _readOnlyMessage(UserRole role) {
     case UserRole.viceDean:
       return 'Cette vue sert au pilotage. Les actions operationnelles restent aux services concernes.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Vous pouvez suivre le dossier et relancer le service concerne.';
     case UserRole.teacher:
       return 'Cette demande ne releve pas directement de vos cours.';

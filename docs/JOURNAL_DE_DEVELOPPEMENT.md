@@ -1248,3 +1248,31 @@ ouverte avec `pause` pour les erreurs comme pour l'arret du serveur.
 
 Cette correction ne modifie aucune route, aucun modele, aucune migration,
 aucune base de donnees, aucune dependance ni aucun fichier Flutter.
+
+## 2026-07-14 - Prompt 7A - Presences academiques et controle d'acces
+
+Audit : la table historique `presences` et la route Enseignant associee sont
+conservees pour le suivi des risques. Aucun modele de seance n'existait et
+aucune source active de pourcentage de paiement n'etait disponible. Les roles
+`surveillant` et `chef_promotion` existaient deja dans le backend ; le profil
+Etudiant actif du chef sert de perimetre de promotion, conformement a la
+documentation existante.
+
+Implementation : la migration additive `20260714_0008` ajoute
+`pourcentage_paiement` aux enrôlements et cree `seances_academiques` et
+`presences_academiques`. Le service controle compte actif, enrôlement valide,
+promotion, inscription au cours, ouverture de la seance et seuil >= 50 %. Il
+conserve le pourcentage observe, le motif de refus, la methode matricule et
+une seule presence par etudiant et seance. Les ouvertures, fermetures,
+controles et confirmations sont journalises.
+
+Flutter ajoute la conversion du role `surveillant`, la navigation `Controle d
+acces`, l'ecran de controle manuel et l'ecran minimal `Cours 2` du chef de
+promotion. Aucun theme, aucune camera, aucune biometrie, aucun paiement en
+ligne et aucune statistique avancee n'ont ete ajoutes.
+
+Verification : le cycle downgrade/upgrade de `20260714_0008` a reussi sur
+`smart_faculty_test`. Les deux suites backend ont donne `152 passed` ; la suite
+Flutter a donne `56 passed` ; `flutter analyze` conserve 14 informations
+historiques sans erreur ni avertissement. La base principale n'a pas ete
+utilisee pour les tests et `.vscode/settings.json` n'a pas ete touche.

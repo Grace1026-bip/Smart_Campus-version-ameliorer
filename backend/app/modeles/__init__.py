@@ -17,6 +17,7 @@ from app.modeles.inscriptions import DemandeInscription
 from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
 from app.modeles.notifications import Notification
 from app.modeles.projets import EncadrementProjet, ProjetAcademique
+from app.modeles.presences_academiques import PresenceAcademique, SeanceAcademique
 from app.modeles.specialites import SpecialiteEncadrementEnseignant
 from app.modeles.reclamations import HistoriqueReclamation, MessageReclamation, Reclamation
 from app.modeles.securite import JetonActualisation, Permission, Role, RolePermission, Utilisateur, UtilisateurRole
@@ -47,6 +48,7 @@ __all__ = [
     "Permission",
     "PieceJointePublication",
     "Presence",
+    "PresenceAcademique",
     "Promotion",
     "PublicationValve",
     "ProjetAcademique",
@@ -56,6 +58,7 @@ __all__ = [
     "Role",
     "RolePermission",
     "Semestre",
+    "SeanceAcademique",
     "SessionDeliberation",
     "SpecialiteEncadrementEnseignant",
     "TypeEvaluation",

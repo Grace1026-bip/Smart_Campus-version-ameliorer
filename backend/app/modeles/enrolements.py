@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from datetime import date, datetime
+from decimal import Decimal
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, Index, String, Text, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Index, Numeric, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -18,6 +19,10 @@ class EnrolementAcademique(Base):
         UniqueConstraint("reference_fiche", name="uq_enrolements_academiques_reference"),
         Index("ix_enrolements_academiques_etudiant_annee", "etudiant_id", "annee_academique_id"),
         Index("ix_enrolements_academiques_promotion_statut", "promotion_id", "statut"),
+        CheckConstraint(
+            "pourcentage_paiement >= 0 AND pourcentage_paiement <= 100",
+            name="ck_enrolements_academiques_paiement_valide",
+        ),
     )
 
     id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
@@ -60,6 +65,10 @@ class EnrolementAcademique(Base):
     date_validation: Mapped[datetime | None] = mapped_column(DateTime)
     date_annulation: Mapped[datetime | None] = mapped_column(DateTime)
     motif_annulation: Mapped[str | None] = mapped_column(Text)
+    # Administrative percentage read by access control; no payment operation is performed here.
+    pourcentage_paiement: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False, default=Decimal("0.00"), server_default="0.00"
+    )
     date_creation: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     date_modification: Mapped[datetime] = mapped_column(
         DateTime,

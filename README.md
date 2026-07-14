@@ -194,6 +194,21 @@ Sur cette machine, `where flutter` et `where dart` detectent le SDK dans `C:\Use
 
 ## Archives
 
+## Presences academiques - Prompt 7A
+
+Le controle d'acces est organise par seance et par cours. Le surveillant peut
+creer, ouvrir, fermer une seance et identifier manuellement un etudiant par
+matricule. FastAPI verifie le compte actif, l'enrolement valide, la promotion,
+l'inscription au cours et le seuil administratif de paiement de 50 %. Le
+pourcentage est lu depuis l'enrolement et n'est jamais fourni par Flutter.
+
+Les routes sont documentees dans `docs/PRESENCES_ACADEMIQUES_MVP.md`. Le chef
+de promotion consulte uniquement les seances de son profil de promotion et
+peut confirmer un `cours_2` ouvert. La migration additive est
+`20260714_0008_presences_academiques.py`; elle doit etre appliquee sur
+`smart_faculty_test` pour les tests, jamais automatiquement sur `smart_faculty`.
+La reconnaissance faciale et le paiement en ligne restent hors MVP.
+
 - `legacy/php`: anciens modules PHP et ancien script de lancement PHP.
 - `legacy/flask`: ancien point d'entree Flask.
 - `legacy/autres`: anciens elements racine ou experimentaux qui ne font pas partie de l'architecture officielle.

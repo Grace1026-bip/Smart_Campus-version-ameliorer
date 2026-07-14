@@ -456,6 +456,7 @@ String _titleFor(UserRole role) {
     case UserRole.administrator:
       return 'Gestion des stages';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Suivi apparitorat des stages';
     case UserRole.dean:
     case UserRole.viceDean:
@@ -474,6 +475,7 @@ String _subtitleFor(UserRole role) {
     case UserRole.administrator:
       return 'Valider stages, conventions et entreprises associees.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Verifier les stages reserves aux promotions L3, L4 et M2.';
     case UserRole.dean:
       return 'Observer les tendances d insertion et les partenariats.';

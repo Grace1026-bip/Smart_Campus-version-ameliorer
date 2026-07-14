@@ -479,6 +479,7 @@ List<AcademicProject> _projectsForRole(UserRole role) {
       break;
     case UserRole.administrator:
     case UserRole.apparitor:
+    case UserRole.surveillant:
     case UserRole.dean:
     case UserRole.viceDean:
       scoped = projects;
@@ -497,6 +498,7 @@ String _titleFor(UserRole role) {
     case UserRole.promotionChief:
       return 'Projets de la promotion';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Projets par promotion';
     case UserRole.dean:
       return 'Suivi des projets';
@@ -516,6 +518,7 @@ String _subtitleFor(UserRole role) {
     case UserRole.promotionChief:
       return 'Reperer les groupes en retard et relayer les echeances.';
     case UserRole.apparitor:
+    case UserRole.surveillant:
       return 'Suivre tous les projets, groupes, encadreurs et livrables.';
     case UserRole.dean:
       return 'Lire l avancement global et les points de blocage.';
