@@ -82,6 +82,65 @@ void main() {
     expect(AppRoutes.studentEnrollments, '/student/enrollments');
     expect(AppRoutes.studentProjects, '/student/projects');
   });
+
+  test('l espace academique utilise le dashboard et l historique reels', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'profil': {
+          'nom_complet': 'Etudiant Test',
+          'matricule': 'SF-001',
+          'promotion': 'L2 Informatique',
+        },
+        'nombre_cours': 1,
+        'nombre_resultats_officiels': 0,
+        'cours': [],
+        'projets': [],
+      }),
+      _jsonResponse(200, {
+        'cours': [
+          {
+            'cours': {
+              'id': 4,
+              'code': 'BD201',
+              'intitule': 'Bases de donnees',
+              'nombre_credits': 5,
+            },
+          },
+        ],
+        'promotion': {'nom': 'L2 Informatique'},
+        'annee_academique': {'libelle': '2025-2026'},
+      }),
+      _jsonResponse(200, {
+        'groupes': [
+          {
+            'annee_academique': {'libelle': '2025-2026'},
+            'promotion': {'nom': 'L2 Informatique'},
+            'semestre': {'nom': 'Semestre 1'},
+            'cours': [],
+          },
+        ],
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    const service = EtudiantApiService();
+    final dashboard = await service.tableauDeBord();
+    final courses = await service.cours();
+    final history = await service.historiqueAcademique();
+
+    expect(dashboard['profil']['matricule'], 'SF-001');
+    expect(courses.single['code'], 'BD201');
+    expect(history['groupes'], isNotEmpty);
+    expect(fake.requests.map((item) => item.uri.path), [
+      '/api/v1/etudiants/moi/tableau-de-bord',
+      '/api/v1/etudiants/moi/cours',
+      '/api/v1/etudiants/moi/historique-academique',
+    ]);
+  });
+
+  test('la navigation Etudiant expose Historique', () {
+    expect(AppRoutes.studentHistory, '/student/history');
+  });
 }
 
 class _FakeHttp {

@@ -119,6 +119,11 @@ Depuis la racine:
 .\scripts\demarrer_backend.bat
 ```
 
+Le script localise automatiquement le projet a partir de son emplacement,
+fonctionne depuis CMD, PowerShell ou un double-clic, et conserve la fenetre
+ouverte en cas d'erreur ou apres l'arret du serveur. Il refuse de lancer une
+seconde instance si le port `8000` est deja utilise.
+
 Commande equivalente depuis `backend/`:
 
 ```powershell
@@ -616,3 +621,20 @@ executions; analyse Flutter sans erreur ni avertissement avec les 14
 informations existantes; PDF de test A4 de 5 187 octets rendu visuellement
 sur 2 pages; build Web release reussi. Les health checks FastAPI `/`,
 `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent HTTP 200.
+
+## Prompt 6A - Espace Etudiant academique - 2026-07-14
+
+Le backend limite les cours et la Valve aux `InscriptionCours` actives de
+l'etudiant, sa promotion, un cours actif et l'annee academique active. Le
+profil est derive du token. `EnrolementAcademique` reste le dossier annuel
+administratif; les inscriptions de cours actives definissent le perimetre MVP.
+
+Les routes ajoutees sont `GET /api/v1/etudiants/moi/tableau-de-bord`,
+`GET /api/v1/etudiants/moi/cours`, `GET /api/v1/etudiants/moi/cours/{id}`,
+`GET /api/v1/etudiants/moi/cours/{id}/notes` et
+`GET /api/v1/etudiants/moi/historique-academique`. Brouillons, archives,
+evaluations non publiees et donnees internes sont masques. Le zero est une
+note valide. L'interface affiche uniquement les donnees reelles et ne fabrique
+ni moyenne, presence, paiement, alerte ou risque. L'historique groupe annee,
+promotion, semestre et cours; le moteur des resultats existant reste utilise.
+Il n'y a pas de migration 6A et `smart_faculty` n'est pas modifiee.

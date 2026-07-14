@@ -675,3 +675,24 @@ Validation 5C: backend `141 passed` lors de chacune des deux executions, dont
 avertissement; le PDF de test A4 de 5 187 octets a ete rendu sur deux pages
 sans chevauchement; build Web release reussi. Les health checks FastAPI `/`,
 `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent HTTP 200.
+
+## Prompt 6A - Regles de l'espace Etudiant academique
+
+L'identite Etudiant est derivee du token et le compte doit etre actif. Le
+backend est l'autorite du perimetre: un Etudiant ne consulte que ses
+`InscriptionCours` actives, sa promotion, un cours actif et l'annee active.
+`EnrolementAcademique` reste le dossier administratif annuel; la convention
+MVP utilise les inscriptions de cours actives pour le perimetre courant.
+
+Les routes sont `GET /api/v1/etudiants/moi/tableau-de-bord`,
+`GET /api/v1/etudiants/moi/cours`, `GET /api/v1/etudiants/moi/cours/{id}`,
+`GET /api/v1/etudiants/moi/cours/{id}/notes` et
+`GET /api/v1/etudiants/moi/historique-academique`. Valve et notes reutilisent
+leurs routes Etudiant existantes; brouillons, archives, evaluations non
+publiees et champs internes restent masques. Les resultats semestriels
+officiels viennent des snapshots de deliberation publies.
+
+Flutter propose `Mes cours`, `Valve`, `Mes notes`, `Mes resultats`,
+`Historique`, `Mon enrolement`, `Mon projet`, `Profil` et la deconnexion. Le
+dashboard signale l'absence d'inscription active et n'affiche aucun calcul
+academique invente. Aucune migration ni dependance n'a ete ajoutee.

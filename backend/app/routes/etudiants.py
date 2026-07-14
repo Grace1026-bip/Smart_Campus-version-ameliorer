@@ -5,12 +5,54 @@ from sqlalchemy.orm import Session
 
 from app.base_de_donnees.connexion import obtenir_session
 from app.dependances.authentification import ContexteUtilisateur, exiger_role
-from app.services import enrolements, projets
+from app.services import enrolements, espace_etudiant, notes, projets
 from app.services.fiches_pdf import generer_fiche_enrolement_pdf
 
 
 routeur_etudiants = APIRouter(prefix="/etudiants", tags=["espace etudiant"])
 lecture_etudiant = Depends(exiger_role("etudiant"))
+
+
+@routeur_etudiants.get("/moi/tableau-de-bord")
+def route_tableau_de_bord_etudiant(
+    contexte: ContexteUtilisateur = lecture_etudiant,
+    session: Session = Depends(obtenir_session),
+):
+    return {"succes": True, "message": "Tableau de bord etudiant recupere", "donnees": espace_etudiant.tableau_de_bord(session, contexte.utilisateur.id)}
+
+
+@routeur_etudiants.get("/moi/cours")
+def route_lister_mes_cours(
+    contexte: ContexteUtilisateur = lecture_etudiant,
+    session: Session = Depends(obtenir_session),
+):
+    return {"succes": True, "message": "Cours etudiant recuperes", "donnees": espace_etudiant.lister_cours(session, contexte.utilisateur.id)}
+
+
+@routeur_etudiants.get("/moi/cours/{cours_id}/notes")
+def route_notes_de_mon_cours(
+    cours_id: int,
+    contexte: ContexteUtilisateur = lecture_etudiant,
+    session: Session = Depends(obtenir_session),
+):
+    return {"succes": True, "message": "Notes du cours recuperees", "donnees": notes.notes_etudiant(session, contexte.utilisateur.id, cours_id)}
+
+
+@routeur_etudiants.get("/moi/cours/{cours_id}")
+def route_obtenir_mon_cours(
+    cours_id: int,
+    contexte: ContexteUtilisateur = lecture_etudiant,
+    session: Session = Depends(obtenir_session),
+):
+    return {"succes": True, "message": "Cours etudiant recupere", "donnees": espace_etudiant.obtenir_cours(session, contexte.utilisateur.id, cours_id)}
+
+
+@routeur_etudiants.get("/moi/historique-academique")
+def route_historique_academique(
+    contexte: ContexteUtilisateur = lecture_etudiant,
+    session: Session = Depends(obtenir_session),
+):
+    return {"succes": True, "message": "Historique academique recupere", "donnees": espace_etudiant.historique_academique(session, contexte.utilisateur.id)}
 
 
 @routeur_etudiants.get("/moi/enrolements")

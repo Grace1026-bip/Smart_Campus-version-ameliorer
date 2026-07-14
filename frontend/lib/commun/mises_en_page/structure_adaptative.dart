@@ -219,7 +219,17 @@ class SmartFacultyShell extends StatelessWidget {
           SmartNavItem(
             label: 'Notes',
             icon: Icons.fact_check_rounded,
-            route: AppRoutes.grades,
+            route: AppRoutes.studentNotes,
+          ),
+          SmartNavItem(
+            label: 'Resultats',
+            icon: Icons.assessment_rounded,
+            route: AppRoutes.studentResults,
+          ),
+          SmartNavItem(
+            label: 'Historique',
+            icon: Icons.history_rounded,
+            route: AppRoutes.studentHistory,
           ),
           SmartNavItem(
             label: 'Alertes',

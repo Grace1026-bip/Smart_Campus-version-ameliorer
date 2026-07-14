@@ -1200,3 +1200,51 @@ de test fait 5 187 octets, tient sur 2 pages A4 et a ete rendu visuellement
 sans anomalie. Le build Web release est reussi. Les trois health checks
 FastAPI repondent HTTP 200. `.vscode/settings.json` n'a pas ete touche et
 aucun commit ni push n'a ete effectue.
+
+## 2026-07-14 - Prompt 6A - Espace Etudiant academique
+
+La branche de travail est `espace-etudiant-academique`. Les modeles de
+cours, inscriptions, Valve, notes et deliberations existaient deja; aucune
+migration n'a ete necessaire. Le nouveau service
+`backend/app/services/espace_etudiant.py` centralise le tableau de bord, le
+catalogue, le detail et l'historique. Les routes derives du token filtrent
+promotion, cours actif, inscription active et annee academique active.
+
+Les routes Valve et notes ont ete durcies: brouillons et archives sont
+invisibles, seules les evaluations et resultats publies sont retournes, et
+les champs internes d'encodage ou de creation ne sont pas exposes. Le zero
+reste une note reelle. Les snapshots semestriels officiels continuent de
+provenir du module de deliberation.
+
+Flutter appelle le dashboard reel et ajoute `Historique` avec groupement
+annee/promotion/semestre/cours. Le dashboard ne demande plus les risques ni
+les reclamations et n'affiche plus de moyenne, presence ou compteur invente.
+L'absence de cours actifs est un etat academique explicite. Les tests dedies
+6A couvrent dashboard, cours, historique, perimetre, absence de secret et
+navigation Flutter. Les tests utilisent `smart_faculty_test`; `smart_faculty`
+et `.vscode/settings.json` restent inchanges.
+
+Validation finale 6A: backend `145 passed` lors de chacune des deux suites
+completes; Flutter `49 passed` lors de chacune des deux suites completes;
+`flutter analyze` conserve uniquement les 14 informations historiques; le
+build Web release est reussi. Les health checks `/`, `/api/v1/statut` et
+`/api/v1/sante/base-de-donnees` repondent HTTP 200. La base principale reste
+en `20260713_0007`, aucune migration et aucune donnee metier n'ont ete
+ajoutees pendant 6A.
+
+## 2026-07-14 - Correction ciblee du script de demarrage backend
+
+Le script `scripts/demarrer_backend.bat` lancait deja FastAPI avec le bon
+interpreteur, mais quittait silencieusement lorsqu'Uvicorn echouait, notamment
+si le port `8000` etait deja occupe. La fenetre se fermait donc sans laisser
+voir l'erreur.
+
+Le script derive maintenant la racine depuis `%~dp0`, accepte un emplacement
+dans la racine ou dans `scripts/`, verifie `backend/app/main.py`, le Python du
+venv et le changement de dossier, puis lance directement
+`backend\\.venv\\Scripts\\python.exe -m uvicorn app.main:app`. Il detecte un
+port `8000` deja utilise sans arreter le processus et conserve la fenetre
+ouverte avec `pause` pour les erreurs comme pour l'arret du serveur.
+
+Cette correction ne modifie aucune route, aucun modele, aucune migration,
+aucune base de donnees, aucune dependance ni aucun fichier Flutter.

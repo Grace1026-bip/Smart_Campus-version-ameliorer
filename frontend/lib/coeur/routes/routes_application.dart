@@ -17,6 +17,7 @@ import '../../fonctionnalites/reclamations/presentation/ecran_detail_reclamation
 import '../../fonctionnalites/reclamations/presentation/ecran_reclamations.dart';
 import '../../fonctionnalites/doyen/presentation/ecran_tableau_bord_doyen.dart';
 import '../../fonctionnalites/notes/presentation/ecran_notes.dart';
+import '../../fonctionnalites/notes/presentation/ecran_resultats_academiques.dart';
 import '../../fonctionnalites/notes/presentation/ecran_deliberation.dart';
 import '../../fonctionnalites/stages/presentation/ecran_stages.dart';
 import '../../fonctionnalites/notifications/presentation/ecran_notifications.dart';
@@ -27,6 +28,8 @@ import '../../fonctionnalites/etudiants_risque/presentation/ecran_etudiants_risq
 import '../../fonctionnalites/etudiant/presentation/ecran_alertes_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_cours_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_enrolements_etudiant.dart';
+import '../../fonctionnalites/etudiant/presentation/ecran_historique_academique_etudiant.dart';
+import '../../fonctionnalites/etudiant/presentation/ecran_notes_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_projet_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_tableau_bord_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_valve_etudiant.dart';
@@ -62,6 +65,9 @@ class AppRoutes {
   static const studentAlerts = '/student/alerts';
   static const studentEnrollments = '/student/enrollments';
   static const studentProjects = '/student/projects';
+  static const studentHistory = '/student/history';
+  static const studentNotes = '/student/notes';
+  static const studentResults = '/student/results';
   static const teacherDashboard = '/teacher';
   static const teacherCourses = '/teacher/courses';
   static const teacherCourseDetail = '/teacher/courses/detail';
@@ -202,6 +208,12 @@ class AppRoutes {
         return _route(settings, const StudentEnrollmentsScreen());
       case studentProjects:
         return _route(settings, const StudentProjectsScreen());
+      case studentHistory:
+        return _route(settings, const StudentAcademicHistoryScreen());
+      case studentNotes:
+        return _route(settings, const StudentNotesScreen());
+      case studentResults:
+        return _route(settings, const AcademicResultsScreen());
       case teacherDashboard:
         return _route(settings, const TeacherDashboardScreen());
       case teacherCourses:
@@ -335,6 +347,9 @@ class AppRoutes {
           studentAlerts,
           studentEnrollments,
           studentProjects,
+          studentHistory,
+          studentNotes,
+          studentResults,
           complaints,
           grades,
         }.contains(normalizedRoute);
