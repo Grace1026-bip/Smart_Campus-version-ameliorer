@@ -120,6 +120,29 @@ class EtudiantApiService {
     };
   }
 
+  Future<List<dynamic>> enrolements() async {
+    final data = await ApiDataSource.client.get('/etudiants/moi/enrolements');
+    return data['elements'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> detailEnrolement(int id) async {
+    return ApiDataSource.client.get('/etudiants/moi/enrolements/$id');
+  }
+
+  Future<List<int>> telechargerFicheEnrolement(int id) async {
+    return ApiDataSource.client
+        .getBytes('/etudiants/moi/enrolements/$id/fiche');
+  }
+
+  Future<List<dynamic>> projetsAcademiques() async {
+    final data = await ApiDataSource.client.get('/etudiants/moi/projets');
+    return data['elements'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> detailProjetAcademique(int id) async {
+    return ApiDataSource.client.get('/etudiants/moi/projets/$id');
+  }
+
   Future<Map<String, dynamic>> modifierProfil(
     Map<String, dynamic> donnees,
   ) async {

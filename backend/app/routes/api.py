@@ -8,6 +8,7 @@ from app.routes.dashboard import routeur_dashboard
 from app.routes.deliberations import routeur_deliberations
 from app.routes.enseignants import routeur_enseignants
 from app.routes.enrolements import routeur_enrolements
+from app.routes.etudiants import routeur_etudiants
 from app.routes.inscriptions import routeur_inscriptions
 from app.routes.notes import routeur_notes
 from app.routes.notifications import routeur_notifications
@@ -33,6 +34,7 @@ routeur_api.include_router(routeur_resultats)
 routeur_api.include_router(routeur_deliberations)
 routeur_api.include_router(routeur_risques)
 routeur_api.include_router(routeur_enrolements)
+routeur_api.include_router(routeur_etudiants)
 routeur_api.include_router(routeur_projets_appariteur)
 
 

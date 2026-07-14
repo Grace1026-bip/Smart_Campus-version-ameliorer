@@ -1,0 +1,31 @@
+SMART FACULTY
+00.02 – Vision et objectifs du projet
+Introduction
+La réussite d’un projet informatique repose sur une vision claire et des objectifs bien définis. La vision représente l’ambition à long terme du projet, tandis que les objectifs définissent les résultats concrets que le système doit atteindre.
+Smart Faculty a été conçu avec la volonté d’apporter une solution moderne aux défis rencontrés dans la gestion académique des facultés universitaires en exploitant les technologies numériques afin d’améliorer l’organisation, la communication et le suivi académique.
+Vision du projet
+La vision de Smart Faculty est de devenir une plateforme intelligente de référence pour la gestion académique des facultés universitaires.
+Le projet ambitionne de centraliser les services académiques au sein d’un environnement numérique unique, sécurisé et intuitif, permettant aux étudiants, aux enseignants et aux responsables académiques d’interagir efficacement.
+À long terme, Smart Faculty vise à contribuer à la transformation numérique des établissements d’enseignement supérieur en proposant une solution évolutive capable d’intégrer progressivement de nouveaux services intelligents répondant aux besoins de la communauté universitaire.
+Objectif général
+Concevoir et développer une plateforme intelligente de gestion académique permettant d’améliorer l’organisation des activités d’une faculté universitaire, de faciliter le suivi des étudiants, d’optimiser le travail des enseignants et d’aider les responsables académiques dans leur prise de décision.
+Objectifs spécifiques
+Pour atteindre cet objectif général, Smart Faculty poursuit les objectifs suivants :
+Mettre en place un système d’authentification sécurisé pour les différents utilisateurs.
+Centraliser la gestion des cours et des informations académiques.
+Permettre aux enseignants de publier les notes, les annonces et les documents de cours.
+Offrir aux étudiants un accès rapide à leurs notes, résultats, moyennes et informations académiques.
+Automatiser le calcul des moyennes et des crédits.
+Faciliter la gestion et le suivi des réclamations académiques.
+Détecter automatiquement les étudiants présentant un risque d’échec afin d’améliorer leur accompagnement.
+Fournir aux responsables académiques des tableaux de bord et des statistiques facilitant la prise de décision.
+Résultats attendus
+À travers la réalisation de Smart Faculty, les résultats attendus sont les suivants :
+une gestion académique plus efficace ;
+une meilleure communication entre les acteurs de la faculté ;
+une réduction des traitements administratifs manuels ;
+une amélioration du suivi académique des étudiants ;
+une plus grande transparence dans la gestion des notes et des résultats ;
+une aide à la décision grâce aux indicateurs statistiques générés par le système.
+Conclusion
+La vision et les objectifs de Smart Faculty traduisent l’ambition de développer une plateforme moderne, fiable et évolutive répondant aux besoins réels d’une faculté universitaire. Ils guideront l’ensemble des décisions fonctionnelles et techniques prises tout au long du développement du projet afin de garantir la cohérence et la qualité de la solution proposée.

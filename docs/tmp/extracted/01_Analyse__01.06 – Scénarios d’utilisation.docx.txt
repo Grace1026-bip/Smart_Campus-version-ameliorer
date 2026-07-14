@@ -1,0 +1,102 @@
+SMART FACULTY
+01.06 – Scénarios d’utilisation
+Introduction
+Les scénarios d’utilisation décrivent le déroulement des principales interactions entre les utilisateurs et Smart Faculty. Ils permettent de comprendre comment les différentes fonctionnalités du système sont utilisées dans des situations réelles.
+Ces scénarios serviront de référence lors du développement, des tests fonctionnels et de la démonstration du projet pendant la soutenance.
+Scénario 1 : Connexion d’un utilisateur
+Acteur
+Tous les utilisateurs.
+Description
+L’utilisateur ouvre l’application Smart Faculty.
+Il saisit son adresse électronique et son mot de passe.
+Le système vérifie les informations.
+Si elles sont correctes, l’utilisateur est connecté et redirigé automatiquement vers son tableau de bord.
+Dans le cas contraire, un message d’erreur est affiché.
+Scénario 2 : Publication d’une annonce
+Acteur
+Enseignant.
+Description
+L’enseignant se connecte.
+Il ouvre l’un de ses cours.
+Il accède à la Valve académique.
+Il rédige une annonce et la publie.
+Le système enregistre cette publication.
+Tous les étudiants inscrits à ce cours reçoivent automatiquement une notification.
+Scénario 3 : Publication des notes
+Acteur
+Enseignant.
+Description
+L’enseignant ouvre son cours.
+Il sélectionne une évaluation.
+Il encode les notes des étudiants.
+Après vérification, il publie les résultats.
+Le système :
+enregistre les notes ;
+calcule automatiquement les moyennes ;
+met à jour les crédits ;
+informe les étudiants concernés.
+Scénario 4 : Consultation des résultats
+Acteur
+Étudiant.
+Description
+L’étudiant se connecte.
+Il ouvre son tableau de bord.
+Il consulte ses cours.
+Il sélectionne un cours.
+Le système affiche :
+les notes ;
+la moyenne ;
+les crédits ;
+les informations publiées dans la Valve.
+Scénario 5 : Création d’une réclamation
+Acteur
+Étudiant.
+Description
+Après consultation de ses résultats, l’étudiant constate une erreur.
+Il ouvre le module Réclamations.
+Il sélectionne le cours concerné.
+Il décrit le problème rencontré.
+Il soumet la réclamation.
+Le système enregistre la demande et informe automatiquement l’enseignant concerné.
+Scénario 6 : Traitement d’une réclamation
+Acteur
+Enseignant.
+Description
+L’enseignant reçoit une notification.
+Il consulte la réclamation.
+Il analyse la demande.
+Il répond à l’étudiant.
+Le système met automatiquement à jour le statut de la réclamation.
+L’étudiant reçoit une notification.
+Scénario 7 : Détection d’un étudiant à risque
+Acteur
+Système.
+Description
+Après la publication des résultats, Smart Faculty analyse automatiquement les performances académiques.
+Le système détecte qu’un étudiant présente plusieurs difficultés.
+Une alerte académique est créée.
+L’étudiant est informé.
+L’enseignant, l’appariteur et le doyen peuvent consulter cette alerte dans leurs tableaux de bord.
+Scénario 8 : Consultation du tableau de bord
+Acteur
+Responsable académique.
+Description
+Le responsable se connecte.
+Il ouvre son tableau de bord.
+Le système affiche :
+les statistiques générales ;
+les promotions ;
+les étudiants à risque ;
+les réclamations ;
+les indicateurs de réussite.
+Ces informations facilitent la prise de décision.
+Résumé des scénarios
+Conclusion
+Les scénarios d’utilisation illustrent le fonctionnement concret de Smart Faculty. Ils permettent de comprendre les interactions entre les utilisateurs et la plateforme, tout en servant de support pour le développement, les tests et la démonstration du projet.
+Chaque scénario présenté dans ce document devra être entièrement opérationnel dans la version finale de Smart Faculty.
+Scénario complémentaire : Enregistrement des présences
+Acteur : Enseignant.
+Description : L’enseignant se connecte, ouvre l’un de ses cours, sélectionne une séance et marque chaque étudiant comme présent, absent, en retard ou justifié.
+Le système enregistre les présences, met à jour les statistiques d’assiduité et utilise ces informations dans le calcul du risque académique.
+L’étudiant peut ensuite consulter son propre historique de présence depuis son espace personnel.
+L’appariteur et le doyen peuvent consulter les indicateurs agrégés afin d’identifier les promotions ou cours présentant des problèmes d’assiduité.

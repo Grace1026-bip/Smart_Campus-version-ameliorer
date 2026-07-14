@@ -583,3 +583,36 @@ aucun push n'a ete effectue.
 Le Prompt 5B est valide techniquement. `smart_faculty` reste en `0006`; la
 migration `20260713_0007` est validee sur `smart_faculty_test` mais reste a
 deployer separement sur la base principale.
+
+## Prompt 5C - Espace Etudiant : enrolement, fiche et encadreurs - 2026-07-14
+
+La migration `20260713_0007` a ete deployee de facon controlee sur
+`smart_faculty` apres creation de la sauvegarde
+`backend/sauvegardes/smart_faculty_avant_20260713_0007_20260714_022432.sql`.
+La base est en `0007`; la table des specialites est vide et les compteurs
+metier existants sont restes inchanges. Aucun jeu de demonstration n'a ete
+ajoute.
+
+L'etudiant utilise les routes:
+
+- `GET /api/v1/etudiants/moi/enrolements`;
+- `GET /api/v1/etudiants/moi/enrolements/{id}`;
+- `GET /api/v1/etudiants/moi/enrolements/{id}/fiche`;
+- `GET /api/v1/etudiants/moi/projets`;
+- `GET /api/v1/etudiants/moi/projets/{id}`;
+- `GET /api/v1/etudiants/moi/projets/{id}/encadreurs`.
+
+Le backend derive toujours l'etudiant du token. Une fiche PDF n'est
+telechargeable que pour un enrolement `valide`; elle est generee en memoire
+avec ReportLab `4.2.5`, contient le programme et les credits, et n'inclut
+aucun secret, paiement, note ou donnees d'un autre etudiant. Flutter expose
+`Mon enrolement` et `Mon projet`, avec telechargement Web authentifie, detail,
+etats vides, erreurs et session expiree. L'etudiant ne peut effectuer aucune
+mutation d'enrolement, de projet ou d'encadrement.
+
+Validation 5C: 141 tests backend reussis lors de chacune des deux executions,
+dont 7 tests dedies; 47 tests Flutter reussis lors de chacune des deux
+executions; analyse Flutter sans erreur ni avertissement avec les 14
+informations existantes; PDF de test A4 de 5 187 octets rendu visuellement
+sur 2 pages; build Web release reussi. Les health checks FastAPI `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent HTTP 200.

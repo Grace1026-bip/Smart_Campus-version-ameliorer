@@ -26,6 +26,8 @@ import '../../fonctionnalites/chef_promotion/presentation/ecran_tableau_bord_che
 import '../../fonctionnalites/etudiants_risque/presentation/ecran_etudiants_risque.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_alertes_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_cours_etudiant.dart';
+import '../../fonctionnalites/etudiant/presentation/ecran_enrolements_etudiant.dart';
+import '../../fonctionnalites/etudiant/presentation/ecran_projet_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_tableau_bord_etudiant.dart';
 import '../../fonctionnalites/etudiant/presentation/ecran_valve_etudiant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_cours_enseignant.dart';
@@ -58,6 +60,8 @@ class AppRoutes {
   static const studentValve = '/student/valve';
   static const studentValveCourse = '/student/valve/cours';
   static const studentAlerts = '/student/alerts';
+  static const studentEnrollments = '/student/enrollments';
+  static const studentProjects = '/student/projects';
   static const teacherDashboard = '/teacher';
   static const teacherCourses = '/teacher/courses';
   static const teacherCourseDetail = '/teacher/courses/detail';
@@ -194,6 +198,10 @@ class AppRoutes {
         return _route(settings, StudentCourseValveScreen(courseId: courseId));
       case studentAlerts:
         return _route(settings, const StudentAlertsScreen());
+      case studentEnrollments:
+        return _route(settings, const StudentEnrollmentsScreen());
+      case studentProjects:
+        return _route(settings, const StudentProjectsScreen());
       case teacherDashboard:
         return _route(settings, const TeacherDashboardScreen());
       case teacherCourses:
@@ -325,6 +333,8 @@ class AppRoutes {
           studentCourses,
           studentValve,
           studentAlerts,
+          studentEnrollments,
+          studentProjects,
           complaints,
           grades,
         }.contains(normalizedRoute);

@@ -326,9 +326,91 @@ def lister_etudiant(session: Session, etudiant_id: int) -> list[dict]:
     return [_serialiser(item) for item in elements]
 
 
+def _etudiant_connecte(session: Session, utilisateur_id: int) -> Etudiant:
+    etudiant = session.scalar(select(Etudiant).where(Etudiant.utilisateur_id == utilisateur_id))
+    if etudiant is None:
+        raise RessourceIntrouvable("Profil etudiant introuvable")
+    return _obtenir_etudiant(session, etudiant.id)
+
+
+def _serialiser_pour_etudiant(enrolement: EnrolementAcademique, programme: list[dict]) -> dict:
+    promotion = enrolement.promotion
+    annee = enrolement.annee_academique
+    return {
+        "id": enrolement.id,
+        "reference_fiche": enrolement.reference_fiche,
+        "statut": enrolement.statut,
+        "etudiant": {
+            "matricule": enrolement.etudiant.matricule,
+            "nom": _nom(enrolement.etudiant.utilisateur),
+        },
+        "date_enrolement": enrolement.date_enrolement,
+        "date_validation": enrolement.date_validation,
+        "date_annulation": enrolement.date_annulation,
+        "promotion": {
+            "id": promotion.id,
+            "nom": promotion.nom,
+            "niveau": promotion.niveau,
+        },
+        "annee_academique": {
+            "id": annee.id,
+            "libelle": annee.libelle,
+            "est_active": annee.est_active,
+        },
+        "nombre_cours": len(programme),
+        "credits_prevus": sum(item["credits"] for item in programme),
+        "fiche_disponible": enrolement.statut == "valide",
+        "programme": programme,
+    }
+
+
+def _charger_pour_etudiant(session: Session, utilisateur_id: int, enrolement_id: int) -> EnrolementAcademique:
+    etudiant = _etudiant_connecte(session, utilisateur_id)
+    enrolement = session.scalar(
+        select(EnrolementAcademique)
+        .options(
+            joinedload(EnrolementAcademique.promotion),
+            joinedload(EnrolementAcademique.annee_academique),
+        )
+        .where(
+            EnrolementAcademique.id == enrolement_id,
+            EnrolementAcademique.etudiant_id == etudiant.id,
+        )
+    )
+    if enrolement is None:
+        raise RessourceIntrouvable("Enrolement introuvable")
+    return enrolement
+
+
+def lister_pour_etudiant(session: Session, utilisateur_id: int) -> list[dict]:
+    etudiant = _etudiant_connecte(session, utilisateur_id)
+    elements = session.scalars(
+        select(EnrolementAcademique)
+        .options(
+            joinedload(EnrolementAcademique.promotion),
+            joinedload(EnrolementAcademique.annee_academique),
+        )
+        .where(EnrolementAcademique.etudiant_id == etudiant.id)
+        .order_by(EnrolementAcademique.id.desc())
+    ).all()
+    return [_serialiser_pour_etudiant(item, _cours_programme(session, item.promotion_id)) for item in elements]
+
+
+def obtenir_pour_etudiant(session: Session, utilisateur_id: int, enrolement_id: int) -> dict:
+    enrolement = _charger_pour_etudiant(session, utilisateur_id, enrolement_id)
+    return _serialiser_pour_etudiant(enrolement, _cours_programme(session, enrolement.promotion_id))
+
+
 def donnees_fiche(session: Session, enrolement_id: int) -> dict:
     enrolement = _charger(session, enrolement_id)
     if enrolement.statut != "valide":
         raise ConflitDonnees("La fiche n est disponible que pour un enrolement valide")
     programme = _cours_programme(session, enrolement.promotion_id)
     return _serialiser(enrolement, programme)
+
+
+def donnees_fiche_pour_etudiant(session: Session, utilisateur_id: int, enrolement_id: int) -> dict:
+    enrolement = _charger_pour_etudiant(session, utilisateur_id, enrolement_id)
+    if enrolement.statut != "valide":
+        raise ConflitDonnees("La fiche n est disponible que pour un enrolement valide")
+    return obtenir_pour_etudiant(session, utilisateur_id, enrolement_id)

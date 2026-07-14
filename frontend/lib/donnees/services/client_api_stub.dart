@@ -15,3 +15,17 @@ Future<ReponseHttp> envoyerRequeteHttp({
     body: body,
   );
 }
+
+Future<ReponseOctetsHttp> envoyerRequeteOctetsHttp({
+  required String methode,
+  required Uri uri,
+  required Map<String, String> headers,
+  String? body,
+}) {
+  return implementation.envoyerRequeteOctetsHttp(
+    methode: methode,
+    uri: uri,
+    headers: headers,
+    body: body,
+  );
+}

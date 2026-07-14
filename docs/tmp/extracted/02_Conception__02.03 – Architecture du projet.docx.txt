@@ -1,0 +1,76 @@
+SMART FACULTY
+02.03 – Architecture du projet
+Introduction
+L’architecture du projet définit l’organisation des fichiers et des dossiers qui composent Smart Faculty. Une structure claire facilite le développement, la maintenance, les tests et l’évolution de l’application.
+Le projet est organisé selon une architecture modulaire séparant le frontend, le backend et la base de données.
+Objectifs de l’architecture
+L’architecture retenue poursuit les objectifs suivants :
+organiser le projet de manière claire ;
+faciliter le travail des développeurs ;
+séparer les responsabilités des différents composants ;
+simplifier la maintenance ;
+permettre l’ajout futur de nouveaux modules.
+Structure générale
+Le projet Smart Faculty est organisé autour de trois grandes parties :
+Frontend Flutter
+Backend FastAPI
+Base de données MySQL
+Chaque partie possède son propre rôle tout en collaborant avec les autres.
+Architecture du Frontend
+Le frontend est développé avec Flutter.
+Il est organisé autour des principaux dossiers suivants :
+core : configuration générale, constantes et utilitaires.
+models : modèles représentant les données.
+services : communication avec l’API REST.
+screens : interfaces utilisateur.
+widgets : composants réutilisables.
+providers : gestion de l’état de l’application.
+assets : images, icônes et ressources.
+routes : navigation entre les écrans.
+Cette organisation permet de séparer clairement l’interface utilisateur de la logique applicative.
+Architecture du Backend
+Le backend est développé avec Python et FastAPI.
+Il est organisé autour des principaux dossiers suivants :
+config : paramètres de configuration.
+database : connexion à MySQL.
+models : modèles de données.
+schemas : validation des données.
+routes : points d’entrée de l’API.
+services : logique métier.
+repositories : accès aux données.
+middlewares : sécurité et contrôle des requêtes.
+utils : fonctions utilitaires.
+Cette architecture garantit une bonne séparation entre la logique métier et l’accès aux données.
+Architecture de la Base de données
+La base de données MySQL est organisée autour des principales tables :
+utilisateurs ;
+étudiants ;
+enseignants ;
+promotions ;
+cours ;
+évaluations ;
+notes ;
+publications ;
+réclamations ;
+notifications ;
+alertes académiques.
+Les relations entre ces tables assurent la cohérence des informations.
+Communication entre les composants
+Les composants communiquent selon le schéma suivant :
+Flutter → FastAPI → MySQL
+Chaque requête suit les étapes suivantes :
+L’utilisateur effectue une action.
+Flutter envoie une requête HTTP.
+FastAPI applique les règles métier.
+FastAPI communique avec MySQL.
+Les données sont renvoyées à Flutter.
+L’interface est mise à jour.
+Avantages de cette architecture
+Cette organisation permet :
+une meilleure lisibilité du projet ;
+une maintenance simplifiée ;
+une évolution progressive ;
+une meilleure réutilisation du code ;
+une meilleure collaboration entre développeurs.
+Conclusion
+L’architecture retenue garantit une organisation claire du projet Smart Faculty et facilite le développement de chaque module de manière indépendante tout en assurant une bonne cohérence de l’ensemble de l’application.

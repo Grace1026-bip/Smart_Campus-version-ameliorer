@@ -202,6 +202,16 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.studentCourses,
           ),
           SmartNavItem(
+            label: 'Mon enrolement',
+            icon: Icons.assignment_rounded,
+            route: AppRoutes.studentEnrollments,
+          ),
+          SmartNavItem(
+            label: 'Mon projet',
+            icon: Icons.workspaces_rounded,
+            route: AppRoutes.studentProjects,
+          ),
+          SmartNavItem(
             label: 'Valve',
             icon: Icons.campaign_rounded,
             route: AppRoutes.studentValve,

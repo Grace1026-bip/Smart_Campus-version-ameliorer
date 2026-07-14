@@ -1,0 +1,336 @@
+
+===== PAGE 1 =====
+UNIVERSITÉ PROTESTANTE AU CONGO
+Faculté des Sciences Informatiques
+Guide de Rédaction de Monographie
+Licences 1 et 2 – LMD
+Année académique 2024–2025
+
+===== PAGE 2 =====
+Présentation du Guide
+Ce guide a été conçu pour accompagner les étudiants de première et deuxième année
+de Licence dans la réalisation de leur monographie académique. Il répond à une nécessité
+pédagogique et méthodologique : fournir une structure standardisée, claire et rigoureuse pour
+les travaux à caractère individuel que chaque étudiant est amené à produire dans le cadre de
+son parcours en Sciences Informatiques.
+La monographie vise à initier l’étudiant aux exigences fondamentales du travail scienti-
+fique : problématisation, structuration logique, clarté de l’expression, respect des sources, et
+maîtrise des outils technologiques pertinents. Pour les niveaux L1 et L2 LMD, le travail est
+encadré et doit demeurer accessible, tout en témoignant d’un effort de réflexion personnelle
+et d’application pratique des connaissances acquises.
+Ce guide propose ainsi :
+— Une structure type du document à respecter;
+— Des consignes claires pour chaque section à rédiger;
+— Des conseils de mise en forme pour harmoniser les présentations;
+— Des recommandations sur le contenu attendu selon le niveau;
+— Des astuces techniques pour faciliter l’utilisation de LATEX ou Word.
+Il ne remplace pas le travail d’encadrement fourni par les enseignants, mais le complète.
+L’étudiant reste responsable de son contenu, de la qualité de sa rédaction et du respect du
+calendrier établi.
+Les projets traités en L1 et L2 peuvent porter sur :
+— Des petites applications (formulaires, interfaces, mini logiciels);
+— Des sujets de culture numérique ou de sensibilisation aux technologies;
+— Des expérimentations simples à l’aide d’outils ou de plateformes existantes;
+— Des réflexions guidées autour de problématiques concrètes ou locales.
+L’objectif ultime est de former l’étudiant à devenir progressivement autonome dans la pro-
+duction de documents académiques professionnels et utiles.
+1
+
+===== PAGE 3 =====
+Résumé
+Ce projet de monographie s’inscrit dans le cadre de l’initiation à la démarche scientifique
+au sein de la Faculté des Sciences Informatiques. Il vise à concevoir et implémenter une
+solution simple répondant à un besoin identifié dans un contexte donné. Dans le présent
+travail, l’étudiant a réalisé une application permettant la gestion des présences des étudiants à
+l’aided’unformulairenumérique.L’approchesuiviecombinel’analysefonctionnelledubesoin,
+la conception d’une interface utilisateur intuitive, et l’utilisation de langages comme Python
+et HTML. Les résultats obtenus montrent que même une solution légère peut contribuer à
+améliorer la traçabilité et la gestion dans un environnement académique. Ce projet démontre
+ainsi la capacité de l’étudiant à mobiliser les compétences acquises en vue de résoudre un
+problème concret à travers un outil numérique adapté.
+(Le résumé doit être rédigé en un seul paragraphe de 5 à 10 lignes, à la 3e personne, sans
+abréviations ni énumérations.)
+2
+
+===== PAGE 4 =====
+Table des matières
+Présentation du Guide 1
+Résumé 2
+1 Introduction générale 5
+1.1 Contexte . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+1.2 Problématique . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+1.3 Objectifs . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+1.3.1 Objectif général . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 5
+1.3.2 Objectifs spécifiques . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+1.4 Méthodologie adoptée . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+1.5 Structure du document . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 6
+2 Cadre théorique et technologique 7
+2.1 Définitions des concepts clés . . . . . . . . . . . . . . . . . . . . . . . . . . . 7
+2.2 Présentation des outils ou technologies utilisés . . . . . . . . . . . . . . . . . 7
+3 Réalisation du projet 9
+3.1 Analyse des besoins . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+3.2 Architecture de la solution . . . . . . . . . . . . . . . . . . . . . . . . . . . . 9
+3.3 Étapes de mise en œuvre . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+3.4 Résultats obtenus . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 10
+4 Difficultés rencontrées et limites 11
+4.1 Difficultés rencontrées . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+4.2 Limites de la solution . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 11
+5 Conclusion générale 13
+5.1 Récapitulatif . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+5.2 Apports du projet . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+3
+
+===== PAGE 5 =====
+TABLE DES MATIÈRES
+5.3 Perspectives . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . 13
+6 Bibliographie et Webographie 14
+7 Annexes 16
+4
+
+===== PAGE 6 =====
+1. Introduction générale
+1.1 Contexte
+Dans un monde de plus en plus numérisé, les technologies de l’information et de la com-
+munication jouent un rôle central dans la résolution des problèmes concrets auxquels sont
+confrontées les communautés. L’enseignement supérieur, notamment dans le contexte congo-
+lais, est aujourd’hui confronté à plusieurs défis liés à la gestion, la traçabilité des activités
+académiques, et l’accès aux solutions numériques simples. Ce projet de monographie s’inscrit
+dans ce cadre, en tant qu’exercice académique visant à initier l’étudiant à la réflexion cri-
+tique, à la résolution de problèmes, et à l’implémentation d’une solution adaptée au niveau
+de formation.
+1.2 Problématique
+Malgré la présence de plusieurs outils technologiques dans divers domaines, de nombreuses
+tâches quotidiennes sont encore exécutées de manière manuelle ou inefficace, générant pertes
+de temps, erreurs ou manque de suivi. Ce constat est valable dans plusieurs environnements
+d’apprentissage, d’organisation ou de gestion. Le problème fondamental que ce projet tente
+de résoudre est le suivant :comment concevoir une solution numérique simple, fonc-
+tionnelle et adaptée à un besoin spécifique identifié dans l’environnement de
+l’étudiant, à l’aide des connaissances acquises en première ou deuxième année?
+1.3 Objectifs
+1.3.1 Objectif général
+Réaliser une solution informatique légère permettant de répondre à un besoin clairement
+identifié, en mobilisant les compétences de base acquises en L1 ou L2.
+5
+
+===== PAGE 7 =====
+CHAPITRE 1. INTRODUCTION GÉNÉRALE
+1.3.2 Objectifs spécifiques
+— Identifier un besoin réel dans un contexte concret;
+— Proposer une solution technique réalisable avec les outils maîtrisés;
+— Concevoir et implémenter cette solution de manière fonctionnelle;
+— Documenter les étapes de travail selon une démarche structurée.
+1.4 Méthodologie adoptée
+Le travail s’est déroulé en plusieurs étapes successives. Tout d’abord, l’étudiant a mené
+une analyse du besoin et du contexte. Ensuite, il a procédé à la conception de la solution sous
+forme de maquettes ou de schémas d’architecture. La phase suivante a consisté en l’implémen-
+tation pratique de la solution à l’aide d’outils de base (Python, HTML, outils bureautiques,
+etc.). Enfin, des tests ont été réalisés pour valider le fonctionnement du prototype ou de l’ap-
+plication développée. Tout au long du processus, l’étudiant a été encadré par un enseignant
+référent.
+1.5 Structure du document
+Ce document est structuré en cinq chapitres principaux :
+— Le premier chapitre,Introduction générale, présente le contexte, la problématique,
+les objectifs, la méthodologie et l’organisation du travail.
+— Le deuxième chapitre,Cadre théorique et technologique, définit les concepts clés
+et décrit les outils ou langages utilisés.
+— Le troisième chapitre,Réalisation du projet, présente les étapes concrètes du dé-
+veloppement de la solution.
+— Le quatrième chapitre,Difficultés rencontrées et limites, expose les contraintes
+et les limites observées.
+— Enfin, le cinquième chapitre, Conclusion générale, récapitule le travail effectué,
+présente les apports du projet et propose des perspectives d’amélioration.
+6
+
+===== PAGE 8 =====
+2. Cadre théorique et technologique
+2.1 Définitions des concepts clés
+Dans cette section, l’étudiant(e) est invité(e) à définir les termes ou notions essentiels liés
+au thème de son projet. Ces concepts doivent être expliqués de manière claire et concise, en
+s’appuyant si possible sur des définitions académiques ou techniques provenant de sources
+fiables (ouvrages, articles, webographie).
+Exemples de termes à définir :base de données, interface utilisateur, algorithme, prototy-
+page, intelligence artificielle, formulaire, application web, etc.
+Chaque définition doit être contextualisée, c’est-à-dire qu’il faut expliquer en quoi le
+concept est pertinent pour le projet traité.
+Recommandation :Éviter les simples copier-coller. Reformuler avec ses propres mots
+et citer les sources si nécessaire.
+2.2 Présentation des outils ou technologies utilisés
+Dans cette partie, l’étudiant(e) présente tous les outils, langages, frameworks ou logiciels
+qui ont été utilisés dans le cadre de la réalisation du projet.
+Pour chaque outil ou technologie, la présentation doit inclure au minimum :
+— Une brève description de l’outil ou langage (à quoi il sert).
+— Les raisons de son choix dans le projet (avantages, compatibilité, facilité d’utilisation,
+etc.).
+— Son rôle précis dans la solution (ex. : interface, base de données, traitement des don-
+nées...).
+Exemples d’éléments à présenter :
+7
+
+===== PAGE 9 =====
+CHAPITRE 2. CADRE THÉORIQUE ET TECHNOLOGIQUE
+— Langages de programmation (Python, JavaScript, HTML/CSS, etc.)
+— Systèmes de gestion de base de données (MySQL, SQLite, etc.)
+— Outils de conception ou de maquettage (Draw.io, Figma, PowerPoint)
+— Environnements ou éditeurs (VS Code, Thonny, etc.)
+— Librairies ou frameworks (Bootstrap, Flask, Tkinter, etc.)
+Conseil pratique :Si l’outil a été utilisé seulement pour tester ou pour illustrer, cela
+doit être mentionné également (ex. : Excel pour organiser les résultats, Canva pour le design).
+8
+
+===== PAGE 10 =====
+3. Réalisation du projet
+Cette partie est le cœur de la monographie. Elle décrit toutes les étapes concrètes qui
+ont mené à la mise en place de la solution ou du prototype. L’étudiant(e) doit y montrer sa
+démarche, ses choix, ses essais, ses outils et les résultats partiels ou finaux.
+3.1 Analyse des besoins
+Dans cette section, il faut expliquer ce qui a motivé la réalisation du projet d’un point de
+vue fonctionnel. Il s’agit d’identifier les besoins à satisfaire :
+— besoins des utilisateurs ou des bénéficiaires,
+— problèmes concrets à résoudre,
+— objectifs techniques ou organisationnels à atteindre.
+L’analyse peut inclure une brève description du public cible ou du contexte d’usage. Il est
+aussi possible de présenter les contraintes ou les limites imposées (temps, matériel, niveau de
+compétence, etc.).
+Conseil : L’étudiant peut formuler les besoins sous forme de liste ou de tableau (ex :
+besoins fonctionnels / non-fonctionnels).
+3.2 Architecture de la solution
+L’étudiant(e) présente ici la structure logique de son application, programme ou système.
+Il peut s’agir :
+— d’un schéma d’architecture technique (client-serveur, base de données, etc.),
+— d’un diagramme simplifié (flux de données, cas d’utilisation, etc.),
+— ou d’un plan fonctionnel (modules, entrées/sorties, composants).
+Ce schéma doit aider à comprendre l’organisation générale du projet. Il peut être inséré
+sous forme d’image ou dessiné avec les outils de dessin de LATEX ou importé depuis Power-
+Point, Figma, Draw.io, etc.
+9
+
+===== PAGE 11 =====
+CHAPITRE 3. RÉALISATION DU PROJET
+Astuce :Ajouter une légende ou une brève explication du schéma pour faciliter sa lecture.
+3.3 Étapes de mise en œuvre
+Cette partie décrit comment le projet a été concrètement réalisé, étape par étape. Il est
+recommandé de suivre un ordre chronologique :
+— Phase de conception : Description des idées, des maquettes réalisées, des dia-
+grammes, du plan de développement.
+— Phase d’implémentation :Description du développement du projet, du codage ou
+de l’assemblage, avec des captures d’écran ou extraits de code significatifs.
+— Phase de tests :Présentation des vérifications effectuées pour s’assurer que le sys-
+tème fonctionne correctement. Cela peut inclure des tableaux de résultats ou des
+retours d’utilisateurs testeurs.
+Recommandation : Bien illustrer cette section avec des exemples visuels concrets du
+travail effectué.
+3.4 Résultats obtenus
+L’étudiant(e) présente ici ce que son projet permet de faire : ce qui a été obtenu au final,
+ce qui fonctionne, ce qui est visible, utilisable ou mesurable.
+Il peut s’agir de :
+— captures d’écran de l’interface,
+— extraits de résultats produits par le programme,
+— photos du prototype fonctionnel (pour projets matériels),
+— tableaux de performance ou synthèse de tests.
+Il faut mettre en évidence les réussites principales du projet, tout en restant honnête sur
+ce qui n’a pas pu être terminé.
+10
+
+===== PAGE 12 =====
+4. Difficultés rencontrées et limites
+Cettesectionestessentiellepourmontrerqueleprojetaétéunedémarched’apprentissage.
+Il est tout à fait normal d’avoir rencontré des difficultés : ce chapitre permet de les reconnaître
+et d’en tirer des leçons.
+4.1 Difficultés rencontrées
+Dans cette partie, l’étudiant(e) décrit les principaux obstacles ou problèmes rencontrés
+au cours du projet. Ces difficultés peuvent être :
+— d’ordre technique (bug, configuration, choix de langage, etc.),
+— d’ordre organisationnel (temps limité, coordination difficile, manque de documenta-
+tion),
+— ou d’ordre personnel (niveau de compétence, surcharge de travail).
+L’objectif est de montrer que l’étudiant(e) a su faire face à ces défis, les analyser, les
+contourner ou les dépasser.
+Conseil : Il ne faut pas exagérer ni minimiser. Soyez honnête, mais structuré dans la
+présentation des difficultés.
+4.2 Limites de la solution
+Cette section consiste à reconnaître ce que le projet n’a pas pu accomplir, soit à cause de
+contraintes, soit à cause de choix techniques.
+Il faut identifier :
+— ce qui manque dans la version actuelle du projet,
+— les fonctionnalités non réalisées,
+— les faiblesses potentielles (performance, ergonomie, dépendance à une technologie,
+etc.).
+Ce chapitre ne diminue pas la valeur du travail : il prouve que l’étudiant(e) a une vision
+critique et professionnelle de son propre projet.
+11
+
+===== PAGE 13 =====
+CHAPITRE 4. DIFFICULTÉS RENCONTRÉES ET LIMITES
+—
+12
+
+===== PAGE 14 =====
+5. Conclusion générale
+Cette dernière partie clôture la monographie. Elle ne doit pas introduire de nouvelles
+informations, mais faire le bilan du travail effectué et ouvrir sur l’avenir.
+5.1 Récapitulatif
+L’étudiant(e) doit résumer en quelques paragraphes :
+— le sujet traité,
+— la démarche suivie,
+— les outils utilisés,
+— les résultats obtenus.
+5.2 Apports du projet
+Cette section permet de mettre en valeur :
+— ce que l’étudiant(e) a appris techniquement ou méthodologiquement,
+— les compétences développées,
+— les bénéfices personnels ou collectifs du projet.
+Astuce :Mentionner les notions ou savoir-faire que ce projet a permis de maîtriser.
+5.3 Perspectives
+Enfin, il faut suggérer ce qui pourrait être fait dans la suite du projet :
+— améliorations futures,
+— nouvelles fonctionnalités à ajouter,
+— déploiement possible ou généralisation,
+— poursuite dans un futur mémoire ou un projet de L3.
+Conseil :Montrer que le projet a un avenir, même s’il est encore simple à ce stade.
+13
+
+===== PAGE 15 =====
+6. Bibliographie et Webographie
+Ce chapitre rassemble toutes les sources qui ont été consultées pour réaliser le projet.
+Il est fondamental de bien citer ses sources afin de respecter l’honnêteté intellectuelle et de
+permettre au lecteur de retrouver les documents mentionnés.
+Bibliographie
+Dans cette partie, l’étudiant(e) liste les livres, articles scientifiques, documents PDF,
+mémoires ou rapports imprimés utilisés.
+Chaque référence doit suivre une structure claire :
+— Auteur(s) (Nom, Prénom),
+— Titre du livre ou document(en italique),
+— Maison d’édition,
+— Année de publication.
+Exemple :
+Durand, Michel.Introduction à l’informatique. Éditions Universitaires, 2018.
+Webographie
+Cette partie liste les sites web consultés. Il faut indiquer clairement :
+— Le nom du site,
+— Le titre de l’article ou de la page,
+— L’URL complète,
+— La date de consultation.
+Exemple :
+Developpez.com, “Comprendre le langage Python”,
+https://python.developpez.com, consulté le 10 mars 2025.
+14
+
+===== PAGE 16 =====
+CHAPITRE 6. BIBLIOGRAPHIE ET WEBOGRAPHIE
+Remarque :Évitez d’utiliser des blogs ou forums non fiables comme unique source. Pré-
+férez les documents officiels, sites éducatifs, livres numériques, ou documentation technique.
+—
+15
+
+===== PAGE 17 =====
+7. Annexes
+Les annexes sont utilisées pour placer les éléments complémentaires qui seraient trop longs
+ou trop détaillés pour le corps du document. Chaque annexe doit être numérotée et titrée.
+Exemples de contenu d’annexes :
+— Maquettes ou interfaces du projet,
+— Diagrammes UML ou d’architecture technique,
+— Extraits de code source (si trop longs pour être intégrés dans le corps du texte),
+— Questionnaires ou grilles d’entretien,
+— Captures d’écran,
+— Résultats de test.
+16
