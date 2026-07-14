@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_campus_app/donnees/modeles/modeles_faculte.dart';
 import 'package:smart_campus_app/donnees/services/client_api_reponse.dart';
@@ -11,6 +12,9 @@ import 'package:smart_campus_app/donnees/services/service_session.dart';
 import 'package:smart_campus_app/coeur/routes/routes_application.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  SharedPreferences.setMockInitialValues({});
+
   tearDown(() async {
     await SessionService.clear();
     SessionPersistenceService.resetStorage();

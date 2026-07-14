@@ -44,7 +44,7 @@ class ApiAuthService implements AuthService {
     if (resolvedRole == null || !roles.contains(roleActif)) {
       throw ApiException('Role actif invalide dans la reponse API.');
     }
-    _configurerJetons(data, roleActif);
+    await _configurerJetons(data, roleActif);
     final user = _userFromApi(userJson, resolvedRole);
 
     SessionService.connectWithUser(user);
