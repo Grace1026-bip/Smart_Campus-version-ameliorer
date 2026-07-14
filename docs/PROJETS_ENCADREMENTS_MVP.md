@@ -87,3 +87,8 @@ La gestion est reservee a un compte actif dont le role actif est
 `appariteur`. Les routes de lecture Enseignant restent separees et continuent
 de filtrer par l'enseignant issu du token. La consultation des encadreurs par
 l'Etudiant et la fiche PDF restent reportees.
+
+Validation finale du Prompt 5B: deux executions backend a `134 passed`, deux
+executions Flutter a `44 passed`, build Web release reussi et health checks
+FastAPI HTTP 200. La migration `20260713_0007` est validee par downgrade puis
+upgrade sur `smart_faculty_test`; `smart_faculty` reste en `20260713_0006`.

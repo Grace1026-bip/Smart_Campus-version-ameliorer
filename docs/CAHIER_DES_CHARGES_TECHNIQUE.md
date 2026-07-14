@@ -579,3 +579,63 @@ Validation: deux suites backend a `128 passed`, deux suites Flutter a
 `42 passed`, analyse Dart avec 0 erreur et 0 avertissement, 6 informations
 historiques `dart:html`, build Web release reussi. Les endpoints FastAPI `/`,
 `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent correctement.
+
+## Prompt 5B - Gestion appariteur des projets et encadrements
+
+La migration `20260713_0006` a ete deployee sur `smart_faculty` apres une
+sauvegarde complete. L'etat avant migration etait `20260713_0005`, avec 36
+tables et sans table d'enrolement; l'etat apres est `20260713_0006`, avec 37
+tables et une table `enrolements_academiques` vide. Les compteurs des tables
+existantes sont restes inchanges.
+
+Le modele `ProjetAcademique` est reutilise. La creation appariteur exige un
+etudiant actif, une promotion coherente, une annee derivee de cette promotion
+et un `EnrolementAcademique` valide. Un seul projet non archive est autorise
+pour un etudiant et une annee. La modification ne peut pas changer librement
+l'etudiant, la promotion ou l'annee; le changement de type est refuse si un
+encadreur actif n'a pas la nouvelle specialite.
+
+Le modele `SpecialiteEncadrementEnseignant`, ajoute par `20260713_0007`, porte
+les domaines explicitement configures par l'appariteur. Les specialites sont
+controlees par le meme referentiel que les projets et leur desactivation garde
+la ligne historique. La migration ajoute aussi
+`desactive_par_utilisateur_id` a `EncadrementProjet`.
+
+Les routes appariteur sont:
+
+- `GET/POST /api/v1/appariteur/projets`;
+- `GET/PATCH /api/v1/appariteur/projets/{projet_id}`;
+- `POST /api/v1/appariteur/projets/{projet_id}/archiver`;
+- `GET /api/v1/appariteur/enseignants-encadreurs`;
+- `GET/PUT /api/v1/appariteur/enseignants-encadreurs/{enseignant_id}/specialites`;
+- `POST /api/v1/appariteur/projets/{projet_id}/encadrements`;
+- `PATCH /api/v1/appariteur/projets/{projet_id}/encadrements/{encadrement_id}`;
+- `POST /api/v1/appariteur/projets/{projet_id}/encadrements/{encadrement_id}/desactiver`.
+
+Un seul encadreur principal actif est autorise. Plusieurs co-encadreurs sont
+possibles. Le remplacement du principal est une action explicite; l'ancien
+encadrement devient inactif et reste consultable dans l'historique. La base
+utilise la valeur historique `coencadreur`; l'API et Flutter utilisent
+`co_encadreur`.
+
+La migration `20260713_0007` a ete verifiee par downgrade vers `0006` puis
+upgrade vers `0007` sur `smart_faculty_test`. Elle n'a pas ete appliquee a
+`smart_faculty` dans ce prompt. Les tests automatises n'utilisent que la base
+suffixee `_test`.
+
+Flutter expose l'ecran Appariteur `Projets et encadrements`, avec filtres,
+creation, detail, configuration des specialites, attribution compatible,
+remplacement, desactivation et archivage. Les enseignants continuent de
+consulter uniquement leurs encadrements par leur token. La consultation
+Etudiant et les fonctions de projet avancees sont reportees.
+
+Validation finale: `134 passed` backend lors de chacune des deux executions
+completes et `44 passed` Flutter lors de chacune des deux executions completes.
+`flutter analyze` ne signale aucune erreur ni avertissement; les 14 informations
+restantes correspondent aux 6 informations historiques `dart:html` et a 8
+recommandations de style deja presentes dans l'ancien ecran de supervision.
+`flutter build web --release` est reussi. FastAPI repond HTTP 200 sur `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees`. `smart_faculty` reste en
+`20260713_0006`; `20260713_0007` est validee uniquement sur
+`smart_faculty_test` et son deploiement principal est reporte a une operation
+controlee separee.

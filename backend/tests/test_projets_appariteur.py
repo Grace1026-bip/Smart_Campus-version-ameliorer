@@ -68,7 +68,7 @@ def _creer_enseignant(client: TestClient, token_admin: str, suffixe: str, statut
                 "email": email,
                 "mot_de_passe": MOT_DE_PASSE,
             },
-            "matricule_agent": f"ENS-5B-{suffixe[-8:]}",
+            "matricule_agent": f"ENS-5B-{suffixe}",
             "grade": "Assistant",
             "departement": "Informatique",
             "statut": statut,

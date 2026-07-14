@@ -83,11 +83,16 @@ def downgrade() -> None:
     bind = op.get_bind()
     columns = {column["name"] for column in inspect(bind).get_columns("encadrements_projet")}
     if "desactive_par_utilisateur_id" in columns:
-        op.drop_constraint(
-            "fk_encadrements_projet_desactive_par_utilisateur",
-            "encadrements_projet",
-            type_="foreignkey",
+        foreign_key = next(
+            (
+                foreign_key
+                for foreign_key in inspect(bind).get_foreign_keys("encadrements_projet")
+                if foreign_key.get("constrained_columns") == ["desactive_par_utilisateur_id"]
+            ),
+            None,
         )
+        if foreign_key and foreign_key.get("name"):
+            op.drop_constraint(foreign_key["name"], "encadrements_projet", type_="foreignkey")
         op.drop_column("encadrements_projet", "desactive_par_utilisateur_id")
     if "specialites_encadrement_enseignant" in _tables():
         op.drop_table("specialites_encadrement_enseignant")

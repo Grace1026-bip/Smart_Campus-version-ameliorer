@@ -7,6 +7,7 @@ import '../../fonctionnalites/administration/presentation/ecran_gestion_administ
 import '../../fonctionnalites/analyses/presentation/ecran_analyses.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_assistant_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_enrolements_appariteur.dart';
+import '../../fonctionnalites/apparitorat/presentation/ecran_projets_encadrements_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_supervision_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_tableau_bord_apparitorat.dart';
 import '../../fonctionnalites/authentification/presentation/ecran_mot_de_passe_oublie.dart';
@@ -164,7 +165,7 @@ class AppRoutes {
       case apparitorRisks:
         return _route(settings, const ApparitorRisksScreen());
       case apparitorProjects:
-        return _route(settings, const ApparitorProjectsScreen());
+        return _route(settings, const ApparitorProjectsSupervisionsScreen());
       case apparitorInternships:
         return _route(settings, const ApparitorInternshipsScreen());
       case apparitorReports:

@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.exceptions.erreurs import AccesInterdit, ErreurApplication, RessourceIntrouvable
+from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, ErreurApplication, RessourceIntrouvable
 from app.modeles.academique import AnneeAcademique, Enseignant, Etudiant, Promotion
 from app.modeles.enrolements import EnrolementAcademique
 from app.modeles.projets import EncadrementProjet, ProjetAcademique, ROLES_ENCADREMENT, STATUTS_PROJET, TYPES_PROJET
@@ -198,6 +198,7 @@ def _role_api(role: str) -> str:
 
 
 def _charger_projet_gestion(session: Session, projet_id: int) -> ProjetAcademique:
+    session.expire_all()
     projet = session.scalar(
         select(ProjetAcademique)
         .options(
@@ -601,6 +602,7 @@ def configurer_specialites_enseignant(
                 )
             )
     session.commit()
+    session.expire_all()
     return obtenir_specialites_enseignant(session, enseignant.id)
 
 

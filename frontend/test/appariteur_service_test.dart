@@ -90,6 +90,91 @@ void main() {
   test('la navigation Appariteur expose Enrolements', () {
     expect(AppRoutes.apparitorEnrollments, '/apparitorat/enrolements');
   });
+
+  test('AppariteurApiService charge et filtre les projets', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'elements': [
+          {
+            'id': 12,
+            'titre': 'Plateforme universitaire',
+            'type_projet': 'genie_logiciel',
+            'statut': 'propose',
+          },
+        ],
+        'total': 1,
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final resultat = await const AppariteurApiService().projets(
+      typeProjet: 'genie_logiciel',
+      statut: 'propose',
+      recherche: 'Plateforme',
+      sansEncadreur: true,
+    );
+
+    expect(resultat['total'], 1);
+    expect(fake.requests.single.uri.path, '/api/v1/appariteur/projets');
+    expect(fake.requests.single.uri.queryParameters['type_projet'],
+        'genie_logiciel');
+    expect(fake.requests.single.uri.queryParameters['sans_encadreur'], 'true');
+  });
+
+  test('AppariteurApiService couvre specialites et attribution', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(201, {'id': 12}),
+      _jsonResponse(200, {'id': 12}),
+      _jsonResponse(200, {'id': 12}),
+      _jsonResponse(200, {'id': 12, 'specialites': []}),
+      _jsonResponse(200, {'id': 4, 'specialites': []}),
+      _jsonResponse(201, {'id': 21}),
+      _jsonResponse(200, {'id': 21}),
+      _jsonResponse(200, {'id': 21}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+    const service = AppariteurApiService();
+
+    await service.creerProjet(
+      etudiantId: 1,
+      titre: 'Plateforme',
+      typeProjet: 'genie_logiciel',
+    );
+    await service.detailProjet(12);
+    await service.modifierProjet(12, statut: 'en_cours');
+    await service.configurerSpecialites(
+      enseignantId: 4,
+      typesProjet: ['genie_logiciel'],
+    );
+    await service.specialitesEnseignant(4);
+    await service.attribuerEncadrement(
+      projetId: 12,
+      enseignantId: 4,
+      roleEncadrement: 'principal',
+      remplacerPrincipal: true,
+    );
+    await service.modifierEncadrement(
+      projetId: 12,
+      encadrementId: 21,
+      roleEncadrement: 'co_encadreur',
+    );
+    await service.desactiverEncadrement(projetId: 12, encadrementId: 21);
+
+    expect(fake.requests.map((request) => request.methode), [
+      'POST',
+      'GET',
+      'PATCH',
+      'PUT',
+      'GET',
+      'POST',
+      'PATCH',
+      'POST',
+    ]);
+    expect(fake.requests[5].uri.path,
+        '/api/v1/appariteur/projets/12/encadrements');
+    expect(fake.requests[7].uri.path,
+        '/api/v1/appariteur/projets/12/encadrements/21/desactiver');
+  });
 }
 
 class _FakeHttp {

@@ -1102,3 +1102,59 @@ Le Prompt 5A est valide techniquement. La migration `20260713_0006` est prete
 pour un deploiement controle ulterieur sur la base principale. Le prochain
 module peut traiter l'attribution des encadreurs par l'appariteur, sans
 melanger cette fonctionnalite avec l'enrolement academique.
+
+## 2026-07-13 - Prompt 5B - Projets et attribution des encadreurs
+
+### Deploiement de 0006
+
+La branche active reste `moteur-resultats-academiques`. Avant migration,
+`smart_faculty` etait a `20260713_0005`, comptait 36 tables et ne possedait pas
+`enrolements_academiques`. La sauvegarde complete
+`backend/sauvegardes/smart_faculty_avant_20260713_0006_20260713_144212.sql`
+a ete creee; elle est ignoree par Git et sa taille est superieure a zero.
+
+La migration `20260713_0006` a ete appliquee uniquement a `smart_faculty`.
+Apres operation, la revision est `0006`, la table est InnoDB, vide, et ses
+cles et index sont presents. Les compteurs `utilisateurs`, `etudiants`,
+`enseignants`, `promotions`, `annees_academiques`, `cours` et
+`inscriptions_cours` sont restes identiques. Aucun jeu de demonstration n'a
+ete ajoute.
+
+### Audit et implementation 5B
+
+Le modele 4D `ProjetAcademique` et `EncadrementProjet` a ete reutilise. La
+creation appariteur exige un enrolement academique valide et derive la
+promotion et l'annee depuis l'etudiant. Le doublon actif est refuse. Les
+projets peuvent etre filtres par type, statut, etudiant, enseignant,
+promotion, annee, recherche et presence d'encadrement.
+
+La migration `20260713_0007` ajoute `SpecialiteEncadrementEnseignant` et le
+champ `desactive_par_utilisateur_id`. Les specialites sont explicitement
+configurees par l'appariteur; elles ne sont jamais deduites du nom ou du grade.
+Le type d'un projet filtre les enseignants compatibles. Le workflow conserve
+un principal, plusieurs co-encadreurs, le remplacement explicite du principal,
+la date et l'auteur d'attribution, ainsi que l'historique desactivations.
+
+La convention active de la base est `coencadreur`; la couche API expose
+`co_encadreur` pour le role public. Le backend reserve toutes les mutations a
+un compte actif avec `role_actif=appariteur`; les enseignants restent limites
+aux projets derives de leur token.
+
+### Flutter et verification
+
+L'ancien ecran indicatif Appariteur est remplace par `Projets et encadrements`.
+Il gere liste, filtres, creation, modification, detail, specialites,
+attribution, co-encadrement, remplacement, desactivation, archivage, erreur,
+session expiree, liste vide et absence d'enseignant compatible. Aucun ecran
+Etudiant, PDF, depot, messagerie, reunion, notation ou soutenance n'a ete
+ajoute.
+
+La migration `0007` a passe le cycle downgrade vers `0006` puis upgrade vers
+`0007` sur `smart_faculty_test`. Les deux executions completes donnent chacune
+`134 passed` backend et `44 passed` Flutter. `flutter analyze` ne signale aucune
+erreur ni avertissement; les 14 informations restantes sont les 6 informations
+historiques `dart:html` et 8 recommandations de style deja presentes dans
+l'ancien ecran de supervision. Le build Web release est reussi et les health
+checks FastAPI `/`, `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent
+HTTP 200. `smart_faculty` reste a `0006`, `0007` n'y a pas ete appliquee et
+`.vscode/settings.json` a ete conserve intact.

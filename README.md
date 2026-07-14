@@ -537,3 +537,49 @@ le build Web release est reussi. FastAPI repond HTTP 200 sur `/`,
 `/api/v1/statut` et le health check MySQL. Le Prompt 5A est techniquement
 valide et la migration `0006` est prete pour un deploiement controle ulterieur
 sur `smart_faculty`.
+
+## Prompt 5B - Projets et attribution des encadreurs - 2026-07-13
+
+La migration `20260713_0006` a ete deployee de facon controlee sur
+`smart_faculty` apres creation de la sauvegarde
+`backend/sauvegardes/smart_faculty_avant_20260713_0006_20260713_144212.sql`.
+La base est passee de `0005` a `0006`; elle compte 37 tables et la table
+`enrolements_academiques` est initialement vide. Les compteurs existants sont
+restes inchanges. FastAPI et le health check MySQL ont repondu normalement.
+
+L'appariteur gere des projets academiques rattaches a un etudiant possedant un
+enrolement valide. Un seul projet actif est autorise par etudiant et annee.
+Les types sont controles par le backend: `reseaux`, `systemes_embarques`,
+`intelligence_artificielle` et `genie_logiciel`.
+
+La migration additive `20260713_0007` ajoute les specialites explicites des
+enseignants et l'auteur de desactivation d'un encadrement. Elle a ete testee
+en downgrade puis upgrade sur `smart_faculty_test` et n'a pas ete appliquee a
+`smart_faculty` pendant 5B.
+
+L'appariteur peut configurer les specialites d'un enseignant actif, filtrer
+les enseignants compatibles, attribuer un principal, ajouter des
+co-encadreurs, remplacer explicitement le principal, desactiver un
+encadrement et archiver un projet. Les historiques ne sont pas supprimes.
+La convention SQL historique `coencadreur` est exposee par l'API sous le nom
+`co_encadreur`.
+
+Flutter remplace l'ancien ecran informatif par `Projets et encadrements`:
+liste, filtres, creation, modification, detail, specialites, attribution,
+remplacement, desactivation et archivage, avec etats vide, erreur, session
+expiree et absence d'enseignant compatible. La vue Etudiant, le PDF,
+les documents, la messagerie, les reunions, l'evaluation et la note du projet
+restent hors perimetre.
+
+Validation 5B: backend `134 passed` lors de chacune des deux executions
+completes; Flutter `44 passed` lors de chacune des deux executions completes.
+`flutter analyze` ne signale aucune erreur ni avertissement; les 14 informations
+restantes sont les 6 informations historiques `dart:html` et 8 recommandations
+de style deja presentes dans l'ancien ecran de supervision. Le build Web
+release est reussi et les trois health checks FastAPI repondent HTTP 200.
+Le role appariteur est obligatoire, l'auteur est toujours derive du token et
+aucun secret n'est expose. `.vscode/settings.json` n'a pas ete touche et
+aucun push n'a ete effectue.
+Le Prompt 5B est valide techniquement. `smart_faculty` reste en `0006`; la
+migration `20260713_0007` est validee sur `smart_faculty_test` mais reste a
+deployer separement sur la base principale.

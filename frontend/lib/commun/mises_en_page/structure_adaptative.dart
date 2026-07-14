@@ -164,7 +164,7 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.apparitorRisks,
           ),
           SmartNavItem(
-            label: 'Projets',
+            label: 'Projets et encadrements',
             icon: Icons.workspaces_rounded,
             route: AppRoutes.apparitorProjects,
           ),
