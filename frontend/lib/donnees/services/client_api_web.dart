@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:typed_data';
 
 import 'client_api_reponse.dart';
 
@@ -23,6 +24,59 @@ Future<ReponseHttp> envoyerRequeteHttp({
       ReponseHttp(
         statusCode: request.status ?? 0,
         body: request.responseText ?? '',
+        headers: const {},
+      ),
+    );
+  });
+  request.onTimeout.listen((_) {
+    if (!resultat.isCompleted) {
+      resultat.completeError(
+        const ErreurTransportHttp(TypeErreurTransport.delaiDepasse),
+      );
+    }
+  });
+  request.onError.listen((_) async {
+    if (resultat.isCompleted) return;
+    final accessible = await _serveurJoignableSansCors(uri);
+    if (resultat.isCompleted) return;
+    resultat.completeError(
+      ErreurTransportHttp(
+        accessible
+            ? TypeErreurTransport.cors
+            : TypeErreurTransport.serveurInaccessible,
+      ),
+    );
+  });
+
+  request.send(body);
+  return resultat.future;
+}
+
+Future<ReponseOctetsHttp> envoyerRequeteOctetsHttp({
+  required String methode,
+  required Uri uri,
+  required Map<String, String> headers,
+  String? body,
+}) async {
+  final request = html.HttpRequest();
+  final resultat = Completer<ReponseOctetsHttp>();
+  request
+    ..open(methode, uri.toString())
+    ..responseType = 'arraybuffer'
+    ..withCredentials = false
+    ..timeout = 10000;
+
+  headers.forEach(request.setRequestHeader);
+  request.onLoad.listen((_) {
+    if (resultat.isCompleted) return;
+    final response = request.response;
+    final bytes = response is ByteBuffer
+        ? Uint8List.view(response)
+        : Uint8List.fromList(const []);
+    resultat.complete(
+      ReponseOctetsHttp(
+        statusCode: request.status ?? 0,
+        bytes: bytes,
         headers: const {},
       ),
     );

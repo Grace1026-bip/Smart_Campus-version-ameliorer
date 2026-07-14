@@ -8,48 +8,17 @@ class EtudiantApiService {
   const EtudiantApiService();
 
   Future<Map<String, dynamic>> tableauDeBord() async {
-    final profilData = await profil();
-    final coursValve = await valve();
-    final notesPayload = await notes();
-    final resultatsPayload = await NotesDataSource.service.resultatsEtudiant();
-    final alertesPayload = await RisquesDataSource.service.risquesEtudiant();
-    final reclamationsPayload =
-        await ReclamationsDataSource.service.reclamationsEtudiant();
-
-    final notesListe = notesPayload['notes'] as List<dynamic>? ?? const [];
-    final resultats =
-        resultatsPayload['resultats'] as List<dynamic>? ?? const [];
-    final alertes = alertesPayload['risques'] as List<dynamic>? ?? const [];
-    final reclamations =
-        reclamationsPayload['elements'] as List<dynamic>? ?? const [];
-
-    return {
-      'profil': profilData,
-      'nombre_cours': coursValve.length,
-      'moyenne_generale': resultatsPayload['moyenne_generale'],
-      'credits_valides': resultatsPayload['credits_valides'] ?? 0,
-      'credits_restants': _creditsRestants(resultats),
-      'notes_publiees': notesListe.length,
-      'dernieres_notes': _dernieresNotes(notesListe),
-      'dernieres_annonces': _dernieresAnnonces(coursValve),
-      'nombre_publications': coursValve.fold<int>(
-        0,
-        (total, item) => total + _asInt(item['nombre_publications']),
-      ),
-      'reclamations_en_cours': reclamations
-          .where((item) =>
-              item is Map &&
-              !{'resolue', 'rejetee'}.contains(item['statut']?.toString()))
-          .length,
-      'nombre_alertes': alertes.length,
-      'alertes': alertes,
-    };
+    return ApiDataSource.client.get('/etudiants/moi/tableau-de-bord');
   }
 
   Future<List<dynamic>> cours() async {
-    final data = await ValveDataSource.service.valveEtudiant();
+    final data = await ApiDataSource.client.get('/etudiants/moi/cours');
     final cartes = data['cours'] as List<dynamic>? ?? const [];
     return cartes.map(_normaliserCarteCours).toList();
+  }
+
+  Future<Map<String, dynamic>> historiqueAcademique() async {
+    return ApiDataSource.client.get('/etudiants/moi/historique-academique');
   }
 
   Future<Map<String, dynamic>> detailCours(int id) async {
@@ -100,24 +69,48 @@ class EtudiantApiService {
   }
 
   Future<Map<String, dynamic>> profil() async {
-    final data = await ApiDataSource.client.get('/auth/moi');
+    final data = await tableauDeBord();
+    final profilData = data['profil'] as Map<String, dynamic>? ?? const {};
     final nomComplet = [
-      data['nom'],
-      data['postnom'],
-      data['prenom'],
+      profilData['nom'],
+      profilData['postnom'],
+      profilData['prenom'],
     ].where((item) => item != null && item.toString().trim().isNotEmpty).join(
           ' ',
         );
 
     return {
-      ...data,
+      ...profilData,
       'nom_complet': nomComplet,
-      'email': data['email'],
-      'statut': data['statut'],
-      'promotion': '',
-      'matricule': '',
-      'annee_academique': '',
+      'email': profilData['email'],
+      'statut': profilData['statut'],
+      'promotion': profilData['promotion'] ?? '',
+      'matricule': profilData['matricule'] ?? '',
+      'annee_academique': profilData['annee_academique'] ?? '',
     };
+  }
+
+  Future<List<dynamic>> enrolements() async {
+    final data = await ApiDataSource.client.get('/etudiants/moi/enrolements');
+    return data['elements'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> detailEnrolement(int id) async {
+    return ApiDataSource.client.get('/etudiants/moi/enrolements/$id');
+  }
+
+  Future<List<int>> telechargerFicheEnrolement(int id) async {
+    return ApiDataSource.client
+        .getBytes('/etudiants/moi/enrolements/$id/fiche');
+  }
+
+  Future<List<dynamic>> projetsAcademiques() async {
+    final data = await ApiDataSource.client.get('/etudiants/moi/projets');
+    return data['elements'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> detailProjetAcademique(int id) async {
+    return ApiDataSource.client.get('/etudiants/moi/projets/$id');
   }
 
   Future<Map<String, dynamic>> modifierProfil(
@@ -145,39 +138,6 @@ class EtudiantApiService {
       priorite: _prioriteReclamation(priorite),
     );
     return {'reclamation': reclamation};
-  }
-
-  int _creditsRestants(List<dynamic> resultats) {
-    var total = 0;
-    for (final item in resultats) {
-      if (item is! Map<String, dynamic>) continue;
-      total += _asInt(item['credits_restants']);
-    }
-    return total;
-  }
-
-  List<Map<String, dynamic>> _dernieresNotes(List<dynamic> notes) {
-    return [
-      for (final item in notes.take(5))
-        if (item is Map<String, dynamic>)
-          {
-            'code_cours': (item['cours'] as Map?)?['code'],
-            'type_note': (item['evaluation'] as Map?)?['type_evaluation'],
-            'valeur': (item['note'] as Map?)?['note_obtenue'],
-          },
-    ];
-  }
-
-  List<Map<String, dynamic>> _dernieresAnnonces(List<dynamic> cartes) {
-    return [
-      for (final item in cartes)
-        if (item is Map<String, dynamic> &&
-            item['derniere_publication'] is Map<String, dynamic>)
-          _normaliserPublication(
-            item['derniere_publication'] as Map<String, dynamic>,
-            codeCours: item['code']?.toString(),
-          ),
-    ];
   }
 
   Map<String, dynamic> _normaliserCarteCours(dynamic item) {
@@ -325,11 +285,6 @@ class EtudiantApiService {
     }
   }
 
-  int _asInt(dynamic value) {
-    if (value is int) return value;
-    if (value is num) return value.toInt();
-    return int.tryParse('${value ?? 0}') ?? 0;
-  }
 }
 
 class EtudiantDataSource {

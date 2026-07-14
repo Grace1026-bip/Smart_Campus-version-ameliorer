@@ -713,7 +713,8 @@ class _SecurityPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     return const SectionPanel(
       title: 'Connexion future API',
-      subtitle: AppConstants.apiArchitectureNote,
+      subtitle:
+          'Les espaces academiques consomment maintenant l API REST FastAPI.',
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

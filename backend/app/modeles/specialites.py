@@ -36,7 +36,7 @@ class SpecialiteEncadrementEnseignant(Base):
         ForeignKey("utilisateurs.id", ondelete="RESTRICT"),
         nullable=False,
     )
-    cle_doublon_active: Mapped[str | None] = mapped_column(String(120), unique=True)
+    cle_doublon_active: Mapped[str | None] = mapped_column(String(120))
 
     enseignant = relationship("Enseignant", back_populates="specialites_encadrement")
     cree_par = relationship("Utilisateur", foreign_keys=[cree_par_utilisateur_id])

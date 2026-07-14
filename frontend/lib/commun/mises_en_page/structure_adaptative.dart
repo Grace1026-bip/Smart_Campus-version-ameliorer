@@ -164,7 +164,7 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.apparitorRisks,
           ),
           SmartNavItem(
-            label: 'Projets',
+            label: 'Projets et encadrements',
             icon: Icons.workspaces_rounded,
             route: AppRoutes.apparitorProjects,
           ),
@@ -202,6 +202,16 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.studentCourses,
           ),
           SmartNavItem(
+            label: 'Mon enrolement',
+            icon: Icons.assignment_rounded,
+            route: AppRoutes.studentEnrollments,
+          ),
+          SmartNavItem(
+            label: 'Mon projet',
+            icon: Icons.workspaces_rounded,
+            route: AppRoutes.studentProjects,
+          ),
+          SmartNavItem(
             label: 'Valve',
             icon: Icons.campaign_rounded,
             route: AppRoutes.studentValve,
@@ -209,7 +219,17 @@ class SmartFacultyShell extends StatelessWidget {
           SmartNavItem(
             label: 'Notes',
             icon: Icons.fact_check_rounded,
-            route: AppRoutes.grades,
+            route: AppRoutes.studentNotes,
+          ),
+          SmartNavItem(
+            label: 'Resultats',
+            icon: Icons.assessment_rounded,
+            route: AppRoutes.studentResults,
+          ),
+          SmartNavItem(
+            label: 'Historique',
+            icon: Icons.history_rounded,
+            route: AppRoutes.studentHistory,
           ),
           SmartNavItem(
             label: 'Alertes',

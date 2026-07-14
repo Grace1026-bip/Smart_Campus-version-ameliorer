@@ -1102,3 +1102,149 @@ Le Prompt 5A est valide techniquement. La migration `20260713_0006` est prete
 pour un deploiement controle ulterieur sur la base principale. Le prochain
 module peut traiter l'attribution des encadreurs par l'appariteur, sans
 melanger cette fonctionnalite avec l'enrolement academique.
+
+## 2026-07-13 - Prompt 5B - Projets et attribution des encadreurs
+
+### Deploiement de 0006
+
+La branche active reste `moteur-resultats-academiques`. Avant migration,
+`smart_faculty` etait a `20260713_0005`, comptait 36 tables et ne possedait pas
+`enrolements_academiques`. La sauvegarde complete
+`backend/sauvegardes/smart_faculty_avant_20260713_0006_20260713_144212.sql`
+a ete creee; elle est ignoree par Git et sa taille est superieure a zero.
+
+La migration `20260713_0006` a ete appliquee uniquement a `smart_faculty`.
+Apres operation, la revision est `0006`, la table est InnoDB, vide, et ses
+cles et index sont presents. Les compteurs `utilisateurs`, `etudiants`,
+`enseignants`, `promotions`, `annees_academiques`, `cours` et
+`inscriptions_cours` sont restes identiques. Aucun jeu de demonstration n'a
+ete ajoute.
+
+### Audit et implementation 5B
+
+Le modele 4D `ProjetAcademique` et `EncadrementProjet` a ete reutilise. La
+creation appariteur exige un enrolement academique valide et derive la
+promotion et l'annee depuis l'etudiant. Le doublon actif est refuse. Les
+projets peuvent etre filtres par type, statut, etudiant, enseignant,
+promotion, annee, recherche et presence d'encadrement.
+
+La migration `20260713_0007` ajoute `SpecialiteEncadrementEnseignant` et le
+champ `desactive_par_utilisateur_id`. Les specialites sont explicitement
+configurees par l'appariteur; elles ne sont jamais deduites du nom ou du grade.
+Le type d'un projet filtre les enseignants compatibles. Le workflow conserve
+un principal, plusieurs co-encadreurs, le remplacement explicite du principal,
+la date et l'auteur d'attribution, ainsi que l'historique desactivations.
+
+La convention active de la base est `coencadreur`; la couche API expose
+`co_encadreur` pour le role public. Le backend reserve toutes les mutations a
+un compte actif avec `role_actif=appariteur`; les enseignants restent limites
+aux projets derives de leur token.
+
+### Flutter et verification
+
+L'ancien ecran indicatif Appariteur est remplace par `Projets et encadrements`.
+Il gere liste, filtres, creation, modification, detail, specialites,
+attribution, co-encadrement, remplacement, desactivation, archivage, erreur,
+session expiree, liste vide et absence d'enseignant compatible. Aucun ecran
+Etudiant, PDF, depot, messagerie, reunion, notation ou soutenance n'a ete
+ajoute.
+
+La migration `0007` a passe le cycle downgrade vers `0006` puis upgrade vers
+`0007` sur `smart_faculty_test`. Les deux executions completes donnent chacune
+`134 passed` backend et `44 passed` Flutter. `flutter analyze` ne signale aucune
+erreur ni avertissement; les 14 informations restantes sont les 6 informations
+historiques `dart:html` et 8 recommandations de style deja presentes dans
+l'ancien ecran de supervision. Le build Web release est reussi et les health
+checks FastAPI `/`, `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent
+HTTP 200. `smart_faculty` reste a `0006`, `0007` n'y a pas ete appliquee et
+`.vscode/settings.json` a ete conserve intact.
+
+## 2026-07-14 - Prompt 5C - Espace Etudiant
+
+### Deploiement de 0007
+
+La branche reste `moteur-resultats-academiques`. Avant operation,
+`smart_faculty` etait en `20260713_0006`, comptait 37 tables et ne possedait
+ni la table des specialites ni la colonne d'auteur de desactivation. La
+sauvegarde complete
+`backend/sauvegardes/smart_faculty_avant_20260713_0007_20260714_022432.sql`
+fait 63620 octets. La migration a ete appliquee uniquement a `smart_faculty`;
+la revision est maintenant `20260713_0007`, avec 38 tables, une table des
+specialites vide et les compteurs existants inchanges.
+
+### Backend Etudiant
+
+Les routes `/api/v1/etudiants/moi/enrolements`, son detail et sa fiche PDF
+utilisent le profil Etudiant derive du token. Les statuts `en_attente`,
+`valide` et `annule` restent consultables; seule la ligne valide genere la
+fiche. ReportLab `4.2.5` produit le PDF en memoire avec les cours actifs de
+la promotion, les credits, la reference et les dates. Les reponses ajoutent
+les en-tetes d'attachement et de non-cache et ne contiennent aucun secret.
+
+Les routes `/api/v1/etudiants/moi/projets`, detail et encadreurs filtrent par
+Etudiant, excluent les projets archives et ne retournent que les encadrements
+actifs. Aucun choix ou mutation d'encadreur n'est expose a l'etudiant.
+
+### Flutter et verification
+
+`Mon enrolement` affiche les statuts, le detail, les cours, les credits et le
+bouton de fiche uniquement pour `valide`. `ApiService.getBytes` conserve le
+Bearer token et l'import conditionnel Web telecharge le Blob PDF. `Mon projet`
+affiche le projet, son type, son statut et les encadreurs actifs. Les etats
+vide, chargement, erreur, session expiree et absence d'encadreur sont traites.
+
+Les deux executions completes donnent chacune `141 passed` backend et `47
+passed` Flutter; 7 tests backend et 3 tests Flutter sont dedies au Prompt 5C.
+L'analyse garde 14 informations connues, sans erreur ni avertissement. Le PDF
+de test fait 5 187 octets, tient sur 2 pages A4 et a ete rendu visuellement
+sans anomalie. Le build Web release est reussi. Les trois health checks
+FastAPI repondent HTTP 200. `.vscode/settings.json` n'a pas ete touche et
+aucun commit ni push n'a ete effectue.
+
+## 2026-07-14 - Prompt 6A - Espace Etudiant academique
+
+La branche de travail est `espace-etudiant-academique`. Les modeles de
+cours, inscriptions, Valve, notes et deliberations existaient deja; aucune
+migration n'a ete necessaire. Le nouveau service
+`backend/app/services/espace_etudiant.py` centralise le tableau de bord, le
+catalogue, le detail et l'historique. Les routes derives du token filtrent
+promotion, cours actif, inscription active et annee academique active.
+
+Les routes Valve et notes ont ete durcies: brouillons et archives sont
+invisibles, seules les evaluations et resultats publies sont retournes, et
+les champs internes d'encodage ou de creation ne sont pas exposes. Le zero
+reste une note reelle. Les snapshots semestriels officiels continuent de
+provenir du module de deliberation.
+
+Flutter appelle le dashboard reel et ajoute `Historique` avec groupement
+annee/promotion/semestre/cours. Le dashboard ne demande plus les risques ni
+les reclamations et n'affiche plus de moyenne, presence ou compteur invente.
+L'absence de cours actifs est un etat academique explicite. Les tests dedies
+6A couvrent dashboard, cours, historique, perimetre, absence de secret et
+navigation Flutter. Les tests utilisent `smart_faculty_test`; `smart_faculty`
+et `.vscode/settings.json` restent inchanges.
+
+Validation finale 6A: backend `145 passed` lors de chacune des deux suites
+completes; Flutter `49 passed` lors de chacune des deux suites completes;
+`flutter analyze` conserve uniquement les 14 informations historiques; le
+build Web release est reussi. Les health checks `/`, `/api/v1/statut` et
+`/api/v1/sante/base-de-donnees` repondent HTTP 200. La base principale reste
+en `20260713_0007`, aucune migration et aucune donnee metier n'ont ete
+ajoutees pendant 6A.
+
+## 2026-07-14 - Correction ciblee du script de demarrage backend
+
+Le script `scripts/demarrer_backend.bat` lancait deja FastAPI avec le bon
+interpreteur, mais quittait silencieusement lorsqu'Uvicorn echouait, notamment
+si le port `8000` etait deja occupe. La fenetre se fermait donc sans laisser
+voir l'erreur.
+
+Le script derive maintenant la racine depuis `%~dp0`, accepte un emplacement
+dans la racine ou dans `scripts/`, verifie `backend/app/main.py`, le Python du
+venv et le changement de dossier, puis lance directement
+`backend\\.venv\\Scripts\\python.exe -m uvicorn app.main:app`. Il detecte un
+port `8000` deja utilise sans arreter le processus et conserve la fenetre
+ouverte avec `pause` pour les erreurs comme pour l'arret du serveur.
+
+Cette correction ne modifie aucune route, aucun modele, aucune migration,
+aucune base de donnees, aucune dependance ni aucun fichier Flutter.

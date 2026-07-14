@@ -174,8 +174,141 @@ class AppariteurApiService {
     return data['elements'] as List<dynamic>? ?? const [];
   }
 
-  Future<List<dynamic>> projets() async {
-    throw ApiException('Le module projets/TFC est prevu pour la version 2.');
+  Future<Map<String, dynamic>> projets({
+    String? typeProjet,
+    int? promotionId,
+    int? anneeAcademiqueId,
+    String? statut,
+    int? etudiantId,
+    int? enseignantId,
+    String? recherche,
+    bool sansEncadreur = false,
+    bool avecEncadreur = false,
+  }) async {
+    return ApiDataSource.client.get(
+      '/appariteur/projets',
+      query: {
+        if (typeProjet != null) 'type_projet': typeProjet,
+        if (promotionId != null) 'promotion_id': promotionId,
+        if (anneeAcademiqueId != null) 'annee_academique_id': anneeAcademiqueId,
+        if (statut != null) 'statut': statut,
+        if (etudiantId != null) 'etudiant_id': etudiantId,
+        if (enseignantId != null) 'enseignant_id': enseignantId,
+        if (recherche != null && recherche.trim().isNotEmpty)
+          'recherche': recherche.trim(),
+        if (sansEncadreur) 'sans_encadreur': true,
+        if (avecEncadreur) 'avec_encadreur': true,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> creerProjet({
+    required int etudiantId,
+    required String titre,
+    required String typeProjet,
+    String? description,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/projets',
+      body: {
+        'etudiant_id': etudiantId,
+        'titre': titre.trim(),
+        'type_projet': typeProjet,
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> detailProjet(int id) async {
+    return ApiDataSource.client.get('/appariteur/projets/$id');
+  }
+
+  Future<Map<String, dynamic>> modifierProjet(
+    int id, {
+    String? titre,
+    String? typeProjet,
+    String? description,
+    String? statut,
+  }) async {
+    return ApiDataSource.client.patch(
+      '/appariteur/projets/$id',
+      body: {
+        if (titre != null) 'titre': titre.trim(),
+        if (typeProjet != null) 'type_projet': typeProjet,
+        if (description != null) 'description': description.trim(),
+        if (statut != null) 'statut': statut,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> archiverProjet(int id) async {
+    return ApiDataSource.client.post('/appariteur/projets/$id/archiver');
+  }
+
+  Future<Map<String, dynamic>> enseignantsEncadreurs({
+    String? typeProjet,
+    String? recherche,
+  }) async {
+    return ApiDataSource.client.get(
+      '/appariteur/enseignants-encadreurs',
+      query: {
+        if (typeProjet != null) 'type_projet': typeProjet,
+        if (recherche != null && recherche.trim().isNotEmpty)
+          'recherche': recherche.trim(),
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> specialitesEnseignant(int enseignantId) async {
+    return ApiDataSource.client
+        .get('/appariteur/enseignants-encadreurs/$enseignantId/specialites');
+  }
+
+  Future<Map<String, dynamic>> configurerSpecialites({
+    required int enseignantId,
+    required List<String> typesProjet,
+  }) async {
+    return ApiDataSource.client.put(
+      '/appariteur/enseignants-encadreurs/$enseignantId/specialites',
+      body: {'types_projet': typesProjet},
+    );
+  }
+
+  Future<Map<String, dynamic>> attribuerEncadrement({
+    required int projetId,
+    required int enseignantId,
+    required String roleEncadrement,
+    bool remplacerPrincipal = false,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/projets/$projetId/encadrements',
+      body: {
+        'enseignant_id': enseignantId,
+        'role_encadrement': roleEncadrement,
+        if (remplacerPrincipal) 'remplacer_principal': true,
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> modifierEncadrement({
+    required int projetId,
+    required int encadrementId,
+    required String roleEncadrement,
+  }) async {
+    return ApiDataSource.client.patch(
+      '/appariteur/projets/$projetId/encadrements/$encadrementId',
+      body: {'role_encadrement': roleEncadrement},
+    );
+  }
+
+  Future<Map<String, dynamic>> desactiverEncadrement({
+    required int projetId,
+    required int encadrementId,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/projets/$projetId/encadrements/$encadrementId/desactiver',
+    );
   }
 
   Future<List<dynamic>> stages() async {

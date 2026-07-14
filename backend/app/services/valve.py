@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.configuration.parametres import obtenir_parametres
 from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, ErreurApplication, RessourceIntrouvable
-from app.modeles.academique import Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours
+from app.modeles.academique import AnneeAcademique, Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours, Promotion, Semestre
 from app.modeles.audit import JournalAudit
 from app.modeles.notes import Evaluation, Note
 from app.modeles.securite import Utilisateur
@@ -48,9 +48,15 @@ def _enseignant_connecte(session: Session, utilisateur_id: int) -> Enseignant:
 
 
 def _etudiant_connecte(session: Session, utilisateur_id: int) -> Etudiant:
-    etudiant = session.scalar(select(Etudiant).where(Etudiant.utilisateur_id == utilisateur_id))
+    etudiant = session.scalar(
+        select(Etudiant).join(Etudiant.utilisateur).where(
+            Etudiant.utilisateur_id == utilisateur_id,
+            Etudiant.statut_academique == "actif",
+            Utilisateur.statut == "actif",
+        )
+    )
     if etudiant is None:
-        raise AccesInterdit("Profil etudiant introuvable")
+        raise AccesInterdit("Profil etudiant indisponible")
     return etudiant
 
 
@@ -69,10 +75,19 @@ def _verifier_enseignant_du_cours(session: Session, utilisateur_id: int, cours_i
 
 def _verifier_etudiant_inscrit(session: Session, etudiant_id: int, cours_id: int) -> None:
     inscription = session.scalar(
-        select(InscriptionCours).where(
+        select(InscriptionCours)
+        .join(InscriptionCours.cours)
+        .join(InscriptionCours.annee_academique)
+        .join(Cours.promotion)
+        .join(Semestre, Cours.semestre_id == Semestre.id)
+        .where(
             InscriptionCours.etudiant_id == etudiant_id,
             InscriptionCours.cours_id == cours_id,
             InscriptionCours.statut == "active",
+            InscriptionCours.annee_academique_id == Semestre.annee_academique_id,
+            AnneeAcademique.est_active.is_(True),
+            Cours.est_actif.is_(True),
+            Promotion.est_active.is_(True),
         )
     )
     if inscription is None:
@@ -139,6 +154,9 @@ def _nom_utilisateur(utilisateur: Utilisateur | None) -> str | None:
 
 
 def _serialiser_cours(cours: Cours) -> dict:
+    semestre = cours.semestre
+    promotion = cours.promotion
+    annee = semestre.annee_academique if semestre else None
     return {
         "id": cours.id,
         "code": cours.code,
@@ -147,7 +165,13 @@ def _serialiser_cours(cours: Cours) -> dict:
         "nombre_heures": cours.nombre_heures,
         "nombre_credits": cours.nombre_credits,
         "promotion_id": cours.promotion_id,
+        "promotion": promotion.nom if promotion else None,
+        "niveau": promotion.niveau if promotion else None,
         "semestre_id": cours.semestre_id,
+        "semestre": semestre.nom if semestre else None,
+        "numero_semestre": semestre.numero if semestre else None,
+        "annee_academique_id": annee.id if annee else None,
+        "annee_academique": annee.libelle if annee else None,
     }
 
 
@@ -643,8 +667,23 @@ def lister_valve_etudiant(session: Session, utilisateur_id: int) -> dict:
     etudiant = _etudiant_connecte(session, utilisateur_id)
     inscriptions = session.scalars(
         select(InscriptionCours)
-        .options(selectinload(InscriptionCours.cours))
-        .where(InscriptionCours.etudiant_id == etudiant.id, InscriptionCours.statut == "active")
+        .options(
+            selectinload(InscriptionCours.cours).selectinload(Cours.semestre),
+            selectinload(InscriptionCours.cours).selectinload(Cours.promotion),
+        )
+        .join(InscriptionCours.cours)
+        .join(InscriptionCours.annee_academique)
+        .join(Cours.promotion)
+        .join(Semestre, Cours.semestre_id == Semestre.id)
+        .where(
+            InscriptionCours.etudiant_id == etudiant.id,
+            InscriptionCours.statut == "active",
+            InscriptionCours.annee_academique_id == Semestre.annee_academique_id,
+            AnneeAcademique.est_active.is_(True),
+            Cours.est_actif.is_(True),
+            Cours.promotion_id == etudiant.promotion_id,
+            Promotion.est_active.is_(True),
+        )
         .order_by(InscriptionCours.cours_id)
     ).all()
 

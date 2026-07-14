@@ -1,0 +1,64 @@
+SMART FACULTY
+00.06 – Planification générale du projet
+Introduction
+La réussite d’un projet informatique dépend non seulement de la qualité de sa conception, mais également d’une bonne organisation des différentes étapes de sa réalisation.
+La présente planification définit les principales phases qui guideront le développement de Smart Faculty. Chaque phase possède des objectifs précis et constitue une étape essentielle vers la réalisation complète de la plateforme.
+Cette organisation permettra de suivre l’évolution du projet de manière méthodique tout en facilitant le contrôle de son avancement.
+Phase 1 : Admission du projet
+Cette première phase consiste à définir les bases du projet.
+Elle comprend notamment :
+la présentation du projet ;
+la vision et les objectifs ;
+le périmètre du projet ;
+les utilisateurs du système ;
+les technologies retenues ;
+la planification générale.
+Cette phase permet de comprendre clairement ce qui sera réalisé.
+Phase 2 : Analyse
+Cette phase consiste à étudier les besoins de la faculté afin d’identifier les fonctionnalités que devra offrir Smart Faculty.
+Les principales activités sont :
+l’identification des besoins fonctionnels ;
+l’identification des besoins non fonctionnels ;
+l’identification des acteurs du système ;
+la réalisation des cas d’utilisation ;
+l’analyse des processus académiques.
+À l’issue de cette phase, toutes les fonctionnalités du système seront clairement définies.
+Phase 3 : Conception
+La phase de conception consiste à préparer l’architecture technique de la plateforme.
+Elle comprend notamment :
+la conception de la base de données ;
+la modélisation des entités ;
+la conception des API ;
+la définition de l’architecture logicielle ;
+l’organisation des modules du système.
+Cette étape permettra de construire une architecture solide et évolutive.
+Phase 4 : Développement
+Cette phase correspond à la réalisation de l’application.
+Elle comprend :
+le développement du backend avec FastAPI ;
+le développement du frontend avec Flutter ;
+l’intégration avec la base de données MySQL ;
+la mise en œuvre des différents modules fonctionnels ;
+les tests de fonctionnement de chaque module.
+Chaque fonctionnalité sera développée, testée et validée avant de passer à la suivante.
+Phase 5 : Tests et validation
+Une fois le développement terminé, plusieurs tests seront réalisés afin de vérifier la qualité du système.
+Ces tests permettront de :
+vérifier le bon fonctionnement des fonctionnalités ;
+détecter les éventuelles erreurs ;
+corriger les anomalies ;
+valider les performances de l’application ;
+garantir la sécurité des données.
+Cette étape permettra d’obtenir une version stable de Smart Faculty.
+Phase 6 : Déploiement et préparation de la soutenance
+La dernière phase consiste à préparer la version finale du projet.
+Elle comprend :
+la finalisation de la documentation ;
+la préparation de la démonstration ;
+la rédaction du rapport ;
+la préparation de la présentation orale ;
+la correction des derniers détails avant la défense.
+À l’issue de cette phase, Smart Faculty sera prêt à être présenté devant le jury.
+ Calendrier général
+Conclusion
+La planification générale permet d’organiser le développement de Smart Faculty de manière progressive et structurée. En suivant ces différentes phases, le projet pourra être réalisé dans de bonnes conditions tout en garantissant la qualité de la solution finale et une préparation efficace à la soutenance.

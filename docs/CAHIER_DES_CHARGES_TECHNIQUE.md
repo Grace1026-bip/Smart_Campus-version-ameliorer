@@ -579,3 +579,120 @@ Validation: deux suites backend a `128 passed`, deux suites Flutter a
 `42 passed`, analyse Dart avec 0 erreur et 0 avertissement, 6 informations
 historiques `dart:html`, build Web release reussi. Les endpoints FastAPI `/`,
 `/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent correctement.
+
+## Prompt 5B - Gestion appariteur des projets et encadrements
+
+La migration `20260713_0006` a ete deployee sur `smart_faculty` apres une
+sauvegarde complete. L'etat avant migration etait `20260713_0005`, avec 36
+tables et sans table d'enrolement; l'etat apres est `20260713_0006`, avec 37
+tables et une table `enrolements_academiques` vide. Les compteurs des tables
+existantes sont restes inchanges.
+
+Le modele `ProjetAcademique` est reutilise. La creation appariteur exige un
+etudiant actif, une promotion coherente, une annee derivee de cette promotion
+et un `EnrolementAcademique` valide. Un seul projet non archive est autorise
+pour un etudiant et une annee. La modification ne peut pas changer librement
+l'etudiant, la promotion ou l'annee; le changement de type est refuse si un
+encadreur actif n'a pas la nouvelle specialite.
+
+Le modele `SpecialiteEncadrementEnseignant`, ajoute par `20260713_0007`, porte
+les domaines explicitement configures par l'appariteur. Les specialites sont
+controlees par le meme referentiel que les projets et leur desactivation garde
+la ligne historique. La migration ajoute aussi
+`desactive_par_utilisateur_id` a `EncadrementProjet`.
+
+Les routes appariteur sont:
+
+- `GET/POST /api/v1/appariteur/projets`;
+- `GET/PATCH /api/v1/appariteur/projets/{projet_id}`;
+- `POST /api/v1/appariteur/projets/{projet_id}/archiver`;
+- `GET /api/v1/appariteur/enseignants-encadreurs`;
+- `GET/PUT /api/v1/appariteur/enseignants-encadreurs/{enseignant_id}/specialites`;
+- `POST /api/v1/appariteur/projets/{projet_id}/encadrements`;
+- `PATCH /api/v1/appariteur/projets/{projet_id}/encadrements/{encadrement_id}`;
+- `POST /api/v1/appariteur/projets/{projet_id}/encadrements/{encadrement_id}/desactiver`.
+
+Un seul encadreur principal actif est autorise. Plusieurs co-encadreurs sont
+possibles. Le remplacement du principal est une action explicite; l'ancien
+encadrement devient inactif et reste consultable dans l'historique. La base
+utilise la valeur historique `coencadreur`; l'API et Flutter utilisent
+`co_encadreur`.
+
+La migration `20260713_0007` a ete verifiee par downgrade vers `0006` puis
+upgrade vers `0007` sur `smart_faculty_test`. Elle n'a pas ete appliquee a
+`smart_faculty` dans ce prompt. Les tests automatises n'utilisent que la base
+suffixee `_test`.
+
+Flutter expose l'ecran Appariteur `Projets et encadrements`, avec filtres,
+creation, detail, configuration des specialites, attribution compatible,
+remplacement, desactivation et archivage. Les enseignants continuent de
+consulter uniquement leurs encadrements par leur token. La consultation
+Etudiant et les fonctions de projet avancees sont reportees.
+
+Validation finale: `134 passed` backend lors de chacune des deux executions
+completes et `44 passed` Flutter lors de chacune des deux executions completes.
+`flutter analyze` ne signale aucune erreur ni avertissement; les 14 informations
+restantes correspondent aux 6 informations historiques `dart:html` et a 8
+recommandations de style deja presentes dans l'ancien ecran de supervision.
+`flutter build web --release` est reussi. FastAPI repond HTTP 200 sur `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees`. `smart_faculty` reste en
+`20260713_0006`; `20260713_0007` est validee uniquement sur
+`smart_faculty_test` et son deploiement principal est reporte a une operation
+controlee separee.
+
+## Prompt 5C - Espace Etudiant
+
+Le module etudiant utilise le profil associe au token et impose le role actif
+`etudiant`. Les routes `/api/v1/etudiants/moi/enrolements` et
+`/api/v1/etudiants/moi/projets` ne prennent aucun identifiant d'etudiant
+comme autorite. Les details refusent un identifiant appartenant a un autre
+profil par une reponse introuvable.
+
+Une fiche officielle est disponible uniquement pour un enrolement `valide`.
+`GET /api/v1/etudiants/moi/enrolements/{id}/fiche` genere un PDF A4 en
+memoire avec ReportLab `4.2.5`, ajoute `Content-Type: application/pdf`,
+`Content-Disposition: attachment` et `Cache-Control: private, no-store`.
+Le document contient la reference, l'etudiant, la promotion, l'annee, les
+dates, le statut, le programme, les credits et le pied de page; il ne contient
+aucun secret, paiement, note ou chemin local.
+
+Le client Flutter fournit `ApiService.getBytes`, qui conserve le Bearer token
+et reutilise le rafraichissement de session. L'implementation Web utilise un
+import conditionnel et un telechargement par Blob; les plateformes sans
+integration de partage de fichier affichent un retour explicite sans
+persistance serveur. Les ecrans `Mon enrolement` et `Mon projet` reutilisent
+le theme et la navigation existants.
+
+Les projets etudiants sont filtres par le profil du token et excluent les
+projets archives ainsi que les encadrements inactifs. Seuls le titre, le type,
+la description autorisee, le statut, la promotion, l'annee et les encadreurs
+actifs sont exposes. L'etudiant n'accede ni a l'historique interne ni aux
+actions d'attribution.
+
+Validation 5C: backend `141 passed` lors de chacune des deux executions, dont
+7 tests dedies; Flutter `47 passed` lors de chacune des deux executions;
+`flutter analyze` conserve 14 informations connues sans erreur ni
+avertissement; le PDF de test A4 de 5 187 octets a ete rendu sur deux pages
+sans chevauchement; build Web release reussi. Les health checks FastAPI `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent HTTP 200.
+
+## Prompt 6A - Regles de l'espace Etudiant academique
+
+L'identite Etudiant est derivee du token et le compte doit etre actif. Le
+backend est l'autorite du perimetre: un Etudiant ne consulte que ses
+`InscriptionCours` actives, sa promotion, un cours actif et l'annee active.
+`EnrolementAcademique` reste le dossier administratif annuel; la convention
+MVP utilise les inscriptions de cours actives pour le perimetre courant.
+
+Les routes sont `GET /api/v1/etudiants/moi/tableau-de-bord`,
+`GET /api/v1/etudiants/moi/cours`, `GET /api/v1/etudiants/moi/cours/{id}`,
+`GET /api/v1/etudiants/moi/cours/{id}/notes` et
+`GET /api/v1/etudiants/moi/historique-academique`. Valve et notes reutilisent
+leurs routes Etudiant existantes; brouillons, archives, evaluations non
+publiees et champs internes restent masques. Les resultats semestriels
+officiels viennent des snapshots de deliberation publies.
+
+Flutter propose `Mes cours`, `Valve`, `Mes notes`, `Mes resultats`,
+`Historique`, `Mon enrolement`, `Mon projet`, `Profil` et la deconnexion. Le
+dashboard signale l'absence d'inscription active et n'affiche aucun calcul
+academique invente. Aucune migration ni dependance n'a ete ajoutee.

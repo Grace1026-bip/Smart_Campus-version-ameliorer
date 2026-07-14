@@ -56,7 +56,7 @@ def route_creer_projet(
     session: Session = Depends(obtenir_session),
 ):
     projet = service.creer_projet_appariteur(session, contexte.utilisateur.id, donnees)
-    return reponse_succes("Projet academique cree", projet)
+    return reponse_succes("Projet academique cree", projet, code_http=status.HTTP_201_CREATED)
 
 
 @routeur_projets_appariteur.get("/projets/{projet_id}")
@@ -148,6 +148,7 @@ def route_attribuer_encadrement(
             projet_id,
             donnees,
         ),
+        code_http=status.HTTP_201_CREATED,
     )
 
 

@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.configuration.parametres import obtenir_parametres
 from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, ErreurApplication, RessourceIntrouvable
-from app.modeles.academique import AnneeAcademique, Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours
+from app.modeles.academique import AnneeAcademique, Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours, Promotion, Semestre
 from app.modeles.audit import JournalAudit
 from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
 from app.modeles.notifications import Notification
@@ -38,9 +38,15 @@ def _enseignant_connecte(session: Session, utilisateur_id: int) -> Enseignant:
 
 
 def _etudiant_connecte(session: Session, utilisateur_id: int) -> Etudiant:
-    etudiant = session.scalar(select(Etudiant).where(Etudiant.utilisateur_id == utilisateur_id))
+    etudiant = session.scalar(
+        select(Etudiant).join(Etudiant.utilisateur).where(
+            Etudiant.utilisateur_id == utilisateur_id,
+            Etudiant.statut_academique == "actif",
+            Etudiant.utilisateur.has(statut="actif"),
+        )
+    )
     if etudiant is None:
-        raise AccesInterdit("Profil etudiant introuvable")
+        raise AccesInterdit("Profil etudiant indisponible")
     return etudiant
 
 
@@ -81,12 +87,19 @@ def _verifier_etudiant_inscrit(session: Session, etudiant_id: int, cours_id: int
         select(InscriptionCours)
         .join(InscriptionCours.etudiant)
         .join(InscriptionCours.annee_academique)
+        .join(InscriptionCours.cours)
+        .join(Cours.promotion)
+        .join(Semestre, Cours.semestre_id == Semestre.id)
         .where(
             InscriptionCours.etudiant_id == etudiant_id,
             InscriptionCours.cours_id == cours_id,
             InscriptionCours.statut == "active",
+            InscriptionCours.annee_academique_id == Semestre.annee_academique_id,
             Etudiant.statut_academique == "actif",
             AnneeAcademique.est_active.is_(True),
+            Cours.est_actif.is_(True),
+            Cours.promotion_id == Etudiant.promotion_id,
+            Promotion.est_active.is_(True),
         )
     )
     if inscription is None:
@@ -167,6 +180,36 @@ def _serialiser_note(note: Note) -> dict:
         "encodee_par": note.encodee_par,
         "cree_le": note.cree_le,
         "modifie_le": note.modifie_le,
+    }
+
+
+def _serialiser_note_etudiant(note: Note) -> dict:
+    return {
+        "id": note.id,
+        "evaluation_id": note.evaluation_id,
+        "note_obtenue": note.note_obtenue,
+        "commentaire": note.commentaire,
+        "cree_le": note.cree_le,
+        "modifie_le": note.modifie_le,
+    }
+
+
+def _serialiser_evaluation_etudiant(evaluation: Evaluation) -> dict:
+    return {
+        "id": evaluation.id,
+        "cours_id": evaluation.cours_id,
+        "type_evaluation_id": evaluation.type_evaluation_id,
+        "type_evaluation": {
+            "id": evaluation.type_evaluation.id,
+            "nom": evaluation.type_evaluation.nom,
+            "description": evaluation.type_evaluation.description,
+        } if evaluation.type_evaluation else None,
+        "titre": evaluation.titre,
+        "note_maximale": evaluation.note_maximale,
+        "ponderation": evaluation.ponderation,
+        "statut": evaluation.statut,
+        "date_evaluation": evaluation.date_evaluation,
+        "date_publication": evaluation.date_publication,
     }
 
 
@@ -651,7 +694,20 @@ def notes_etudiant(session: Session, utilisateur_id: int, cours_id: int | None =
         select(Note, Evaluation, Cours)
         .join(Evaluation, Note.evaluation_id == Evaluation.id)
         .join(Cours, Evaluation.cours_id == Cours.id)
+        .join(InscriptionCours, InscriptionCours.cours_id == Cours.id)
+        .join(AnneeAcademique, InscriptionCours.annee_academique_id == AnneeAcademique.id)
+        .join(Promotion, Cours.promotion_id == Promotion.id)
+        .join(Semestre, Cours.semestre_id == Semestre.id)
         .where(Note.etudiant_id == etudiant.id, Evaluation.statut == "publiee")
+        .where(
+            InscriptionCours.etudiant_id == etudiant.id,
+            InscriptionCours.statut == "active",
+            InscriptionCours.annee_academique_id == Semestre.annee_academique_id,
+            AnneeAcademique.est_active.is_(True),
+            Cours.est_actif.is_(True),
+            Cours.promotion_id == etudiant.promotion_id,
+            Promotion.est_active.is_(True),
+        )
         .order_by(Evaluation.date_publication.desc())
     )
     if cours_id is not None:
@@ -662,8 +718,8 @@ def notes_etudiant(session: Session, utilisateur_id: int, cours_id: int | None =
     return {
         "notes": [
             {
-                "note": _serialiser_note(note),
-                "evaluation": _serialiser_evaluation(evaluation),
+                "note": _serialiser_note_etudiant(note),
+                "evaluation": _serialiser_evaluation_etudiant(evaluation),
                 "cours": {"id": cours.id, "code": cours.code, "intitule": cours.intitule},
             }
             for note, evaluation, cours in lignes
@@ -675,18 +731,42 @@ def resultats_etudiant(session: Session, utilisateur_id: int) -> dict:
     etudiant = _etudiant_connecte(session, utilisateur_id)
     resultats = session.scalars(
         select(ResultatCours)
-        .where(ResultatCours.etudiant_id == etudiant.id)
+        .join(InscriptionCours, InscriptionCours.cours_id == ResultatCours.cours_id)
+        .join(Cours, Cours.id == ResultatCours.cours_id)
+        .join(AnneeAcademique, InscriptionCours.annee_academique_id == AnneeAcademique.id)
+        .join(Promotion, Cours.promotion_id == Promotion.id)
+        .where(
+            ResultatCours.etudiant_id == etudiant.id,
+            InscriptionCours.etudiant_id == etudiant.id,
+            InscriptionCours.statut == "active",
+            AnneeAcademique.est_active.is_(True),
+            Cours.est_actif.is_(True),
+            Cours.promotion_id == etudiant.promotion_id,
+            Promotion.est_active.is_(True),
+            ResultatCours.statut_resultat.in_({"reussi", "echoue"}),
+        )
         .order_by(ResultatCours.cours_id)
     ).all()
-    total_credits = sum(resultat.credits_obtenus for resultat in resultats)
+    resultats_officiels = []
+    for resultat in resultats:
+        evaluations = session.scalars(
+            select(Evaluation).where(
+                Evaluation.cours_id == resultat.cours_id,
+                Evaluation.statut != "archivee",
+            )
+        ).all()
+        if evaluations and all(item.statut == "publiee" for item in evaluations):
+            resultats_officiels.append(resultat)
+    total_credits = sum(resultat.credits_obtenus for resultat in resultats_officiels)
     moyenne_generale = None
-    if resultats:
-        moyenne_generale = sum(Decimal(str(resultat.moyenne)) for resultat in resultats) / Decimal(len(resultats))
+    if resultats_officiels:
+        moyenne_generale = sum(Decimal(str(resultat.moyenne)) for resultat in resultats_officiels) / Decimal(len(resultats_officiels))
 
     return {
-        "resultats": [_serialiser_resultat(resultat) for resultat in resultats],
+        "resultats": [_serialiser_resultat(resultat) for resultat in resultats_officiels],
         "moyenne_generale": moyenne_generale,
         "credits_valides": total_credits,
-        "cours_reussis": sum(1 for resultat in resultats if resultat.statut_resultat == "reussi"),
-        "cours_echoues": sum(1 for resultat in resultats if resultat.statut_resultat == "echoue"),
+        "cours_reussis": sum(1 for resultat in resultats_officiels if resultat.statut_resultat == "reussi"),
+        "cours_echoues": sum(1 for resultat in resultats_officiels if resultat.statut_resultat == "echoue"),
+        "etat": "publie" if resultats_officiels else "en_attente",
     }

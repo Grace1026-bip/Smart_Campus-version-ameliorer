@@ -1,0 +1,93 @@
+SMART FACULTY
+02.01 – Architecture générale
+Introduction
+La conception générale permet de définir l’organisation technique de Smart Faculty avant le développement complet de l’application. Elle présente les principaux composants du système, leurs rôles et la manière dont ils communiquent entre eux.
+Smart Faculty repose sur une architecture moderne séparant clairement l’interface utilisateur, le serveur applicatif et la base de données. Cette séparation facilite la maintenance, la sécurité et l’évolution future du projet.
+1. Principe général de l’architecture
+Smart Faculty utilise une architecture client-serveur composée de trois parties principales :
+le frontend ;
+le backend ;
+la base de données.
+Le frontend permet aux utilisateurs d’interagir avec l’application.
+Le backend contient la logique métier, les règles de sécurité, les calculs académiques et les traitements du système.
+La base de données conserve toutes les informations nécessaires au fonctionnement de la plateforme.
+2. Frontend
+Le frontend de Smart Faculty est développé avec Flutter.
+Il représente la partie visible de l’application.
+Il permet aux utilisateurs de :
+se connecter ;
+consulter leur tableau de bord ;
+accéder aux cours ;
+consulter la Valve académique ;
+consulter les notes ;
+créer des réclamations ;
+recevoir des notifications ;
+consulter les statistiques selon leur rôle.
+Flutter communique avec le backend à travers des requêtes HTTP envoyées vers l’API REST.
+3. Backend
+Le backend est développé avec Python et FastAPI.
+Il représente le cœur logique de Smart Faculty.
+Il assure notamment :
+l’authentification des utilisateurs ;
+la gestion des rôles et permissions ;
+la gestion des cours ;
+la gestion des notes ;
+le calcul des moyennes et crédits ;
+la gestion de la Valve académique ;
+la gestion des réclamations ;
+la détection des étudiants à risque ;
+la gestion minimale des présences, absences et retards ;
+la génération des notifications ;
+la production des données des tableaux de bord.
+Le backend vérifie toutes les règles métier avant d’autoriser une opération.
+4. Base de données
+La base de données utilisée est MySQL.
+Elle permet de stocker durablement les informations du système, notamment :
+les utilisateurs ;
+les rôles ;
+les étudiants ;
+les enseignants ;
+les promotions ;
+les cours ;
+les notes ;
+les résultats ;
+les présences, absences et retards ;
+les publications ;
+les réclamations ;
+les notifications ;
+les alertes académiques.
+MySQL garantit la cohérence des données grâce aux relations entre les tables.
+5. Communication entre les composants
+Le fonctionnement général est le suivant :
+L’utilisateur effectue une action dans l’application Flutter.
+Flutter envoie une requête HTTP au backend FastAPI.
+FastAPI vérifie l’identité et les permissions de l’utilisateur.
+FastAPI applique les règles métier.
+FastAPI interroge ou modifie la base de données MySQL.
+MySQL renvoie les données demandées.
+FastAPI retourne une réponse JSON.
+Flutter affiche le résultat à l’utilisateur.
+6. Schéma simplifié de l’architecture
+7. Sécurité de l’architecture
+La sécurité est assurée principalement par le backend.
+Le système doit :
+vérifier l’identité de chaque utilisateur ;
+contrôler les rôles ;
+empêcher les accès non autorisés ;
+protéger les données académiques ;
+empêcher un utilisateur de consulter les informations d’un autre utilisateur ;
+sécuriser les mots de passe ;
+vérifier chaque opération sensible.
+Le frontend ne doit jamais être le seul responsable de la sécurité. Toutes les vérifications importantes doivent être faites côté backend.
+8. Avantages de cette architecture
+Cette architecture présente plusieurs avantages :
+séparation claire entre interface, logique métier et données ;
+meilleure sécurité ;
+meilleure organisation du code ;
+facilité de maintenance ;
+possibilité d’évolution future ;
+adaptation aux applications web et mobiles ;
+facilité d’intégration future de modules intelligents.
+Conclusion
+L’architecture générale de Smart Faculty repose sur une séparation claire entre Flutter, FastAPI et MySQL. Cette organisation permet de construire une application moderne, sécurisée, maintenable et évolutive.
+Elle constitue la base technique sur laquelle seront développés tous les modules fonctionnels de la plateforme.

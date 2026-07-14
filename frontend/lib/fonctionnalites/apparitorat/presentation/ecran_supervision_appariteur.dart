@@ -16,7 +16,8 @@ class ApparitorStudentsScreen extends StatefulWidget {
   const ApparitorStudentsScreen({super.key});
 
   @override
-  State<ApparitorStudentsScreen> createState() => _ApparitorStudentsScreenState();
+  State<ApparitorStudentsScreen> createState() =>
+      _ApparitorStudentsScreenState();
 }
 
 class _ApparitorStudentsScreenState extends State<ApparitorStudentsScreen> {
@@ -30,15 +31,32 @@ class _ApparitorStudentsScreenState extends State<ApparitorStudentsScreen> {
       subtitle: 'Supervision academique des profils etudiants.',
       future: AppariteurDataSource.service.etudiants(),
       builder: (items) {
-        final filtered = _filter(items, _query, ['nom_complet', 'matricule', 'promotion', 'email']);
+        final filtered = _filter(
+            items, _query, ['nom_complet', 'matricule', 'promotion', 'email']);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             ResponsiveGrid(children: [
-              _stat('Etudiants', '${items.length}', 'total', Icons.groups_rounded, AppColors.primary),
-              _stat('Alertes', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['alertes_actives']))}', 'actives', Icons.warning_amber_rounded, AppColors.warning),
-              _stat('Reclamations', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_reclamations']))}', 'suivi', Icons.mark_email_unread_rounded, AppColors.cyan),
-              _stat('Credits valides', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['credits_valides']))}', 'cumules', Icons.workspace_premium_rounded, AppColors.success),
+              _stat('Etudiants', '${items.length}', 'total',
+                  Icons.groups_rounded, AppColors.primary),
+              _stat(
+                  'Alertes',
+                  '${items.fold<int>(0, (sum, item) => sum + _asInt(item['alertes_actives']))}',
+                  'actives',
+                  Icons.warning_amber_rounded,
+                  AppColors.warning),
+              _stat(
+                  'Reclamations',
+                  '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_reclamations']))}',
+                  'suivi',
+                  Icons.mark_email_unread_rounded,
+                  AppColors.cyan),
+              _stat(
+                  'Credits valides',
+                  '${items.fold<int>(0, (sum, item) => sum + _asInt(item['credits_valides']))}',
+                  'cumules',
+                  Icons.workspace_premium_rounded,
+                  AppColors.success),
             ]),
             const SizedBox(height: 22),
             _SearchPanel(
@@ -93,10 +111,26 @@ class ApparitorTeachersScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ResponsiveGrid(children: [
-            _stat('Enseignants', '${items.length}', 'total', Icons.school_rounded, AppColors.primary),
-            _stat('Cours', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_cours']))}', 'attribues', Icons.menu_book_rounded, AppColors.success),
-            _stat('Publications', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_publications']))}', 'valve', Icons.campaign_rounded, AppColors.warning),
-            _stat('Reclamations', '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_reclamations']))}', 'liees', Icons.mark_email_unread_rounded, AppColors.cyan),
+            _stat('Enseignants', '${items.length}', 'total',
+                Icons.school_rounded, AppColors.primary),
+            _stat(
+                'Cours',
+                '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_cours']))}',
+                'attribues',
+                Icons.menu_book_rounded,
+                AppColors.success),
+            _stat(
+                'Publications',
+                '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_publications']))}',
+                'valve',
+                Icons.campaign_rounded,
+                AppColors.warning),
+            _stat(
+                'Reclamations',
+                '${items.fold<int>(0, (sum, item) => sum + _asInt(item['nombre_reclamations']))}',
+                'liees',
+                Icons.mark_email_unread_rounded,
+                AppColors.cyan),
           ]),
           const SizedBox(height: 22),
           SmartTable(
@@ -145,16 +179,22 @@ class ApparitorPromotionsScreen extends StatelessWidget {
           for (final item in items)
             SectionPanel(
               title: '${item['nom'] ?? '-'}',
-              subtitle: '${item['effectif'] ?? 0} etudiant(s) - ${item['nombre_cours'] ?? 0} cours',
+              subtitle:
+                  '${item['effectif'] ?? 0} etudiant(s) - ${item['nombre_cours'] ?? 0} cours',
               trailing: StatusBadge(
                 label: '${item['etudiants_a_risque'] ?? 0} risque(s)',
-                color: _asInt(item['etudiants_a_risque']) > 0 ? AppColors.warning : AppColors.success,
+                color: _asInt(item['etudiants_a_risque']) > 0
+                    ? AppColors.warning
+                    : AppColors.success,
               ),
               child: Column(
                 children: [
                   _InfoLine(label: 'Niveau', value: item['niveau']),
-                  _InfoLine(label: 'Enseignants', value: item['nombre_enseignants']),
-                  _InfoLine(label: 'Moyenne', value: _formatNumber(item['moyenne_generale'])),
+                  _InfoLine(
+                      label: 'Enseignants', value: item['nombre_enseignants']),
+                  _InfoLine(
+                      label: 'Moyenne',
+                      value: _formatNumber(item['moyenne_generale'])),
                   _InfoLine(label: 'Reussites', value: item['reussites']),
                   _InfoLine(label: 'Echecs', value: item['echecs']),
                   const SizedBox(height: 12),
@@ -203,7 +243,8 @@ class ApparitorPromotionDetailScreen extends StatelessWidget {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) return _ErrorPanel(message: snapshot.error.toString());
+          if (snapshot.hasError)
+            return _ErrorPanel(message: snapshot.error.toString());
           final item = snapshot.data ?? {};
           final students = item['etudiants'] as List<dynamic>? ?? const [];
           final courses = item['cours'] as List<dynamic>? ?? const [];
@@ -214,12 +255,17 @@ class ApparitorPromotionDetailScreen extends StatelessWidget {
             children: [
               SectionPanel(
                 title: '${item['nom'] ?? '-'}',
-                subtitle: '${students.length} etudiant(s), ${courses.length} cours.',
+                subtitle:
+                    '${students.length} etudiant(s), ${courses.length} cours.',
                 child: ResponsiveGrid(children: [
-                  _stat('Moyenne', _formatNumber(item['moyenne_generale']), '/20', Icons.analytics_rounded, AppColors.primary),
-                  _stat('Reussites', '${item['reussites'] ?? 0}', 'notes', Icons.trending_up_rounded, AppColors.success),
-                  _stat('Echecs', '${item['echecs'] ?? 0}', 'notes', Icons.trending_down_rounded, AppColors.danger),
-                  _stat('Risques', '${risks.length}', 'actifs', Icons.health_and_safety_rounded, AppColors.warning),
+                  _stat('Moyenne', _formatNumber(item['moyenne_generale']),
+                      '/20', Icons.analytics_rounded, AppColors.primary),
+                  _stat('Reussites', '${item['reussites'] ?? 0}', 'notes',
+                      Icons.trending_up_rounded, AppColors.success),
+                  _stat('Echecs', '${item['echecs'] ?? 0}', 'notes',
+                      Icons.trending_down_rounded, AppColors.danger),
+                  _stat('Risques', '${risks.length}', 'actifs',
+                      Icons.health_and_safety_rounded, AppColors.warning),
                 ]),
               ),
               const SizedBox(height: 22),
@@ -227,10 +273,26 @@ class ApparitorPromotionDetailScreen extends StatelessWidget {
                 minItemWidth: 360,
                 maxColumns: 2,
                 children: [
-                  _MiniTable(title: 'Cours', items: courses, columns: const ['code', 'nom', 'statut_notes']),
-                  _MiniTable(title: 'Risques', items: risks, columns: const ['etudiant', 'cours', 'niveau']),
-                  _MiniTable(title: 'Reclamations', items: complaints, columns: const ['titre', 'code_cours', 'statut']),
-                  _MiniTable(title: 'Etudiants', items: students, columns: const ['matricule', 'nom_complet', 'moyenne_generale']),
+                  _MiniTable(
+                      title: 'Cours',
+                      items: courses,
+                      columns: const ['code', 'nom', 'statut_notes']),
+                  _MiniTable(
+                      title: 'Risques',
+                      items: risks,
+                      columns: const ['etudiant', 'cours', 'niveau']),
+                  _MiniTable(
+                      title: 'Reclamations',
+                      items: complaints,
+                      columns: const ['titre', 'code_cours', 'statut']),
+                  _MiniTable(
+                      title: 'Etudiants',
+                      items: students,
+                      columns: const [
+                        'matricule',
+                        'nom_complet',
+                        'moyenne_generale'
+                      ]),
                 ],
               ),
             ],
@@ -316,12 +378,15 @@ class ApparitorCourseDetailScreen extends StatelessWidget {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) return _ErrorPanel(message: snapshot.error.toString());
+          if (snapshot.hasError)
+            return _ErrorPanel(message: snapshot.error.toString());
           final item = snapshot.data ?? {};
-          final stats = item['statistiques'] as Map<String, dynamic>? ?? const {};
+          final stats =
+              item['statistiques'] as Map<String, dynamic>? ?? const {};
           final students = item['etudiants'] as List<dynamic>? ?? const [];
           final notes = item['notes'] as List<dynamic>? ?? const [];
-          final publications = item['publications'] as List<dynamic>? ?? const [];
+          final publications =
+              item['publications'] as List<dynamic>? ?? const [];
           final documents = item['documents'] as List<dynamic>? ?? const [];
           final complaints = item['reclamations'] as List<dynamic>? ?? const [];
           final risks = item['risques'] as List<dynamic>? ?? const [];
@@ -331,13 +396,22 @@ class ApparitorCourseDetailScreen extends StatelessWidget {
             children: [
               SectionPanel(
                 title: '${item['code'] ?? '-'} ${item['nom'] ?? ''}',
-                subtitle: '${item['promotion'] ?? '-'} - ${item['enseignant_principal'] ?? 'Enseignant non attribue'}',
+                subtitle:
+                    '${item['promotion'] ?? '-'} - ${item['enseignant_principal'] ?? 'Enseignant non attribue'}',
                 trailing: _notesBadge('${item['statut_notes'] ?? '-'}'),
                 child: ResponsiveGrid(children: [
-                  _stat('Etudiants', '${stats['total_etudiants'] ?? students.length}', 'inscrits', Icons.groups_rounded, AppColors.primary),
-                  _stat('Moyenne', _formatNumber(stats['moyenne_cours']), '/20', Icons.analytics_rounded, AppColors.cyan),
-                  _stat('Reussites', '${stats['reussites'] ?? 0}', 'publiees', Icons.trending_up_rounded, AppColors.success),
-                  _stat('Risques', '${risks.length}', 'actifs', Icons.health_and_safety_rounded, AppColors.warning),
+                  _stat(
+                      'Etudiants',
+                      '${stats['total_etudiants'] ?? students.length}',
+                      'inscrits',
+                      Icons.groups_rounded,
+                      AppColors.primary),
+                  _stat('Moyenne', _formatNumber(stats['moyenne_cours']), '/20',
+                      Icons.analytics_rounded, AppColors.cyan),
+                  _stat('Reussites', '${stats['reussites'] ?? 0}', 'publiees',
+                      Icons.trending_up_rounded, AppColors.success),
+                  _stat('Risques', '${risks.length}', 'actifs',
+                      Icons.health_and_safety_rounded, AppColors.warning),
                 ]),
               ),
               const SizedBox(height: 22),
@@ -352,7 +426,9 @@ class ApparitorCourseDetailScreen extends StatelessWidget {
                     _InfoLine(label: 'Credits', value: item['credits']),
                     _InfoLine(label: 'Heures', value: item['nombre_heures']),
                     _InfoLine(label: 'Semestre', value: item['semestre']),
-                    _InfoLine(label: 'Assistants', value: _joinList(item['assistants'])),
+                    _InfoLine(
+                        label: 'Assistants',
+                        value: _joinList(item['assistants'])),
                   ],
                 ),
               ),
@@ -361,12 +437,45 @@ class ApparitorCourseDetailScreen extends StatelessWidget {
                 minItemWidth: 420,
                 maxColumns: 2,
                 children: [
-                  _MiniTable(title: 'Etudiants', items: students, columns: const ['matricule', 'nom_complet', 'moyenne']),
-                  _MiniTable(title: 'Notes', items: notes, columns: const ['matricule', 'etudiant', 'type_note', 'valeur', 'statut']),
-                  _MiniTable(title: 'Valve', items: publications, columns: const ['titre', 'type_publication', 'auteur', 'date_publication', 'statut']),
-                  _MiniTable(title: 'Documents', items: documents, columns: const ['titre', 'type_document', 'date_creation']),
-                  _MiniTable(title: 'Reclamations', items: complaints, columns: const ['titre', 'etudiant', 'statut']),
-                  _MiniTable(title: 'Risques', items: risks, columns: const ['etudiant', 'moyenne', 'niveau', 'motif']),
+                  _MiniTable(
+                      title: 'Etudiants',
+                      items: students,
+                      columns: const ['matricule', 'nom_complet', 'moyenne']),
+                  _MiniTable(title: 'Notes', items: notes, columns: const [
+                    'matricule',
+                    'etudiant',
+                    'type_note',
+                    'valeur',
+                    'statut'
+                  ]),
+                  _MiniTable(
+                      title: 'Valve',
+                      items: publications,
+                      columns: const [
+                        'titre',
+                        'type_publication',
+                        'auteur',
+                        'date_publication',
+                        'statut'
+                      ]),
+                  _MiniTable(
+                      title: 'Documents',
+                      items: documents,
+                      columns: const [
+                        'titre',
+                        'type_document',
+                        'date_creation'
+                      ]),
+                  _MiniTable(
+                      title: 'Reclamations',
+                      items: complaints,
+                      columns: const ['titre', 'etudiant', 'statut']),
+                  _MiniTable(title: 'Risques', items: risks, columns: const [
+                    'etudiant',
+                    'moyenne',
+                    'niveau',
+                    'motif'
+                  ]),
                 ],
               ),
             ],
@@ -381,11 +490,13 @@ class ApparitorComplaintsScreen extends StatefulWidget {
   const ApparitorComplaintsScreen({super.key});
 
   @override
-  State<ApparitorComplaintsScreen> createState() => _ApparitorComplaintsScreenState();
+  State<ApparitorComplaintsScreen> createState() =>
+      _ApparitorComplaintsScreenState();
 }
 
 class _ApparitorComplaintsScreenState extends State<ApparitorComplaintsScreen> {
-  late Future<List<dynamic>> _future = AppariteurDataSource.service.reclamations();
+  late Future<List<dynamic>> _future =
+      AppariteurDataSource.service.reclamations();
   String? _status;
   String _query = '';
 
@@ -408,8 +519,17 @@ class _ApparitorComplaintsScreenState extends State<ApparitorComplaintsScreen> {
         ),
       ],
       builder: (items) {
-        final byStatus = _status == null ? items : items.where((item) => item['statut'] == _status).toList();
-        final filtered = _filter(byStatus, _query, ['titre', 'etudiant', 'cours', 'code_cours', 'enseignant', 'statut']);
+        final byStatus = _status == null
+            ? items
+            : items.where((item) => item['statut'] == _status).toList();
+        final filtered = _filter(byStatus, _query, [
+          'titre',
+          'etudiant',
+          'cours',
+          'code_cours',
+          'enseignant',
+          'statut'
+        ]);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -423,10 +543,14 @@ class _ApparitorComplaintsScreenState extends State<ApparitorComplaintsScreen> {
                   decoration: const InputDecoration(labelText: 'Statut'),
                   items: const [
                     DropdownMenuItem<String?>(value: null, child: Text('Tous')),
-                    DropdownMenuItem(value: 'en_attente', child: Text('En attente')),
-                    DropdownMenuItem(value: 'en_cours', child: Text('En cours')),
+                    DropdownMenuItem(
+                        value: 'en_attente', child: Text('En attente')),
+                    DropdownMenuItem(
+                        value: 'en_cours', child: Text('En cours')),
                     DropdownMenuItem(value: 'resolue', child: Text('Resolue')),
-                    DropdownMenuItem(value: 'transmise_apparitorat', child: Text('Transmise')),
+                    DropdownMenuItem(
+                        value: 'transmise_apparitorat',
+                        child: Text('Transmise')),
                   ],
                   onChanged: (value) => setState(() => _status = value),
                 ),
@@ -473,7 +597,8 @@ class _ApparitorComplaintsScreenState extends State<ApparitorComplaintsScreen> {
   }
 
   Future<void> _openComplaint(dynamic item) async {
-    final detail = await AppariteurDataSource.service.detailReclamation(_asInt(item['id']));
+    final detail = await AppariteurDataSource.service
+        .detailReclamation(_asInt(item['id']));
     if (!mounted) return;
     final saved = await showDialog<bool>(
       context: context,
@@ -502,8 +627,17 @@ class _ApparitorRisksScreenState extends State<ApparitorRisksScreen> {
       subtitle: 'Risques calcules depuis les moyennes finales publiees.',
       future: AppariteurDataSource.service.risques(),
       builder: (items) {
-        final byLevel = _level == null ? items : items.where((item) => item['niveau'] == _level).toList();
-        final filtered = _filter(byLevel, _query, ['etudiant', 'promotion', 'cours', 'code_cours', 'niveau', 'motif']);
+        final byLevel = _level == null
+            ? items
+            : items.where((item) => item['niveau'] == _level).toList();
+        final filtered = _filter(byLevel, _query, [
+          'etudiant',
+          'promotion',
+          'cours',
+          'code_cours',
+          'niveau',
+          'motif'
+        ]);
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -513,9 +647,18 @@ class _ApparitorRisksScreenState extends State<ApparitorRisksScreen> {
               child: Wrap(
                 spacing: 8,
                 children: [
-                  ChoiceChip(label: const Text('Tous'), selected: _level == null, onSelected: (_) => setState(() => _level = null)),
-                  ChoiceChip(label: const Text('Eleve'), selected: _level == 'eleve', onSelected: (_) => setState(() => _level = 'eleve')),
-                  ChoiceChip(label: const Text('Moyen'), selected: _level == 'moyen', onSelected: (_) => setState(() => _level = 'moyen')),
+                  ChoiceChip(
+                      label: const Text('Tous'),
+                      selected: _level == null,
+                      onSelected: (_) => setState(() => _level = null)),
+                  ChoiceChip(
+                      label: const Text('Eleve'),
+                      selected: _level == 'eleve',
+                      onSelected: (_) => setState(() => _level = 'eleve')),
+                  ChoiceChip(
+                      label: const Text('Moyen'),
+                      selected: _level == 'moyen',
+                      onSelected: (_) => setState(() => _level = 'moyen')),
                 ],
               ),
             ),
@@ -565,10 +708,20 @@ class ApparitorProjectsScreen extends StatelessWidget {
       route: AppRoutes.apparitorProjects,
       title: 'Projets academiques',
       subtitle: 'Suivi des groupes, encadreurs, livrables et echeances.',
-      future: AppariteurDataSource.service.projets(),
+      future: AppariteurDataSource.service
+          .projets()
+          .then((data) => data['elements'] as List<dynamic>? ?? const []),
       emptyTitle: 'Aucun projet academique',
-      emptyMessage: 'La table MySQL projets_academiques est prete dans le schema. Les donnees apparaitront apres insertion.',
-      columns: const ['titre', 'promotion', 'encadreur', 'statut', 'progression', 'date_echeance'],
+      emptyMessage:
+          'La table MySQL projets_academiques est prete dans le schema. Les donnees apparaitront apres insertion.',
+      columns: const [
+        'titre',
+        'promotion',
+        'encadreur',
+        'statut',
+        'progression',
+        'date_echeance'
+      ],
     );
   }
 }
@@ -584,8 +737,16 @@ class ApparitorInternshipsScreen extends StatelessWidget {
       subtitle: 'Stages L3, L4 et M2 suivis depuis MySQL.',
       future: AppariteurDataSource.service.stages(),
       emptyTitle: 'Aucun stage enregistre',
-      emptyMessage: 'La table MySQL stages est prete dans le schema. Les suivis apparaitront apres insertion.',
-      columns: const ['etudiant', 'promotion', 'entreprise', 'maitre_stage', 'statut', 'date_fin'],
+      emptyMessage:
+          'La table MySQL stages est prete dans le schema. Les suivis apparaitront apres insertion.',
+      columns: const [
+        'etudiant',
+        'promotion',
+        'entreprise',
+        'maitre_stage',
+        'statut',
+        'date_fin'
+      ],
     );
   }
 }
@@ -606,8 +767,10 @@ class ApparitorReportsScreen extends StatelessWidget {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) return _ErrorPanel(message: snapshot.error.toString());
-          final reports = snapshot.data?['rapports'] as List<dynamic>? ?? const [];
+          if (snapshot.hasError)
+            return _ErrorPanel(message: snapshot.error.toString());
+          final reports =
+              snapshot.data?['rapports'] as List<dynamic>? ?? const [];
           return ResponsiveGrid(
             minItemWidth: 320,
             maxColumns: 3,
@@ -619,8 +782,14 @@ class ApparitorReportsScreen extends StatelessWidget {
                   child: const Wrap(
                     spacing: 8,
                     children: [
-                      StatusBadge(label: 'PDF prevu', color: AppColors.primary, icon: Icons.picture_as_pdf_rounded),
-                      StatusBadge(label: 'Excel prevu', color: AppColors.success, icon: Icons.table_chart_rounded),
+                      StatusBadge(
+                          label: 'PDF prevu',
+                          color: AppColors.primary,
+                          icon: Icons.picture_as_pdf_rounded),
+                      StatusBadge(
+                          label: 'Excel prevu',
+                          color: AppColors.success,
+                          icon: Icons.table_chart_rounded),
                     ],
                   ),
                 ),
@@ -699,7 +868,8 @@ class _ListShell extends StatelessWidget {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
-          if (snapshot.hasError) return _ErrorPanel(message: snapshot.error.toString());
+          if (snapshot.hasError)
+            return _ErrorPanel(message: snapshot.error.toString());
           return builder(snapshot.data ?? const []);
         },
       ),
@@ -773,7 +943,8 @@ class _ApparitorComplaintDialog extends StatefulWidget {
   final Map<String, dynamic> reclamation;
 
   @override
-  State<_ApparitorComplaintDialog> createState() => _ApparitorComplaintDialogState();
+  State<_ApparitorComplaintDialog> createState() =>
+      _ApparitorComplaintDialogState();
 }
 
 class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
@@ -789,7 +960,8 @@ class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final responses = widget.reclamation['reponses'] as List<dynamic>? ?? const [];
+    final responses =
+        widget.reclamation['reponses'] as List<dynamic>? ?? const [];
     return AlertDialog(
       title: Text('${widget.reclamation['titre'] ?? 'Reclamation'}'),
       content: SizedBox(
@@ -805,8 +977,12 @@ class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
                 spacing: 8,
                 runSpacing: 8,
                 children: [
-                  StatusBadge(label: '${widget.reclamation['etudiant'] ?? '-'}', color: AppColors.primary),
-                  StatusBadge(label: '${widget.reclamation['code_cours'] ?? '-'}', color: AppColors.cyan),
+                  StatusBadge(
+                      label: '${widget.reclamation['etudiant'] ?? '-'}',
+                      color: AppColors.primary),
+                  StatusBadge(
+                      label: '${widget.reclamation['code_cours'] ?? '-'}',
+                      color: AppColors.cyan),
                   _statusBadge(_status),
                 ],
               ),
@@ -815,29 +991,35 @@ class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
                 initialValue: _status,
                 decoration: const InputDecoration(labelText: 'Statut'),
                 items: const [
-                  DropdownMenuItem(value: 'en_attente', child: Text('En attente')),
+                  DropdownMenuItem(
+                      value: 'en_attente', child: Text('En attente')),
                   DropdownMenuItem(value: 'en_cours', child: Text('En cours')),
-                  DropdownMenuItem(value: 'transmise_apparitorat', child: Text('Transmise')),
+                  DropdownMenuItem(
+                      value: 'transmise_apparitorat', child: Text('Transmise')),
                   DropdownMenuItem(value: 'resolue', child: Text('Resolue')),
                   DropdownMenuItem(value: 'rejetee', child: Text('Rejetee')),
                 ],
-                onChanged: (value) => setState(() => _status = value ?? _status),
+                onChanged: (value) =>
+                    setState(() => _status = value ?? _status),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: _messageController,
                 minLines: 3,
                 maxLines: 5,
-                decoration: const InputDecoration(labelText: 'Message de suivi'),
+                decoration:
+                    const InputDecoration(labelText: 'Message de suivi'),
               ),
               if (responses.isNotEmpty) ...[
                 const SizedBox(height: 16),
-                Text('Historique', style: Theme.of(context).textTheme.titleSmall),
+                Text('Historique',
+                    style: Theme.of(context).textTheme.titleSmall),
                 const SizedBox(height: 8),
                 for (final response in responses)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 8),
-                    child: Text('${response['auteur'] ?? '-'} : ${response['message'] ?? '-'}'),
+                    child: Text(
+                        '${response['auteur'] ?? '-'} : ${response['message'] ?? '-'}'),
                   ),
               ],
             ],
@@ -845,8 +1027,12 @@ class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
         ),
       ),
       actions: [
-        TextButton(onPressed: _saving ? null : () => Navigator.of(context).pop(false), child: const Text('Annuler')),
-        ElevatedButton(onPressed: _saving ? null : _save, child: Text(_saving ? 'Enregistrement...' : 'Enregistrer')),
+        TextButton(
+            onPressed: _saving ? null : () => Navigator.of(context).pop(false),
+            child: const Text('Annuler')),
+        ElevatedButton(
+            onPressed: _saving ? null : _save,
+            child: Text(_saving ? 'Enregistrement...' : 'Enregistrer')),
       ],
     );
   }
@@ -863,7 +1049,8 @@ class _ApparitorComplaintDialogState extends State<_ApparitorComplaintDialog> {
       Navigator.of(context).pop(true);
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString())));
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text(error.toString())));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -885,7 +1072,10 @@ class _InfoLine extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(label, style: const TextStyle(color: AppColors.textSecondary, fontWeight: FontWeight.w700)),
+            child: Text(label,
+                style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w700)),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -895,7 +1085,8 @@ class _InfoLine extends StatelessWidget {
               textAlign: TextAlign.right,
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w900),
+              style: const TextStyle(
+                  color: AppColors.textPrimary, fontWeight: FontWeight.w900),
             ),
           ),
         ],
@@ -918,11 +1109,14 @@ class _EmptyPanel extends StatelessWidget {
           constraints: const BoxConstraints(maxWidth: 520),
           child: Column(
             children: [
-              const Icon(Icons.dataset_rounded, color: AppColors.textSecondary, size: 44),
+              const Icon(Icons.dataset_rounded,
+                  color: AppColors.textSecondary, size: 44),
               const SizedBox(height: 12),
               Text(title, style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 6),
-              Text(message, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.textSecondary)),
+              Text(message,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: AppColors.textSecondary)),
             ],
           ),
         ),
@@ -950,23 +1144,29 @@ List<dynamic> _filter(List<dynamic> items, String query, List<String> fields) {
   final normalized = query.trim().toLowerCase();
   if (normalized.isEmpty) return items;
   return items.where((item) {
-    final haystack = fields.map((field) => '${item[field] ?? ''}').join(' ').toLowerCase();
+    final haystack =
+        fields.map((field) => '${item[field] ?? ''}').join(' ').toLowerCase();
     return haystack.contains(normalized);
   }).toList();
 }
 
-StatCard _stat(String title, String value, String trend, IconData icon, Color color) {
+StatCard _stat(
+    String title, String value, String trend, IconData icon, Color color) {
   return StatCard(
-    metric: KpiMetric(title: title, value: value, trend: trend, description: 'donnees MySQL'),
+    metric: KpiMetric(
+        title: title, value: value, trend: trend, description: 'donnees MySQL'),
     icon: icon,
     color: color,
   );
 }
 
 StatusBadge _notesBadge(String status) {
-  if (status == 'publiees') return const StatusBadge(label: 'Publiees', color: AppColors.success);
-  if (status == 'brouillon') return const StatusBadge(label: 'Brouillon', color: AppColors.warning);
-  return const StatusBadge(label: 'Non encodees', color: AppColors.textSecondary);
+  if (status == 'publiees')
+    return const StatusBadge(label: 'Publiees', color: AppColors.success);
+  if (status == 'brouillon')
+    return const StatusBadge(label: 'Brouillon', color: AppColors.warning);
+  return const StatusBadge(
+      label: 'Non encodees', color: AppColors.textSecondary);
 }
 
 StatusBadge _statusBadge(String status) {
@@ -988,8 +1188,10 @@ StatusBadge _statusBadge(String status) {
 }
 
 StatusBadge _riskBadge(String level) {
-  if (level == 'eleve') return const StatusBadge(label: 'Eleve', color: AppColors.danger);
-  if (level == 'moyen') return const StatusBadge(label: 'Moyen', color: AppColors.warning);
+  if (level == 'eleve')
+    return const StatusBadge(label: 'Eleve', color: AppColors.danger);
+  if (level == 'moyen')
+    return const StatusBadge(label: 'Moyen', color: AppColors.warning);
   return const StatusBadge(label: 'Faible', color: AppColors.success);
 }
 

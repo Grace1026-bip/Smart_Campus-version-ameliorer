@@ -14,6 +14,13 @@ typedef EnvoyeurRequeteHttp = Future<ReponseHttp> Function({
   String? body,
 });
 
+typedef EnvoyeurRequeteOctetsHttp = Future<ReponseOctetsHttp> Function({
+  required String methode,
+  required Uri uri,
+  required Map<String, String> headers,
+  String? body,
+});
+
 class ApiException implements Exception {
   ApiException(this.message, {this.statusCode, this.errors = const {}});
 
@@ -41,10 +48,14 @@ class ApiException implements Exception {
 }
 
 class ApiService {
-  ApiService({EnvoyeurRequeteHttp envoyer = envoyerRequeteHttp})
-      : _envoyer = envoyer;
+  ApiService({
+    EnvoyeurRequeteHttp envoyer = envoyerRequeteHttp,
+    EnvoyeurRequeteOctetsHttp? envoyerOctets,
+  })  : _envoyer = envoyer,
+        _envoyerOctets = envoyerOctets ?? envoyerRequeteOctetsHttp;
 
   final EnvoyeurRequeteHttp _envoyer;
+  final EnvoyeurRequeteOctetsHttp _envoyerOctets;
   String? _accessToken;
   String? _refreshToken;
   String? _roleActif;
@@ -136,6 +147,33 @@ class ApiService {
     return _decode(response);
   }
 
+  Future<List<int>> getBytes(String path) async {
+    var response = await _requestBytes(
+      methode: 'GET',
+      uri: _uri(path),
+      headers: _headers(),
+    );
+
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _actualiserSession();
+      if (refreshed) {
+        response = await _requestBytes(
+          methode: 'GET',
+          uri: _uri(path),
+          headers: _headers(),
+        );
+      }
+    }
+
+    if (response.statusCode >= 400) {
+      throw ApiException(
+        _messagePourStatut(response.statusCode),
+        statusCode: response.statusCode,
+      );
+    }
+    return response.bytes;
+  }
+
   Uri _uri(String path, [Map<String, dynamic> query = const {}]) {
     final uri = ApiConfig.endpoint(path);
     final cleanedQuery = <String, String>{};
@@ -224,6 +262,52 @@ class ApiService {
       rethrow;
     } catch (_) {
       throw ApiException(ApiConfig.serverUnavailableMessage);
+    }
+  }
+
+  Future<ReponseOctetsHttp> _requestBytes({
+    required String methode,
+    required Uri uri,
+    required Map<String, String> headers,
+    String? body,
+  }) async {
+    try {
+      return await _envoyerOctets(
+        methode: methode,
+        uri: uri,
+        headers: headers,
+        body: body,
+      );
+    } on ErreurTransportHttp catch (erreur) {
+      switch (erreur.type) {
+        case TypeErreurTransport.serveurInaccessible:
+          throw ApiException(ApiConfig.serverUnavailableMessage);
+        case TypeErreurTransport.delaiDepasse:
+          throw ApiException('La connexion a expire.');
+        case TypeErreurTransport.cors:
+          throw ApiException('Requete refusee par le navigateur.');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(ApiConfig.serverUnavailableMessage);
+    }
+  }
+
+  String _messagePourStatut(int statusCode) {
+    switch (statusCode) {
+      case 401:
+        return 'Session expiree.';
+      case 403:
+        return 'Acces refuse.';
+      case 404:
+        return 'Fiche introuvable.';
+      case 409:
+        return 'Fiche indisponible.';
+      case 500:
+        return 'Le serveur FastAPI a rencontre une erreur.';
+      default:
+        return 'Le telechargement a echoue.';
     }
   }
 

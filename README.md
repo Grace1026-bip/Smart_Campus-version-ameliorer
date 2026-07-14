@@ -119,6 +119,11 @@ Depuis la racine:
 .\scripts\demarrer_backend.bat
 ```
 
+Le script localise automatiquement le projet a partir de son emplacement,
+fonctionne depuis CMD, PowerShell ou un double-clic, et conserve la fenetre
+ouverte en cas d'erreur ou apres l'arret du serveur. Il refuse de lancer une
+seconde instance si le port `8000` est deja utilise.
+
 Commande equivalente depuis `backend/`:
 
 ```powershell
@@ -537,3 +542,99 @@ le build Web release est reussi. FastAPI repond HTTP 200 sur `/`,
 `/api/v1/statut` et le health check MySQL. Le Prompt 5A est techniquement
 valide et la migration `0006` est prete pour un deploiement controle ulterieur
 sur `smart_faculty`.
+
+## Prompt 5B - Projets et attribution des encadreurs - 2026-07-13
+
+La migration `20260713_0006` a ete deployee de facon controlee sur
+`smart_faculty` apres creation de la sauvegarde
+`backend/sauvegardes/smart_faculty_avant_20260713_0006_20260713_144212.sql`.
+La base est passee de `0005` a `0006`; elle compte 37 tables et la table
+`enrolements_academiques` est initialement vide. Les compteurs existants sont
+restes inchanges. FastAPI et le health check MySQL ont repondu normalement.
+
+L'appariteur gere des projets academiques rattaches a un etudiant possedant un
+enrolement valide. Un seul projet actif est autorise par etudiant et annee.
+Les types sont controles par le backend: `reseaux`, `systemes_embarques`,
+`intelligence_artificielle` et `genie_logiciel`.
+
+La migration additive `20260713_0007` ajoute les specialites explicites des
+enseignants et l'auteur de desactivation d'un encadrement. Elle a ete testee
+en downgrade puis upgrade sur `smart_faculty_test` et n'a pas ete appliquee a
+`smart_faculty` pendant 5B.
+
+L'appariteur peut configurer les specialites d'un enseignant actif, filtrer
+les enseignants compatibles, attribuer un principal, ajouter des
+co-encadreurs, remplacer explicitement le principal, desactiver un
+encadrement et archiver un projet. Les historiques ne sont pas supprimes.
+La convention SQL historique `coencadreur` est exposee par l'API sous le nom
+`co_encadreur`.
+
+Flutter remplace l'ancien ecran informatif par `Projets et encadrements`:
+liste, filtres, creation, modification, detail, specialites, attribution,
+remplacement, desactivation et archivage, avec etats vide, erreur, session
+expiree et absence d'enseignant compatible. La vue Etudiant, le PDF,
+les documents, la messagerie, les reunions, l'evaluation et la note du projet
+restent hors perimetre.
+
+Validation 5B: backend `134 passed` lors de chacune des deux executions
+completes; Flutter `44 passed` lors de chacune des deux executions completes.
+`flutter analyze` ne signale aucune erreur ni avertissement; les 14 informations
+restantes sont les 6 informations historiques `dart:html` et 8 recommandations
+de style deja presentes dans l'ancien ecran de supervision. Le build Web
+release est reussi et les trois health checks FastAPI repondent HTTP 200.
+Le role appariteur est obligatoire, l'auteur est toujours derive du token et
+aucun secret n'est expose. `.vscode/settings.json` n'a pas ete touche et
+aucun push n'a ete effectue.
+Le Prompt 5B est valide techniquement. `smart_faculty` reste en `0006`; la
+migration `20260713_0007` est validee sur `smart_faculty_test` mais reste a
+deployer separement sur la base principale.
+
+## Prompt 5C - Espace Etudiant : enrolement, fiche et encadreurs - 2026-07-14
+
+La migration `20260713_0007` a ete deployee de facon controlee sur
+`smart_faculty` apres creation de la sauvegarde
+`backend/sauvegardes/smart_faculty_avant_20260713_0007_20260714_022432.sql`.
+La base est en `0007`; la table des specialites est vide et les compteurs
+metier existants sont restes inchanges. Aucun jeu de demonstration n'a ete
+ajoute.
+
+L'etudiant utilise les routes:
+
+- `GET /api/v1/etudiants/moi/enrolements`;
+- `GET /api/v1/etudiants/moi/enrolements/{id}`;
+- `GET /api/v1/etudiants/moi/enrolements/{id}/fiche`;
+- `GET /api/v1/etudiants/moi/projets`;
+- `GET /api/v1/etudiants/moi/projets/{id}`;
+- `GET /api/v1/etudiants/moi/projets/{id}/encadreurs`.
+
+Le backend derive toujours l'etudiant du token. Une fiche PDF n'est
+telechargeable que pour un enrolement `valide`; elle est generee en memoire
+avec ReportLab `4.2.5`, contient le programme et les credits, et n'inclut
+aucun secret, paiement, note ou donnees d'un autre etudiant. Flutter expose
+`Mon enrolement` et `Mon projet`, avec telechargement Web authentifie, detail,
+etats vides, erreurs et session expiree. L'etudiant ne peut effectuer aucune
+mutation d'enrolement, de projet ou d'encadrement.
+
+Validation 5C: 141 tests backend reussis lors de chacune des deux executions,
+dont 7 tests dedies; 47 tests Flutter reussis lors de chacune des deux
+executions; analyse Flutter sans erreur ni avertissement avec les 14
+informations existantes; PDF de test A4 de 5 187 octets rendu visuellement
+sur 2 pages; build Web release reussi. Les health checks FastAPI `/`,
+`/api/v1/statut` et `/api/v1/sante/base-de-donnees` repondent HTTP 200.
+
+## Prompt 6A - Espace Etudiant academique - 2026-07-14
+
+Le backend limite les cours et la Valve aux `InscriptionCours` actives de
+l'etudiant, sa promotion, un cours actif et l'annee academique active. Le
+profil est derive du token. `EnrolementAcademique` reste le dossier annuel
+administratif; les inscriptions de cours actives definissent le perimetre MVP.
+
+Les routes ajoutees sont `GET /api/v1/etudiants/moi/tableau-de-bord`,
+`GET /api/v1/etudiants/moi/cours`, `GET /api/v1/etudiants/moi/cours/{id}`,
+`GET /api/v1/etudiants/moi/cours/{id}/notes` et
+`GET /api/v1/etudiants/moi/historique-academique`. Brouillons, archives,
+evaluations non publiees et donnees internes sont masques. Le zero est une
+note valide. L'interface affiche uniquement les donnees reelles et ne fabrique
+ni moyenne, presence, paiement, alerte ou risque. L'historique groupe annee,
+promotion, semestre et cours; le moteur des resultats existant reste utilise.
+Il n'y a pas de migration 6A et `smart_faculty` n'est pas modifiee.

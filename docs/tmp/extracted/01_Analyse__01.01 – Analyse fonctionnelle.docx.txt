@@ -1,0 +1,65 @@
+SMART FACULTY
+01.01 – Analyse fonctionnelle
+Introduction
+L’analyse fonctionnelle est une étape fondamentale dans le développement d’un projet logiciel. Elle consiste à identifier et à décrire les fonctionnalités que le système devra offrir afin de répondre aux besoins des utilisateurs.
+Dans le cadre du projet Smart Faculty, cette analyse permet de comprendre le fonctionnement global de la plateforme avant sa conception et son développement. Elle constitue la référence principale qui guidera les choix techniques et fonctionnels durant toute la réalisation du projet.
+Présentation fonctionnelle
+Smart Faculty est une plateforme intelligente de gestion académique destinée à une faculté universitaire. Son objectif est de centraliser les activités académiques dans un environnement numérique unique afin de faciliter le travail des étudiants, des enseignants et des responsables académiques.
+Le système est organisé autour de plusieurs modules fonctionnels qui collaborent entre eux pour assurer une gestion efficace des informations académiques.
+Chaque utilisateur accède uniquement aux fonctionnalités correspondant à son rôle grâce à un système de gestion des permissions.
+Acteurs du système
+Le système comporte cinq catégories principales d’utilisateurs :
+Administrateur
+Doyen
+Appariteur
+Enseignant
+Étudiant
+Chaque acteur dispose d’un espace personnel et de fonctionnalités adaptées à ses responsabilités.
+Fonctionnement général
+Le fonctionnement de Smart Faculty repose sur un principe simple.
+L’utilisateur s’authentifie à l’aide de son adresse électronique et de son mot de passe.
+Après authentification, le système identifie automatiquement son rôle et affiche le tableau de bord correspondant.
+Chaque utilisateur peut alors accéder uniquement aux informations et aux fonctionnalités qui lui sont autorisées.
+Toutes les opérations réalisées sont enregistrées dans la base de données afin de garantir la cohérence et la sécurité des informations académiques.
+Modules fonctionnels
+Le système est composé des modules suivants :
+Gestion des utilisateurs
+Permet l’authentification, la gestion des comptes et des rôles.
+Gestion académique
+Permet de gérer les promotions, les cours et les affectations des enseignants.
+Valve académique
+Permet aux enseignants de publier des annonces, des documents et les notes de leurs cours.
+Gestion des notes
+Permet l’encodage, la publication et la consultation des résultats académiques.
+Gestion des réclamations
+Permet aux étudiants de soumettre des réclamations et aux responsables de les traiter.
+Gestion minimale des présences, absences et retards
+Permet d’enregistrer les présences, absences et retards des étudiants afin de mieux suivre leur assiduité et d’alimenter le module de détection des étudiants à risque.
+Détection des étudiants à risque
+Analyse les performances académiques afin d’identifier les étudiants nécessitant un accompagnement.
+Tableau de bord décisionnel
+Présente les indicateurs statistiques destinés aux responsables académiques.
+Notifications
+Informe automatiquement les utilisateurs des événements importants liés à leur activité académique.
+Principe de fonctionnement
+Le fonctionnement général de Smart Faculty suit les étapes suivantes :
+L’utilisateur se connecte à la plateforme.
+Le système vérifie son identité.
+Le système identifie son rôle.
+Le tableau de bord correspondant est affiché.
+L’utilisateur réalise les opérations autorisées.
+Les données sont enregistrées dans la base de données.
+Les autres utilisateurs concernés reçoivent automatiquement les mises à jour nécessaires.
+Interactions entre les modules
+Les modules de Smart Faculty ne fonctionnent pas de manière indépendante.
+Par exemple :
+La publication des notes alimente automatiquement le module des résultats.
+Les résultats mettent à jour les moyennes et les crédits.
+Les nouvelles moyennes sont utilisées par le module de détection des étudiants à risque.
+Les présences, absences et retards alimentent également le module de détection des étudiants à risque.
+Les annonces publiées dans la Valve génèrent des notifications pour les étudiants concernés.
+Les réclamations sont directement associées aux cours et aux enseignants concernés.
+Cette interaction garantit la cohérence du système et limite les interventions manuelles.
+Conclusion
+L’analyse fonctionnelle de Smart Faculty montre que la plateforme repose sur une architecture modulaire où chaque composant remplit une fonction précise tout en collaborant avec les autres. Cette organisation facilite le développement, améliore la maintenance et permet une évolution progressive de la plateforme.
+Ce document constitue la référence fonctionnelle générale du projet et servira de base à la définition détaillée des besoins et au développement des différents modules.

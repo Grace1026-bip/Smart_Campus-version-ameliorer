@@ -1,0 +1,89 @@
+SMART FACULTY
+02.04 – Architecture des API REST
+Introduction
+Les API REST constituent le lien entre le frontend développé avec Flutter et le backend développé avec FastAPI. Elles permettent l’échange sécurisé des données entre les utilisateurs et le serveur.
+Chaque fonctionnalité de Smart Faculty est accessible à travers une ou plusieurs routes API.
+Objectifs des API
+Les API REST ont pour objectifs :
+assurer la communication entre Flutter et FastAPI ;
+sécuriser les échanges de données ;
+centraliser les traitements métier ;
+faciliter l’évolution du système.
+Modules d’API
+Les API sont organisées par domaine fonctionnel.
+Authentification
+Connexion.
+Déconnexion.
+Vérification de session.
+Changement de mot de passe.
+Réinitialisation du mot de passe.
+Utilisateurs
+Consultation des utilisateurs.
+Création d’un utilisateur.
+Modification d’un utilisateur.
+Désactivation d’un compte.
+Consultation du profil.
+Promotions
+Liste des promotions.
+Création d’une promotion.
+Modification d’une promotion.
+Suppression d’une promotion.
+Cours
+Liste des cours.
+Création d’un cours.
+Modification d’un cours.
+Affectation d’un enseignant.
+Consultation des informations d’un cours.
+Notes
+Création d’une évaluation.
+Encodage des notes.
+Modification des notes.
+Publication des résultats.
+Consultation des résultats.
+Présences, absences et retards
+Enregistrement des présences par cours.
+Consultation des présences par étudiant.
+Consultation des absences et retards par promotion.
+Exploitation des présences dans la détection des étudiants à risque.
+Valve académique
+Publication d’une annonce.
+Publication d’un document.
+Consultation des publications.
+Suppression d’une publication.
+Réclamations
+Création d’une réclamation.
+Consultation des réclamations.
+Réponse à une réclamation.
+Modification du statut.
+Notifications
+Consultation des notifications.
+Marquage comme lue.
+Suppression d’une notification.
+Tableau de bord
+Tableau de bord étudiant.
+Tableau de bord enseignant.
+Tableau de bord appariteur.
+Tableau de bord doyen.
+Tableau de bord administrateur.
+Campus Analytics
+Taux de réussite.
+Taux d’échec.
+Statistiques par promotion.
+Étudiants à risque.
+Performances des cours.
+Format des échanges
+Toutes les API communiquent au format JSON.
+Chaque requête contient les informations nécessaires au traitement.
+Chaque réponse renvoie :
+un statut ;
+un message ;
+les données demandées si l’opération réussit.
+Sécurité des API
+Toutes les routes protégées nécessitent une authentification.
+Le backend vérifie :
+l’identité de l’utilisateur ;
+son rôle ;
+ses permissions.
+Aucune opération sensible n’est exécutée sans autorisation.
+Conclusion
+Les API REST constituent le point de communication central entre le frontend Flutter et le backend FastAPI. Elles garantissent une architecture moderne, sécurisée et évolutive permettant à Smart Faculty de répondre efficacement aux besoins de ses utilisateurs.

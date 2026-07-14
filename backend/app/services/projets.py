@@ -5,7 +5,7 @@ from datetime import datetime
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.exceptions.erreurs import AccesInterdit, ErreurApplication, RessourceIntrouvable
+from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, ErreurApplication, RessourceIntrouvable
 from app.modeles.academique import AnneeAcademique, Enseignant, Etudiant, Promotion
 from app.modeles.enrolements import EnrolementAcademique
 from app.modeles.projets import EncadrementProjet, ProjetAcademique, ROLES_ENCADREMENT, STATUTS_PROJET, TYPES_PROJET
@@ -198,6 +198,7 @@ def _role_api(role: str) -> str:
 
 
 def _charger_projet_gestion(session: Session, projet_id: int) -> ProjetAcademique:
+    session.expire_all()
     projet = session.scalar(
         select(ProjetAcademique)
         .options(
@@ -601,6 +602,7 @@ def configurer_specialites_enseignant(
                 )
             )
     session.commit()
+    session.expire_all()
     return obtenir_specialites_enseignant(session, enseignant.id)
 
 
@@ -709,3 +711,84 @@ def desactiver_encadrement_appariteur(
         encadrement.desactive_par_utilisateur_id = utilisateur_id
         session.commit()
     return _serialiser_projet_gestion(_charger_projet_gestion(session, projet.id))
+
+
+def _etudiant_connecte(session: Session, utilisateur_id: int) -> Etudiant:
+    etudiant = session.scalar(
+        select(Etudiant)
+        .options(joinedload(Etudiant.utilisateur))
+        .where(Etudiant.utilisateur_id == utilisateur_id)
+    )
+    if etudiant is None or etudiant.utilisateur.statut != "actif" or etudiant.statut_academique != "actif":
+        raise AccesInterdit("Profil etudiant indisponible")
+    return etudiant
+
+
+def _requete_projets_etudiant(etudiant_id: int):
+    return (
+        select(ProjetAcademique)
+        .options(
+            joinedload(ProjetAcademique.promotion),
+            joinedload(ProjetAcademique.annee_academique),
+            selectinload(ProjetAcademique.encadrements)
+            .joinedload(EncadrementProjet.enseignant)
+            .joinedload(Enseignant.utilisateur),
+        )
+        .where(
+            ProjetAcademique.etudiant_id == etudiant_id,
+            ProjetAcademique.statut != "archive",
+        )
+        .order_by(ProjetAcademique.titre, ProjetAcademique.id)
+    )
+
+
+def _serialiser_projet_etudiant(projet: ProjetAcademique) -> dict:
+    encadreurs = [
+        {
+            "nom": _nom(item.enseignant.utilisateur),
+            "grade": item.enseignant.grade,
+            "role_encadrement": "co_encadreur" if item.role_encadrement == "coencadreur" else "principal",
+            "date_attribution": item.date_attribution,
+        }
+        for item in projet.encadrements
+        if item.actif
+    ]
+    encadreurs.sort(key=lambda item: (item["role_encadrement"] != "principal", item["nom"]))
+    return {
+        "id": projet.id,
+        "titre": projet.titre,
+        "type_projet": projet.type_projet,
+        "type_projet_libelle": LIBELLES_TYPES_PROJET[projet.type_projet],
+        "description": projet.description,
+        "statut": projet.statut,
+        "promotion": {
+            "id": projet.promotion.id,
+            "nom": projet.promotion.nom,
+            "niveau": projet.promotion.niveau,
+        },
+        "annee_academique": _annee(projet.annee_academique),
+        "encadreurs": encadreurs,
+        "nombre_encadreurs": len(encadreurs),
+    }
+
+
+def lister_projets_etudiant(session: Session, utilisateur_id: int) -> dict:
+    etudiant = _etudiant_connecte(session, utilisateur_id)
+    projets = session.scalars(_requete_projets_etudiant(etudiant.id)).unique().all()
+    elements = [_serialiser_projet_etudiant(projet) for projet in projets]
+    return {"elements": elements, "total": len(elements)}
+
+
+def obtenir_projet_etudiant(session: Session, utilisateur_id: int, projet_id: int) -> dict:
+    etudiant = _etudiant_connecte(session, utilisateur_id)
+    projet = session.scalar(
+        _requete_projets_etudiant(etudiant.id).where(ProjetAcademique.id == projet_id)
+    )
+    if projet is None:
+        raise RessourceIntrouvable("Projet academique introuvable")
+    return _serialiser_projet_etudiant(projet)
+
+
+def lister_encadreurs_etudiant(session: Session, utilisateur_id: int, projet_id: int) -> dict:
+    projet = obtenir_projet_etudiant(session, utilisateur_id, projet_id)
+    return {"projet_id": projet["id"], "encadreurs": projet["encadreurs"]}
