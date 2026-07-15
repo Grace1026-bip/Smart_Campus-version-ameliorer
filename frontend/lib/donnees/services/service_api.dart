@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../../core/config/api_config.dart';
 import 'client_api_reponse.dart';
 import 'client_api_stub.dart';
+import 'client_multipart_reponse.dart';
+import 'client_multipart_stub.dart';
 import 'service_persistence.dart';
 
 typedef EnvoyeurRequeteHttp = Future<ReponseHttp> Function({
@@ -51,11 +53,14 @@ class ApiService {
   ApiService({
     EnvoyeurRequeteHttp envoyer = envoyerRequeteHttp,
     EnvoyeurRequeteOctetsHttp? envoyerOctets,
+    EnvoyeurMultipartHttp? envoyerMultipart,
   })  : _envoyer = envoyer,
-        _envoyerOctets = envoyerOctets ?? envoyerRequeteOctetsHttp;
+        _envoyerOctets = envoyerOctets ?? envoyerRequeteOctetsHttp,
+        _envoyerMultipart = envoyerMultipart ?? envoyerRequeteMultipart;
 
   final EnvoyeurRequeteHttp _envoyer;
   final EnvoyeurRequeteOctetsHttp _envoyerOctets;
+  final EnvoyeurMultipartHttp _envoyerMultipart;
   String? _accessToken;
   String? _refreshToken;
   String? _roleActif;
@@ -144,6 +149,33 @@ class ApiService {
       uri: _uri(path),
       headers: _headers(),
     );
+    return _decode(response);
+  }
+
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    Map<String, String> fields = const {},
+    required List<MultipartPart> parts,
+  }) async {
+    var response = await _requestMultipart(
+      methode: 'POST',
+      uri: _uri(path),
+      headers: _headers(),
+      fields: fields,
+      parts: parts,
+    );
+    if (response.statusCode == 401 && _refreshToken != null) {
+      final refreshed = await _actualiserSession();
+      if (refreshed) {
+        response = await _requestMultipart(
+          methode: 'POST',
+          uri: _uri(path),
+          headers: _headers(),
+          fields: fields,
+          parts: parts,
+        );
+      }
+    }
     return _decode(response);
   }
 
@@ -248,6 +280,37 @@ class ApiService {
         uri: uri,
         headers: headers,
         body: body,
+      );
+    } on ErreurTransportHttp catch (erreur) {
+      switch (erreur.type) {
+        case TypeErreurTransport.serveurInaccessible:
+          throw ApiException(ApiConfig.serverUnavailableMessage);
+        case TypeErreurTransport.delaiDepasse:
+          throw ApiException('La connexion a expire.');
+        case TypeErreurTransport.cors:
+          throw ApiException('Requete refusee par le navigateur.');
+      }
+    } on ApiException {
+      rethrow;
+    } catch (_) {
+      throw ApiException(ApiConfig.serverUnavailableMessage);
+    }
+  }
+
+  Future<ReponseHttp> _requestMultipart({
+    required String methode,
+    required Uri uri,
+    required Map<String, String> headers,
+    required Map<String, String> fields,
+    required List<MultipartPart> parts,
+  }) async {
+    try {
+      return await _envoyerMultipart(
+        methode: methode,
+        uri: uri,
+        headers: headers,
+        fields: fields,
+        parts: parts,
       );
     } on ErreurTransportHttp catch (erreur) {
       switch (erreur.type) {

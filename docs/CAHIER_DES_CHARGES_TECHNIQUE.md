@@ -730,3 +730,51 @@ Validation Prompt 7A : migration downgrade/upgrade reussie sur
 passed`, analyse Flutter sans erreur ni avertissement avec 14 informations
 historiques. La base `smart_faculty` et `.vscode/settings.json` restent hors
 perimetre.
+
+## Prompt 7B - Consultation, absences et corrections
+
+La fermeture d'une `SeanceAcademique` genere les absences manquantes des
+etudiants actifs, enroles et inscrits au cours. L'operation est idempotente et
+ne remplace jamais un statut `present`, `retard` ou `refuse`. Le resume de
+seance et le taux de presence sont calcules dans le backend.
+
+Les routes de consultation utilisent exclusivement l'identite issue du token :
+Etudiant pour ses propres presences, Enseignant pour ses cours affectes et
+Chef de promotion pour sa promotion. Les champs financiers restent reserves
+au controle Surveillant et ne sont pas exposes dans les vues pedagogiques.
+
+Une correction de statut exige un motif et un role `surveillant` ou
+`appariteur`. La table additive `corrections_presences_academiques`, creee par
+`20260715_0009`, conserve l'ancienne valeur, la nouvelle valeur, la
+justification, l'auteur et la date ; `JournalAudit` est egalement alimente.
+La migration 0009 est appliquee uniquement a `smart_faculty_test` pendant ce
+prompt.
+
+## Prompt 7C-A - Fondation biometrique
+
+La capture camera Flutter utilise le plugin officiel `camera` et un composant
+partage qui gere permissions, cycle de vie, changement de camera et captures
+multiples. Les images sont transmises en multipart a FastAPI pour validation.
+Le backend ne conserve pas les images originales et ne recoit pas de token,
+de mot de passe ou d'encodage fourni par le client.
+
+Les tables `profils_biometriques` et `encodages_faciaux` sont ajoutees par la
+migration additive `20260715_0010_fondation_biometrique`. Le profil actif,
+le consentement, la version du moteur, le seuil, la revocation et l'historique
+sont separes des encodages binaires. Un reenrolement revoque l'ancien profil
+et conserve sa trace. Le moteur facial est une dependance optionnelle
+injectable ; aucune reconnaissance reelle n'est simulee lorsque le moteur
+n'est pas installe.
+
+Les routes d'enrolement sont reservees a l'Appariteur. La reconnaissance en
+seance est reservee au Surveillant et reutilise le service central de controle
+Presence. Un candidat inconnu ou ambigu est refuse, la contrainte d'unicite
+de presence reste active, et les champs financiers ne sont pas exposes dans
+la reponse biometrique.
+
+La migration 0010 a ete verifiee par downgrade/upgrade sur
+`smart_faculty_test`; `smart_faculty` est restee en 0009 sans donnees
+biometriques. La validation compte 174 tests backend et 62 tests Flutter
+reussis lors de deux executions completes, sans erreur d'analyse Flutter, et
+un build Web release reussi. L'anti-spoofing et la vivacite renforcee sont
+hors perimetre et reportes au Prompt 7C-B.

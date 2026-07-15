@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, time
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 TypeCoursSeance = Literal["cours_1", "cours_2", "autre"]
@@ -26,3 +26,22 @@ class SeanceAcademiqueCreation(BaseModel):
 class ControleAccesPresence(BaseModel):
     matricule: str = Field(min_length=2, max_length=80)
     statut: Literal["present", "retard"] = "present"
+    methode_identification: Literal["manuelle", "matricule", "reconnaissance_faciale"] = "matricule"
+
+    @field_validator("matricule")
+    @classmethod
+    def matricule_normalise(cls, valeur: str) -> str:
+        return valeur.strip()
+
+
+class CorrectionPresence(BaseModel):
+    nouveau_statut: Literal["present", "retard", "absent", "refuse"]
+    motif: str = Field(min_length=3, max_length=500)
+
+    @field_validator("motif")
+    @classmethod
+    def motif_normalise(cls, valeur: str) -> str:
+        valeur = valeur.strip()
+        if len(valeur) < 3:
+            raise ValueError("Le motif de correction est obligatoire")
+        return valeur

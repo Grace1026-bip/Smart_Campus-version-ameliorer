@@ -1276,3 +1276,62 @@ Verification : le cycle downgrade/upgrade de `20260714_0008` a reussi sur
 Flutter a donne `56 passed` ; `flutter analyze` conserve 14 informations
 historiques sans erreur ni avertissement. La base principale n'a pas ete
 utilisee pour les tests et `.vscode/settings.json` n'a pas ete touche.
+
+## 2026-07-15 - Prompt 7B - Consultation, absences et corrections
+
+Deploiement controle : une sauvegarde SQL non versionnee de `smart_faculty` a
+ete creee avant l'upgrade. La migration `20260714_0008` est maintenant en
+`head` sur `smart_faculty`. La table historique `cours` etant MyISAM dans la
+base principale, la migration conserve les cles et index applicables sans
+convertir cette table historique ni modifier ses donnees. La base de test
+reste la seule cible des tests.
+
+Implementation : la fermeture genere les absences manquantes de maniere
+transactionnelle et idempotente. Les routes de consultation sont limitees par
+le token a l'Etudiant, aux cours de l'Enseignant et a la promotion du Chef.
+Le backend fournit les resumes et le taux de presence. Les corrections
+justifiees apres fermeture sont conservees dans la migration additive
+`20260715_0009` et journalisees ; aucun pourcentage financier n'est expose aux
+vues pedagogiques.
+
+La navigation Flutter ajoute `Mes presences`, `Presences de mes cours` et
+`Presences` pour le Chef. Le Surveillant dispose du resume de fermeture, des
+absences et d'un dialogue de correction avec motif obligatoire. La camera, la
+reconnaissance faciale, les paiements et le theme restent hors perimetre.
+
+Validation finale 7B : backend `169 passed` lors de chacune des deux
+executions completes, dont 17 tests dedies ; Flutter `60 passed` lors de
+chacune des deux executions completes, dont les tests de service Presence.
+`flutter analyze` conserve uniquement les 14 informations historiques. Le
+build Web release et les trois health checks FastAPI sont reussis. La base
+principale est en `20260714_0008`, la base de test en `20260715_0009`, et
+aucune donnee de `smart_faculty` n'a ete creee par les tests.
+
+## 2026-07-15 - Prompt 7C-A - Fondation biometrique
+
+L'audit a confirme la branche `main` au commit `b9174fc`, correspondant au
+socle 7A, avec les changements 7B conserves dans l'arbre de travail. Une
+sauvegarde SQL de `smart_faculty` a ete creee avant le deploiement controle de
+0009. La base principale est en 0009 ; la migration biometrique 0010 a ete
+appliquee et testee par downgrade/upgrade uniquement sur `smart_faculty_test`.
+La base principale ne contient aucune table biometrique et aucun test n'y
+ecrit.
+
+La fondation ajoute des profils et encodages biometriques separes, avec
+consentement, revocation, reenrolement versionne, empreinte SHA-256 et
+encodage binaire temporaire. Les images originales, tokens et mots de passe
+ne sont pas stockes. L'enrolement est reserve a l'Appariteur ; la
+reconnaissance en seance est reservee au Surveillant et delegue au controle
+Presence central. Le moteur facial reel reste optionnel et indisponible dans
+l'environnement actuel ; aucune reconnaissance simulee n'est annoncee.
+
+Flutter utilise le plugin `camera` et un composant de capture partage. Les
+etats camera absente, permission, chargement, erreur et session sont traites.
+L'anti-spoofing et la vivacite renforcee sont reportes au 7C-B.
+
+Validation : 174 tests backend reussis deux fois, 62 tests Flutter reussis
+deux fois, 5 tests biometriques cibles reussis, `flutter analyze` sans erreur
+ni avertissement avec 14 informations historiques, build Web release reussi
+et health checks FastAPI HTTP 200. La verification interactive Chrome n'a pas
+pu etre realisee dans cette session, l'extension de controle etant
+indisponible et le port Flutter 52100 etant deja occupe.

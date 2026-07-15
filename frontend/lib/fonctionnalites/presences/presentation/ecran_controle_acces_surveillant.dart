@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:camera/camera.dart';
 
 import '../../../commun/composants/panneau_section.dart';
+import '../../../commun/composants/capture_camera_partagee.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../donnees/services/service_api.dart';
@@ -24,6 +26,7 @@ class _ControleAccesSurveillantScreenState
   List<dynamic> _presences = const [];
   Map<String, dynamic>? _selection;
   Map<String, dynamic>? _dernierControle;
+  Map<String, dynamic>? _resume;
   Object? _erreur;
   bool _chargement = true;
   bool _actionEnCours = false;
@@ -110,7 +113,8 @@ class _ControleAccesSurveillantScreenState
       if (action == 'ouvrir') {
         await _service.ouvrirSeance(id);
       } else {
-        await _service.fermerSeance(id);
+        final resultat = await _service.fermerSeance(id);
+        if (mounted) setState(() => _resume = _map(resultat['resume']));
       }
       await _charger();
     });
@@ -127,6 +131,20 @@ class _ControleAccesSurveillantScreenState
       final resultat = await _service.controlerAcces(
         seanceId: id,
         matricule: matricule,
+      );
+      if (!mounted) return;
+      setState(() => _dernierControle = resultat);
+      await _chargerPresences(_selection!);
+    });
+  }
+
+  Future<void> _reconnaitre(List<XFile> images) async {
+    final id = _asInt(_selection?['id']);
+    if (id == null) return;
+    await _executer(() async {
+      final resultat = await _service.reconnaitreFacial(
+        seanceId: id,
+        images: images,
       );
       if (!mounted) return;
       setState(() => _dernierControle = resultat);
@@ -222,14 +240,18 @@ class _ControleAccesSurveillantScreenState
         if (_selection != null) ...[
           const SizedBox(height: 18),
           _controlePanel(context),
+          if (_resume != null) ...[
+            const SizedBox(height: 18),
+            _resumePanel(context),
+          ],
         ],
         const SizedBox(height: 18),
-        const SectionPanel(
-          title: 'Reconnaissance faciale',
-          subtitle: 'Fonctionnalite future',
-          child: Text(
-              'Reconnaissance faciale - bientot disponible. Le controle actuel reste manuel.'),
-        ),
+        if (_selection != null && _selection!['statut'] == 'ouverte')
+          SectionPanel(
+            title: 'Reconnaissance faciale',
+            subtitle: 'Trois captures, puis verification backend.',
+            child: CaptureCameraPartagee(onCapturesTerminees: _reconnaitre),
+          ),
       ],
     );
   }
@@ -248,6 +270,7 @@ class _ControleAccesSurveillantScreenState
             setState(() {
               _selection = item;
               _dernierControle = null;
+              _resume = null;
               _erreur = null;
             });
             _chargerPresences(item);
@@ -333,12 +356,117 @@ class _ControleAccesSurveillantScreenState
               style: Theme.of(context).textTheme.titleSmall),
           for (final presence in _presences)
             if (presence is Map)
-              Text(
-                  '${presence['etudiant']?['matricule'] ?? '-'} : ${presence['statut'] ?? '-'}'),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                        '${presence['etudiant']?['matricule'] ?? '-'} : ${presence['statut'] ?? '-'}'),
+                  ),
+                  IconButton(
+                    tooltip: 'Corriger avec justification',
+                    onPressed: _actionEnCours
+                        ? null
+                        : () => _demanderCorrection(
+                            Map<String, dynamic>.from(presence)),
+                    icon: const Icon(Icons.edit_note_rounded),
+                  ),
+                ],
+              ),
         ],
       ]),
     );
   }
+
+  Widget _resumePanel(BuildContext context) {
+    final resume = _resume ?? const <String, dynamic>{};
+    return SectionPanel(
+      title: 'Resume apres fermeture',
+      subtitle: 'Les absences manquantes ont ete generees sans doublon.',
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        children: [
+          Chip(label: Text('Presents : ${resume['presents'] ?? 0}')),
+          Chip(label: Text('Retards : ${resume['retards'] ?? 0}')),
+          Chip(label: Text('Absents : ${resume['absents'] ?? 0}')),
+          Chip(label: Text('Refuses : ${resume['refuses'] ?? 0}')),
+          Chip(
+              label: Text(
+                  'Nouvelles absences : ${resume['absences_creees'] ?? 0}')),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _demanderCorrection(Map<String, dynamic> presence) async {
+    final seanceId = _asInt(_selection?['id']);
+    final presenceId = _asInt(presence['id']);
+    if (seanceId == null || presenceId == null) return;
+    var nouveauStatut = '${presence['statut'] ?? 'present'}';
+    final motifController = TextEditingController();
+    final resultat = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Confirmer la correction'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: nouveauStatut,
+                items: const [
+                  DropdownMenuItem(value: 'present', child: Text('Present')),
+                  DropdownMenuItem(value: 'retard', child: Text('Retard')),
+                  DropdownMenuItem(value: 'absent', child: Text('Absent')),
+                  DropdownMenuItem(value: 'refuse', child: Text('Refuse')),
+                ],
+                onChanged: (value) => setDialogState(
+                    () => nouveauStatut = value ?? nouveauStatut),
+                decoration: const InputDecoration(labelText: 'Nouveau statut'),
+              ),
+              TextField(
+                controller: motifController,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                    labelText: 'Motif obligatoire',
+                    hintText: 'Justification de la correction'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Annuler')),
+            FilledButton(
+              onPressed: () {
+                if (motifController.text.trim().length < 3) return;
+                Navigator.pop(dialogContext, {
+                  'nouveau_statut': nouveauStatut,
+                  'motif': motifController.text.trim(),
+                });
+              },
+              child: const Text('Confirmer'),
+            ),
+          ],
+        ),
+      ),
+    );
+    motifController.dispose();
+    if (resultat == null) return;
+    await _executer(() async {
+      await _service.corrigerPresence(
+        seanceId: seanceId,
+        presenceId: presenceId,
+        nouveauStatut: resultat['nouveau_statut']!,
+        motif: resultat['motif']!,
+      );
+      await _chargerPresences(_selection!);
+      _message('Correction enregistree avec sa justification.');
+    });
+  }
+
+  static Map<String, dynamic> _map(dynamic value) =>
+      value is Map ? Map<String, dynamic>.from(value) : <String, dynamic>{};
 
   static int? _asInt(dynamic value) =>
       value is num ? value.toInt() : int.tryParse('$value');

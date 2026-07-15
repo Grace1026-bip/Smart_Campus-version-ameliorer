@@ -131,6 +131,75 @@ void main() {
     expect(result, isEmpty);
     expect(fake.requests.single.uri.path, '/api/v1/chef-promotion/seances');
   });
+
+  test('recupere les presences et le resume de l etudiant', () async {
+    final fake = _FakeHttp([
+      _success({
+        'elements': [
+          {'statut': 'absent'}
+        ],
+        'resume': {'taux_presence': 0.0}
+      })
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final result = await const PresencesApiService().presencesEtudiant(
+      statut: 'absent',
+    );
+
+    expect(result['resume']['taux_presence'], 0.0);
+    expect(fake.requests.single.uri.path, '/api/v1/etudiants/moi/presences');
+    expect(fake.requests.single.uri.queryParameters['statut'], 'absent');
+  });
+
+  test('recupere les seances de l enseignant et leur detail', () async {
+    final fake = _FakeHttp([
+      _success({'elements': []}),
+      _success({'elements': []}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    await const PresencesApiService().seancesEnseignant(statut: 'fermee');
+    await const PresencesApiService().presencesSeanceEnseignant(12);
+
+    expect(fake.requests.map((request) => request.uri.path), [
+      '/api/v1/enseignants/moi/seances',
+      '/api/v1/enseignants/moi/seances/12/presences',
+    ]);
+  });
+
+  test('recupere le resume de fermeture', () async {
+    final fake = _FakeHttp([
+      _success({'presents': 1, 'absences_creees': 2})
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final result = await const PresencesApiService().resumeSeance(12);
+
+    expect(result['absences_creees'], 2);
+    expect(
+        fake.requests.single.uri.path, '/api/v1/surveillant/seances/12/resume');
+  });
+
+  test('enregistre une correction avec motif obligatoire', () async {
+    final fake = _FakeHttp([
+      _success({'statut': 'retard'})
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final result = await const PresencesApiService().corrigerPresence(
+      seanceId: 12,
+      presenceId: 21,
+      nouveauStatut: 'retard',
+      motif: 'Justification verifiee',
+    );
+
+    expect(result['statut'], 'retard');
+    expect(fake.requests.single.methode, 'PATCH');
+    expect(fake.requests.single.uri.path,
+        '/api/v1/surveillant/seances/12/presences/21');
+    expect(fake.requests.single.body, contains('Justification verifiee'));
+  });
 }
 
 class _FakeHttp {

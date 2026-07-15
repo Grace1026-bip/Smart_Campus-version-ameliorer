@@ -653,3 +653,42 @@ note valide. L'interface affiche uniquement les donnees reelles et ne fabrique
 ni moyenne, presence, paiement, alerte ou risque. L'historique groupe annee,
 promotion, semestre et cours; le moteur des resultats existant reste utilise.
 Il n'y a pas de migration 6A et `smart_faculty` n'est pas modifiee.
+
+## Presences academiques - Prompt 7B
+
+Le module Presence complete le socle 7A avec la generation idempotente des
+absences a la fermeture, les resumes calcules par FastAPI et les consultations
+Etudiant, Enseignant et Chef de promotion. Chaque perimetre est derive du
+token ; Flutter ne calcule pas le taux officiel et les vues de consultation ne
+retournent pas les donnees financieres.
+
+Les corrections sont reservees au Surveillant autorise ou a l'Appariteur,
+exigent un motif et sont conservees dans l'historique
+`corrections_presences_academiques` par la migration additive
+`20260715_0009`. Cette migration est testee sur `smart_faculty_test` et n'est
+pas appliquee automatiquement a `smart_faculty`.
+
+## Prompt 7C-A - Fondation biometrique et camera controlee - 2026-07-15
+
+La fondation biometrique est decrite dans
+`docs/RECONNAISSANCE_FACIALE_MVP.md`. L'Appariteur peut enroler ou reenroler
+un etudiant avec consentement et trois a cinq captures camera ; le
+Surveillant peut demander une identification faciale pendant une seance
+ouverte. Le backend ne stocke pas les images originales et reutilise le
+controle d'acces Presence pour appliquer les regles academiques et
+administratives. L'ancien profil est revoque lors d'un reenrolement et son
+historique est conserve.
+
+La migration `20260715_0010_fondation_biometrique` a ete testee par
+downgrade/upgrade sur `smart_faculty_test`. `smart_faculty` reste en 0009 et
+ne contient aucune table biometrique. Le moteur facial reel est optionnel et
+non installe dans l'environnement de validation ; aucune identification
+reelle n'est presentee comme disponible. Le plugin Flutter officiel `camera`
+`0.12.0+2` est utilise pour la capture controlee.
+
+Validation 7C-A : 174 tests backend et 62 tests Flutter reussis lors de deux
+executions completes, 5 tests biometriques cibles reussis, analyse Flutter
+sans erreur ni avertissement avec 14 informations historiques, build Web
+release reussi et trois health checks FastAPI HTTP 200. La validation Chrome
+interactive reste a effectuer dans un environnement ou le navigateur et le
+port Flutter sont disponibles.

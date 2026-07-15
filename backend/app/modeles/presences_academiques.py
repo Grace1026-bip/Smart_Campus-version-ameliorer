@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date, datetime, time
 from decimal import Decimal
 
-from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Index, Numeric, Time, UniqueConstraint, func
+from sqlalchemy import CheckConstraint, Date, DateTime, Enum, ForeignKey, Index, Numeric, Text, Time, UniqueConstraint, func
 from sqlalchemy.dialects.mysql import BIGINT
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -105,7 +105,13 @@ class PresenceAcademique(Base):
     heure_identification: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     heure_enregistrement: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     methode_identification: Mapped[str] = mapped_column(
-        Enum("manuelle", "matricule", "future_reconnaissance_faciale", name="methode_identification_presence"),
+        Enum(
+            "manuelle",
+            "matricule",
+            "future_reconnaissance_faciale",
+            "reconnaissance_faciale",
+            name="methode_identification_presence",
+        ),
         nullable=False,
         default="matricule",
     )
@@ -134,3 +140,44 @@ class PresenceAcademique(Base):
     seance = relationship("SeanceAcademique", back_populates="presences")
     etudiant = relationship("Etudiant")
     enregistre_par = relationship("Utilisateur")
+    corrections = relationship(
+        "CorrectionPresenceAcademique",
+        back_populates="presence",
+        cascade="all, delete-orphan",
+        order_by="CorrectionPresenceAcademique.date_correction",
+    )
+
+
+class CorrectionPresenceAcademique(Base):
+    __tablename__ = "corrections_presences_academiques"
+    __table_args__ = (
+        Index("ix_corrections_presences_presence_id", "presence_id"),
+        Index("ix_corrections_presences_seance_etudiant", "seance_id", "etudiant_id"),
+    )
+
+    id: Mapped[int] = mapped_column(BIGINT(unsigned=True), primary_key=True, autoincrement=True)
+    presence_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), ForeignKey("presences_academiques.id", ondelete="RESTRICT"), nullable=False
+    )
+    seance_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), ForeignKey("seances_academiques.id", ondelete="RESTRICT"), nullable=False
+    )
+    etudiant_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), ForeignKey("etudiants.id", ondelete="RESTRICT"), nullable=False
+    )
+    ancien_statut: Mapped[str] = mapped_column(
+        Enum("present", "retard", "absent", "refuse", name="ancien_statut_presence_academique"), nullable=False
+    )
+    nouveau_statut: Mapped[str] = mapped_column(
+        Enum("present", "retard", "absent", "refuse", name="nouveau_statut_presence_academique"), nullable=False
+    )
+    motif: Mapped[str] = mapped_column(Text, nullable=False)
+    corrige_par_utilisateur_id: Mapped[int] = mapped_column(
+        BIGINT(unsigned=True), ForeignKey("utilisateurs.id", ondelete="RESTRICT"), nullable=False
+    )
+    date_correction: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
+
+    presence = relationship("PresenceAcademique", back_populates="corrections")
+    seance = relationship("SeanceAcademique")
+    etudiant = relationship("Etudiant")
+    corrige_par = relationship("Utilisateur")

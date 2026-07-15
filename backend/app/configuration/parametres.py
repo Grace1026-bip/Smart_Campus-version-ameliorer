@@ -37,6 +37,9 @@ class Parametres(BaseSettings):
         default_factory=lambda: ["pdf", "docx", "xlsx", "pptx", "png", "jpg", "jpeg"],
         validation_alias="EXTENSIONS_PIECES_JOINTES_VALVE",
     )
+    biometrie_seuil_distance: float = Field(default=0.5, gt=0, le=2, validation_alias="BIOMETRIE_SEUIL_DISTANCE")
+    biometrie_taille_max_image_mb: int = Field(default=5, ge=1, le=20, validation_alias="BIOMETRIE_TAILLE_MAX_IMAGE_MB")
+    biometrie_dimension_minimale: int = Field(default=160, ge=64, le=2000, validation_alias="BIOMETRIE_DIMENSION_MINIMALE")
 
     frontend_origins: list[str] = Field(
         default_factory=lambda: [

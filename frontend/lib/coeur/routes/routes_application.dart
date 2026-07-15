@@ -7,6 +7,7 @@ import '../../fonctionnalites/administration/presentation/ecran_gestion_administ
 import '../../fonctionnalites/analyses/presentation/ecran_analyses.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_assistant_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_enrolements_appariteur.dart';
+import '../../fonctionnalites/apparitorat/presentation/ecran_biometrie_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_projets_encadrements_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_supervision_appariteur.dart';
 import '../../fonctionnalites/apparitorat/presentation/ecran_tableau_bord_apparitorat.dart';
@@ -37,6 +38,7 @@ import '../../fonctionnalites/enseignant/presentation/ecran_cours_enseignant.dar
 import '../../fonctionnalites/enseignant/presentation/ecran_encadrements_enseignant.dart';
 import '../../fonctionnalites/enseignant/presentation/ecran_tableau_bord_enseignant.dart';
 import '../../fonctionnalites/presences/presentation/ecran_confirmation_cours_2_chef.dart';
+import '../../fonctionnalites/presences/presentation/ecran_consultation_presences.dart';
 import '../../fonctionnalites/presences/presentation/ecran_controle_acces_surveillant.dart';
 
 class AppRoutes {
@@ -59,6 +61,7 @@ class AppRoutes {
   static const apparitorInternships = '/apparitorat/stages';
   static const apparitorReports = '/apparitorat/rapports';
   static const apparitorEnrollments = '/apparitorat/enrolements';
+  static const apparitorBiometrics = '/apparitorat/biometrie';
   static const studentDashboard = '/student';
   static const studentCourses = '/student/courses';
   static const studentCourseDetail = '/student/courses/detail';
@@ -70,12 +73,15 @@ class AppRoutes {
   static const studentHistory = '/student/history';
   static const studentNotes = '/student/notes';
   static const studentResults = '/student/results';
+  static const studentAttendance = '/student/attendance';
   static const teacherDashboard = '/teacher';
   static const teacherCourses = '/teacher/courses';
   static const teacherCourseDetail = '/teacher/courses/detail';
   static const teacherSupervisions = '/teacher/supervisions';
+  static const teacherAttendance = '/teacher/attendance';
   static const promotionChiefDashboard = '/promotion-chief';
   static const promotionChiefAttendance = '/promotion-chief/attendance';
+  static const promotionChiefPresences = '/promotion-chief/presences';
   static const surveillantDashboard = '/surveillant';
   static const surveillantAttendance = '/surveillant/attendance';
   static const deanDashboard = '/dean';
@@ -147,6 +153,8 @@ class AppRoutes {
         return _route(settings, const ApparitorAssistantScreen());
       case apparitorEnrollments:
         return _route(settings, const ApparitorEnrollmentsScreen());
+      case apparitorBiometrics:
+        return _route(settings, const EcranBiometrieAppariteur());
       case apparitorStudents:
         return _route(settings, const ApparitorStudentsScreen());
       case apparitorTeachers:
@@ -221,6 +229,13 @@ class AppRoutes {
         return _route(settings, const StudentNotesScreen());
       case studentResults:
         return _route(settings, const AcademicResultsScreen());
+      case studentAttendance:
+        return _route(
+          settings,
+          const ConsultationPresencesScreen(
+            mode: PresenceConsultationMode.etudiant,
+          ),
+        );
       case teacherDashboard:
         return _route(settings, const TeacherDashboardScreen());
       case teacherCourses:
@@ -235,10 +250,24 @@ class AppRoutes {
         return _route(settings, TeacherCourseDetailScreen(courseId: courseId));
       case teacherSupervisions:
         return _route(settings, const TeacherSupervisionsScreen());
+      case teacherAttendance:
+        return _route(
+          settings,
+          const ConsultationPresencesScreen(
+            mode: PresenceConsultationMode.enseignant,
+          ),
+        );
       case promotionChiefDashboard:
         return _route(settings, const PromotionChiefDashboardScreen());
       case promotionChiefAttendance:
         return _route(settings, const ConfirmationCours2ChefScreen());
+      case promotionChiefPresences:
+        return _route(
+          settings,
+          const ConsultationPresencesScreen(
+            mode: PresenceConsultationMode.chef,
+          ),
+        );
       case surveillantDashboard:
       case surveillantAttendance:
         return _route(settings, const ControleAccesSurveillantScreen());
@@ -348,6 +377,7 @@ class AppRoutes {
           apparitorInternships,
           apparitorReports,
           apparitorEnrollments,
+          apparitorBiometrics,
           grades,
           deliberations,
         }.contains(normalizedRoute);
@@ -362,6 +392,7 @@ class AppRoutes {
           studentHistory,
           studentNotes,
           studentResults,
+          studentAttendance,
           complaints,
           grades,
         }.contains(normalizedRoute);
@@ -371,6 +402,7 @@ class AppRoutes {
           teacherCourses,
           teacherCourseDetail,
           teacherSupervisions,
+          teacherAttendance,
           complaints,
           grades,
           deliberations,
@@ -380,6 +412,7 @@ class AppRoutes {
         return const {
           promotionChiefDashboard,
           promotionChiefAttendance,
+          promotionChiefPresences,
           complaints,
           analytics,
           projects,

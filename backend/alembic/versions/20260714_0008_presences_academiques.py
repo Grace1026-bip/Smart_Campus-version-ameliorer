@@ -22,6 +22,12 @@ def _tables() -> set[str]:
     return set(inspect(op.get_bind()).get_table_names())
 
 
+def _table_supports_foreign_keys(table_name: str) -> bool:
+    """Les tables MyISAM historiques ne peuvent pas recevoir de FK InnoDB."""
+    moteur = inspect(op.get_bind()).get_table_options(table_name).get("mysql_engine")
+    return moteur is None or str(moteur).upper() == "INNODB"
+
+
 def upgrade() -> None:
     bind = op.get_bind()
     tables = _tables()
@@ -45,6 +51,25 @@ def upgrade() -> None:
         )
 
     if "seances_academiques" not in tables:
+        contraintes_seance = [
+            sa.ForeignKeyConstraint(["promotion_id"], ["promotions.id"], ondelete="RESTRICT"),
+            sa.ForeignKeyConstraint(["enseignant_id"], ["enseignants.id"], ondelete="RESTRICT"),
+            sa.ForeignKeyConstraint(["annee_academique_id"], ["annees_academiques.id"], ondelete="RESTRICT"),
+            sa.ForeignKeyConstraint(["semestre_id"], ["semestres.id"], ondelete="RESTRICT"),
+            sa.ForeignKeyConstraint(
+                ["ouverte_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"
+            ),
+            sa.ForeignKeyConstraint(["fermee_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"),
+            sa.ForeignKeyConstraint(
+                ["confirme_cours_2_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"
+            ),
+        ]
+        if _table_supports_foreign_keys("cours"):
+            contraintes_seance.insert(
+                0,
+                sa.ForeignKeyConstraint(["cours_id"], ["cours.id"], ondelete="RESTRICT"),
+            )
+
         op.create_table(
             "seances_academiques",
             sa.Column("id", mysql.BIGINT(unsigned=True), autoincrement=True, nullable=False),
@@ -84,18 +109,7 @@ def upgrade() -> None:
                 "heure_fin IS NULL OR heure_debut IS NULL OR heure_fin > heure_debut",
                 name="ck_seances_academiques_heures_coherentes",
             ),
-            sa.ForeignKeyConstraint(["cours_id"], ["cours.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(["promotion_id"], ["promotions.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(["enseignant_id"], ["enseignants.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(["annee_academique_id"], ["annees_academiques.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(["semestre_id"], ["semestres.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(
-                ["ouverte_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"
-            ),
-            sa.ForeignKeyConstraint(["fermee_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"),
-            sa.ForeignKeyConstraint(
-                ["confirme_cours_2_par_utilisateur_id"], ["utilisateurs.id"], ondelete="RESTRICT"
-            ),
+            *contraintes_seance,
             sa.PrimaryKeyConstraint("id"),
             sa.UniqueConstraint(
                 "cours_id", "date_seance", "type_cours", name="uq_seances_academiques_cours_date_type"

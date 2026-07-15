@@ -149,6 +149,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.apparitorEnrollments,
           ),
           SmartNavItem(
+            label: 'Biometrie',
+            icon: Icons.face_retouching_natural_rounded,
+            route: AppRoutes.apparitorBiometrics,
+          ),
+          SmartNavItem(
             label: 'Cours',
             icon: Icons.menu_book_rounded,
             route: AppRoutes.apparitorCourses,
@@ -227,6 +232,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.studentResults,
           ),
           SmartNavItem(
+            label: 'Mes presences',
+            icon: Icons.fact_check_outlined,
+            route: AppRoutes.studentAttendance,
+          ),
+          SmartNavItem(
             label: 'Historique',
             icon: Icons.history_rounded,
             route: AppRoutes.studentHistory,
@@ -265,6 +275,11 @@ class SmartFacultyShell extends StatelessWidget {
             route: AppRoutes.teacherSupervisions,
           ),
           SmartNavItem(
+            label: 'Presences de mes cours',
+            icon: Icons.fact_check_outlined,
+            route: AppRoutes.teacherAttendance,
+          ),
+          SmartNavItem(
             label: 'Valve',
             icon: Icons.campaign_rounded,
             route: AppRoutes.notifications,
@@ -301,6 +316,11 @@ class SmartFacultyShell extends StatelessWidget {
             label: 'Cours 2',
             icon: Icons.fact_check_rounded,
             route: AppRoutes.promotionChiefAttendance,
+          ),
+          SmartNavItem(
+            label: 'Presences',
+            icon: Icons.how_to_reg_rounded,
+            route: AppRoutes.promotionChiefPresences,
           ),
           SmartNavItem(
             label: 'Risque',

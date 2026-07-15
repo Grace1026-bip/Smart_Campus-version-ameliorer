@@ -32,3 +32,8 @@ class RessourceIntrouvable(ErreurApplication):
 class ConflitDonnees(ErreurApplication):
     def __init__(self, message: str = "Conflit de donnees") -> None:
         super().__init__(message=message, code_http=status.HTTP_409_CONFLICT)
+
+
+class MoteurBiometriqueIndisponible(ErreurApplication):
+    def __init__(self, message: str = "Le moteur de reconnaissance faciale est indisponible dans cet environnement") -> None:
+        super().__init__(message=message, code_http=status.HTTP_503_SERVICE_UNAVAILABLE)

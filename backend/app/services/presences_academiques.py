@@ -8,12 +8,16 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.exceptions.erreurs import AccesInterdit, ConflitDonnees, RessourceIntrouvable
-from app.modeles.academique import Cours, CoursEnseignant, Etudiant, InscriptionCours
+from app.modeles.academique import Cours, CoursEnseignant, Enseignant, Etudiant, InscriptionCours
 from app.modeles.audit import JournalAudit
 from app.modeles.enrolements import EnrolementAcademique
-from app.modeles.presences_academiques import PresenceAcademique, SeanceAcademique
+from app.modeles.presences_academiques import (
+    CorrectionPresenceAcademique,
+    PresenceAcademique,
+    SeanceAcademique,
+)
 from app.modeles.securite import Utilisateur
-from app.schemas.presences_academiques import ControleAccesPresence, SeanceAcademiqueCreation
+from app.schemas.presences_academiques import CorrectionPresence, ControleAccesPresence, SeanceAcademiqueCreation
 
 
 SEUIL_PAIEMENT = Decimal("50.00")
@@ -56,10 +60,10 @@ def _seance(session: Session, seance_id: int) -> SeanceAcademique:
     return seance
 
 
-def _serialiser_presence(presence: PresenceAcademique) -> dict:
+def _serialiser_presence(presence: PresenceAcademique, inclure_financier: bool = False) -> dict:
     etudiant = presence.etudiant
     utilisateur = etudiant.utilisateur if etudiant else None
-    return {
+    resultat = {
         "id": presence.id,
         "seance_id": presence.seance_id,
         "etudiant_id": presence.etudiant_id,
@@ -73,9 +77,24 @@ def _serialiser_presence(presence: PresenceAcademique) -> dict:
         "statut": presence.statut,
         "methode_identification": presence.methode_identification,
         "motif_refus": presence.motif_refus,
-        "pourcentage_paiement_observe": presence.pourcentage_paiement_observe,
         "heure_identification": presence.heure_identification,
         "heure_enregistrement": presence.heure_enregistrement,
+        "correction": _serialiser_correction(presence),
+    }
+    if inclure_financier:
+        resultat["pourcentage_paiement_observe"] = presence.pourcentage_paiement_observe
+    return resultat
+
+
+def _serialiser_correction(presence: PresenceAcademique) -> dict | None:
+    if not presence.corrections:
+        return None
+    correction = presence.corrections[-1]
+    return {
+        "ancien_statut": correction.ancien_statut,
+        "nouveau_statut": correction.nouveau_statut,
+        "motif": correction.motif,
+        "date_correction": correction.date_correction,
     }
 
 
@@ -101,6 +120,87 @@ def _serialiser_seance(seance: SeanceAcademique) -> dict:
         "confirme_cours_2_par_utilisateur_id": seance.confirme_cours_2_par_utilisateur_id,
         "confirme_cours_2_le": seance.confirme_cours_2_le,
     }
+
+
+def _etudiants_concernes(session: Session, seance: SeanceAcademique) -> list[tuple[Etudiant, EnrolementAcademique]]:
+    requete = (
+        select(Etudiant, EnrolementAcademique)
+        .join(
+            EnrolementAcademique,
+            (EnrolementAcademique.etudiant_id == Etudiant.id)
+            & (EnrolementAcademique.annee_academique_id == seance.annee_academique_id)
+            & (EnrolementAcademique.promotion_id == seance.promotion_id)
+            & (EnrolementAcademique.statut == "valide"),
+        )
+        .join(
+            InscriptionCours,
+            (InscriptionCours.etudiant_id == Etudiant.id)
+            & (InscriptionCours.cours_id == seance.cours_id)
+            & (InscriptionCours.annee_academique_id == seance.annee_academique_id)
+            & (InscriptionCours.statut.in_(["active", "validee"])),
+        )
+        .where(Etudiant.promotion_id == seance.promotion_id, Etudiant.statut_academique == "actif")
+        .order_by(Etudiant.matricule)
+    )
+    return list(session.execute(requete).all())
+
+
+def _resume_depuis_presences(
+    presences: list[PresenceAcademique], total_etudiants_concernes: int | None = None
+) -> dict:
+    compteurs = {statut: sum(1 for presence in presences if presence.statut == statut) for statut in (
+        "present",
+        "retard",
+        "absent",
+        "refuse",
+    )}
+    total = len(presences)
+    taux = (Decimal(compteurs["present"] + compteurs["retard"]) / Decimal(total) * Decimal("100")) if total else Decimal("0")
+    return {
+        "total_etudiants_concernes": total_etudiants_concernes if total_etudiants_concernes is not None else total,
+        "total_enregistrements": total,
+        "presents": compteurs["present"],
+        "retards": compteurs["retard"],
+        "absents": compteurs["absent"],
+        "refuses": compteurs["refuse"],
+        "taux_presence": taux.quantize(Decimal("0.01")),
+    }
+
+
+def _resume_seance(session: Session, seance: SeanceAcademique) -> dict:
+    presences = session.scalars(
+        select(PresenceAcademique).where(PresenceAcademique.seance_id == seance.id)
+    ).all()
+    return _resume_depuis_presences(presences, len(_etudiants_concernes(session, seance)))
+
+
+def _serialiser_seance_avec_resume(session: Session, seance: SeanceAcademique) -> dict:
+    resultat = _serialiser_seance(seance)
+    resultat["resume"] = _resume_seance(session, seance)
+    return resultat
+
+
+def _generer_absences(session: Session, seance: SeanceAcademique, utilisateur_id: int) -> int:
+    deja_enregistres = set(
+        session.scalars(
+            select(PresenceAcademique.etudiant_id).where(PresenceAcademique.seance_id == seance.id)
+        ).all()
+    )
+    absences = [
+        PresenceAcademique(
+            seance_id=seance.id,
+            etudiant_id=etudiant.id,
+            statut="absent",
+            methode_identification="manuelle",
+            enregistre_par_utilisateur_id=utilisateur_id,
+        )
+        for etudiant, _enrolement in _etudiants_concernes(session, seance)
+        if etudiant.id not in deja_enregistres
+    ]
+    if absences:
+        session.add_all(absences)
+        session.flush()
+    return len(absences)
 
 
 def creer_seance(session: Session, utilisateur_id: int, donnees: SeanceAcademiqueCreation) -> dict:
@@ -165,7 +265,7 @@ def lister_seances_chef(session: Session, utilisateur_id: int, date_seance: date
     if date_seance is not None:
         requete = requete.where(SeanceAcademique.date_seance == date_seance)
     requete = requete.order_by(SeanceAcademique.date_seance.desc(), SeanceAcademique.id.desc())
-    return [_serialiser_seance(seance) for seance in session.scalars(requete).all()]
+    return [_serialiser_seance_avec_resume(session, seance) for seance in session.scalars(requete).all()]
 
 
 def lister_presences_chef(session: Session, utilisateur_id: int, seance_id: int) -> list[dict]:
@@ -173,7 +273,7 @@ def lister_presences_chef(session: Session, utilisateur_id: int, seance_id: int)
     seance = _seance(session, seance_id)
     if chef is None or chef.statut_academique != "actif" or chef.promotion_id != seance.promotion_id:
         raise AccesInterdit("Seance hors du perimetre de la promotion")
-    return lister_presences(session, seance_id)
+    return lister_presences(session, seance_id, inclure_financier=False)
 
 
 def obtenir_seance(session: Session, seance_id: int) -> dict:
@@ -197,38 +297,34 @@ def ouvrir_seance(session: Session, utilisateur_id: int, seance_id: int) -> dict
 def fermer_seance(session: Session, utilisateur_id: int, seance_id: int) -> dict:
     seance = _seance(session, seance_id)
     if seance.statut == "fermee":
-        return _serialiser_seance(seance)
+        resultat = _serialiser_seance(seance)
+        resultat["resume"] = _resume_seance(session, seance)
+        resultat["resume"]["absences_creees"] = 0
+        return resultat
     if seance.statut != "ouverte":
         raise ConflitDonnees("Seule une seance ouverte peut etre fermee")
     seance.statut = "fermee"
     seance.fermee_par_utilisateur_id = utilisateur_id
     seance.date_fermeture = _maintenant()
-    _journaliser(session, utilisateur_id, "fermeture_seance_academique", "seances_academiques", seance.id, {})
+    absences_creees = _generer_absences(session, seance, utilisateur_id)
+    resume = _resume_seance(session, seance)
+    resume["absences_creees"] = absences_creees
+    _journaliser(
+        session,
+        utilisateur_id,
+        "fermeture_seance_academique",
+        "seances_academiques",
+        seance.id,
+        {"absences_creees": absences_creees},
+    )
     session.commit()
-    return _serialiser_seance(seance)
+    resultat = _serialiser_seance(seance)
+    resultat["resume"] = resume
+    return resultat
 
 
 def lister_etudiants_seance(session: Session, seance_id: int) -> list[dict]:
     seance = _seance(session, seance_id)
-    requete = (
-        select(Etudiant, EnrolementAcademique)
-        .join(
-            EnrolementAcademique,
-            (EnrolementAcademique.etudiant_id == Etudiant.id)
-            & (EnrolementAcademique.annee_academique_id == seance.annee_academique_id)
-            & (EnrolementAcademique.promotion_id == seance.promotion_id)
-            & (EnrolementAcademique.statut == "valide"),
-        )
-        .join(
-            InscriptionCours,
-            (InscriptionCours.etudiant_id == Etudiant.id)
-            & (InscriptionCours.cours_id == seance.cours_id)
-            & (InscriptionCours.annee_academique_id == seance.annee_academique_id)
-            & (InscriptionCours.statut.in_(["active", "validee"])),
-        )
-        .where(Etudiant.promotion_id == seance.promotion_id, Etudiant.statut_academique == "actif")
-        .order_by(Etudiant.matricule)
-    )
     return [
         {
             "id": etudiant.id,
@@ -238,7 +334,7 @@ def lister_etudiants_seance(session: Session, seance_id: int) -> list[dict]:
             "pourcentage_paiement": enrolement.pourcentage_paiement,
             "acces_financier": enrolement.pourcentage_paiement >= SEUIL_PAIEMENT,
         }
-        for etudiant, enrolement in session.execute(requete).all()
+        for etudiant, enrolement in _etudiants_concernes(session, seance)
     ]
 
 
@@ -302,7 +398,7 @@ def controler_acces(session: Session, utilisateur_id: int, seance_id: int, donne
     )
     if existante is not None:
         resultat = _refus("deja_enregistre", seance, etudiant, existante.pourcentage_paiement_observe)
-        resultat["presence"] = _serialiser_presence(existante)
+        resultat["presence"] = _serialiser_presence(existante, inclure_financier=True)
         resultat["acces_autorise"] = existante.statut in {"present", "retard"}
         return resultat
 
@@ -311,7 +407,7 @@ def controler_acces(session: Session, utilisateur_id: int, seance_id: int, donne
         seance_id=seance.id,
         etudiant_id=etudiant.id,
         statut=donnees.statut if motif == "autorise" else "refuse",
-        methode_identification="matricule",
+        methode_identification=donnees.methode_identification,
         enregistre_par_utilisateur_id=utilisateur_id,
         motif_refus=None if motif == "autorise" else motif,
         pourcentage_paiement_observe=paiement,
@@ -325,7 +421,7 @@ def controler_acces(session: Session, utilisateur_id: int, seance_id: int, donne
             "controle_acces_presence",
             "presences_academiques",
             presence.id,
-            {"seance_id": seance.id, "motif": motif, "methode": "matricule"},
+            {"seance_id": seance.id, "motif": motif, "methode": donnees.methode_identification},
         )
         session.commit()
     except IntegrityError as exc:
@@ -337,22 +433,167 @@ def controler_acces(session: Session, utilisateur_id: int, seance_id: int, donne
         "motif": motif,
         "etudiant": {"id": etudiant.id, "matricule": etudiant.matricule, "nom": _nom(etudiant.utilisateur)},
         "seance": _serialiser_seance(seance),
-        "presence": _serialiser_presence(presence),
+        "presence": _serialiser_presence(presence, inclure_financier=True),
         "pourcentage_paiement_utilise": paiement,
         "heure_decision": presence.heure_enregistrement,
     }
 
 
-def lister_presences(session: Session, seance_id: int) -> list[dict]:
+def lister_presences(session: Session, seance_id: int, inclure_financier: bool = False) -> list[dict]:
     _seance(session, seance_id)
     return [
-        _serialiser_presence(presence)
+        _serialiser_presence(presence, inclure_financier=inclure_financier)
         for presence in session.scalars(
             select(PresenceAcademique)
             .where(PresenceAcademique.seance_id == seance_id)
             .order_by(PresenceAcademique.heure_enregistrement)
         ).all()
     ]
+
+
+def _seance_enseignant(session: Session, utilisateur_id: int, seance_id: int) -> SeanceAcademique:
+    seance = session.scalar(
+        select(SeanceAcademique)
+        .join(CoursEnseignant, CoursEnseignant.cours_id == SeanceAcademique.cours_id)
+        .join(Enseignant, Enseignant.id == CoursEnseignant.enseignant_id)
+        .where(
+            SeanceAcademique.id == seance_id,
+            Enseignant.utilisateur_id == utilisateur_id,
+            Enseignant.statut == "actif",
+        )
+    )
+    if seance is None:
+        raise RessourceIntrouvable("Seance non attribuee a cet enseignant")
+    return seance
+
+
+def lister_seances_enseignant(
+    session: Session,
+    utilisateur_id: int,
+    date_seance: date | None = None,
+    statut: str | None = None,
+    annee_academique_id: int | None = None,
+) -> list[dict]:
+    requete = (
+        select(SeanceAcademique)
+        .join(CoursEnseignant, CoursEnseignant.cours_id == SeanceAcademique.cours_id)
+        .join(Enseignant, Enseignant.id == CoursEnseignant.enseignant_id)
+        .where(Enseignant.utilisateur_id == utilisateur_id, Enseignant.statut == "actif")
+        .order_by(SeanceAcademique.date_seance.desc(), SeanceAcademique.id.desc())
+    )
+    if date_seance is not None:
+        requete = requete.where(SeanceAcademique.date_seance == date_seance)
+    if statut is not None:
+        requete = requete.where(SeanceAcademique.statut == statut)
+    if annee_academique_id is not None:
+        requete = requete.where(SeanceAcademique.annee_academique_id == annee_academique_id)
+    return [_serialiser_seance_avec_resume(session, seance) for seance in session.scalars(requete).all()]
+
+
+def lister_presences_enseignant(session: Session, utilisateur_id: int, seance_id: int) -> list[dict]:
+    _seance_enseignant(session, utilisateur_id, seance_id)
+    return lister_presences(session, seance_id, inclure_financier=False)
+
+
+def _etudiant_connecte(session: Session, utilisateur_id: int) -> Etudiant:
+    etudiant = session.scalar(select(Etudiant).where(Etudiant.utilisateur_id == utilisateur_id))
+    if etudiant is None or etudiant.statut_academique != "actif":
+        raise AccesInterdit("Profil etudiant indisponible")
+    return etudiant
+
+
+def lister_presences_etudiant(
+    session: Session,
+    utilisateur_id: int,
+    annee_academique_id: int | None = None,
+    semestre_id: int | None = None,
+    cours_id: int | None = None,
+    statut: str | None = None,
+) -> dict:
+    etudiant = _etudiant_connecte(session, utilisateur_id)
+    requete = (
+        select(PresenceAcademique)
+        .join(SeanceAcademique, SeanceAcademique.id == PresenceAcademique.seance_id)
+        .where(
+            PresenceAcademique.etudiant_id == etudiant.id,
+            SeanceAcademique.promotion_id == etudiant.promotion_id,
+            SeanceAcademique.statut != "annulee",
+        )
+        .order_by(SeanceAcademique.date_seance.desc(), PresenceAcademique.id.desc())
+    )
+    if annee_academique_id is not None:
+        requete = requete.where(SeanceAcademique.annee_academique_id == annee_academique_id)
+    if semestre_id is not None:
+        requete = requete.where(SeanceAcademique.semestre_id == semestre_id)
+    if cours_id is not None:
+        requete = requete.where(SeanceAcademique.cours_id == cours_id)
+    if statut is not None:
+        requete = requete.where(PresenceAcademique.statut == statut)
+    presences = session.scalars(requete).all()
+    elements = []
+    for presence in presences:
+        element = _serialiser_presence(presence)
+        element["seance"] = _serialiser_seance(presence.seance)
+        elements.append(element)
+    return {"elements": elements, "resume": _resume_depuis_presences(list(presences))}
+
+
+def resume_seance(session: Session, seance_id: int) -> dict:
+    return _resume_seance(session, _seance(session, seance_id))
+
+
+def corriger_presence(
+    session: Session,
+    utilisateur_id: int,
+    role_actif: str,
+    seance_id: int,
+    presence_id: int,
+    donnees: CorrectionPresence,
+) -> dict:
+    presence = session.get(PresenceAcademique, presence_id)
+    if presence is None:
+        raise RessourceIntrouvable("Presence academique introuvable")
+    if presence.seance_id != seance_id:
+        raise RessourceIntrouvable("Presence absente de cette seance")
+    seance = presence.seance
+    if role_actif == "surveillant" and utilisateur_id not in {
+        seance.ouverte_par_utilisateur_id,
+        seance.fermee_par_utilisateur_id,
+    }:
+        raise AccesInterdit("Le surveillant n est pas autorise sur cette promotion")
+    if presence.statut == donnees.nouveau_statut:
+        raise ConflitDonnees("La presence possede deja ce statut")
+
+    ancienne_valeur = presence.statut
+    correction = CorrectionPresenceAcademique(
+        presence_id=presence.id,
+        seance_id=seance.id,
+        etudiant_id=presence.etudiant_id,
+        ancien_statut=ancienne_valeur,
+        nouveau_statut=donnees.nouveau_statut,
+        motif=donnees.motif,
+        corrige_par_utilisateur_id=utilisateur_id,
+    )
+    presence.statut = donnees.nouveau_statut
+    if donnees.nouveau_statut != "refuse":
+        presence.motif_refus = None
+    session.add(correction)
+    _journaliser(
+        session,
+        utilisateur_id,
+        "correction_presence_academique",
+        "presences_academiques",
+        presence.id,
+        {
+            "seance_id": seance.id,
+            "etudiant_id": presence.etudiant_id,
+            "ancien_statut": ancienne_valeur,
+            "nouveau_statut": donnees.nouveau_statut,
+            "motif": donnees.motif,
+        },
+    )
+    session.commit()
+    return _serialiser_presence(presence, inclure_financier=role_actif in {"surveillant", "appariteur"})
 
 
 def confirmer_cours_2(session: Session, utilisateur_id: int, seance_id: int) -> dict:

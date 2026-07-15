@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:smart_campus_app/donnees/modeles/modeles_faculte.dart';
 import 'package:smart_campus_app/donnees/services/client_api_reponse.dart';
+import 'package:smart_campus_app/donnees/services/client_multipart_reponse.dart';
 import 'package:smart_campus_app/donnees/services/service_api.dart';
 import 'package:smart_campus_app/donnees/services/service_authentification.dart';
 import 'package:smart_campus_app/donnees/services/service_inscriptions.dart';
@@ -78,6 +79,53 @@ void main() {
 
     expect(fake.requests.single.headers.containsKey('Authorization'), isFalse);
     expect(fake.requests.single.headers.containsValue('******'), isFalse);
+  });
+
+  test('ApiService envoie des captures multipart avec Bearer', () async {
+    final captures = <String, Object?>{};
+    final client = ApiService(
+      envoyerMultipart: ({
+        required methode,
+        required uri,
+        required headers,
+        required fields,
+        required parts,
+      }) async {
+        captures['methode'] = methode;
+        captures['uri'] = uri.path;
+        captures['headers'] = headers;
+        captures['fields'] = fields;
+        captures['parts'] = parts;
+        return _jsonResponse(201, {
+          'succes': true,
+          'donnees': {'statut': 'actif'},
+        });
+      },
+    );
+    await client.configurerSession(
+      accessToken: 'access-test',
+      refreshToken: 'refresh-test',
+      roleActif: 'appariteur',
+    );
+
+    await client.postMultipart(
+      '/appariteur/biometrie/etudiants/8/enroler',
+      fields: {'consentement': 'true'},
+      parts: [
+        const MultipartPart(
+          name: 'images',
+          bytes: [1, 2, 3],
+          filename: 'capture.png',
+          contentType: 'image/png',
+        ),
+      ],
+    );
+
+    expect(captures['methode'], 'POST');
+    expect(captures['uri'], '/api/v1/appariteur/biometrie/etudiants/8/enroler');
+    expect((captures['headers'] as Map)['Authorization'], 'Bearer access-test');
+    expect((captures['fields'] as Map)['consentement'], 'true');
+    expect((captures['parts'] as List).single, isA<MultipartPart>());
   });
 
   test('ApiAuthService envoie email, mot de passe et role a FastAPI', () async {

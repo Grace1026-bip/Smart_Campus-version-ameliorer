@@ -11,13 +11,14 @@ from app.modeles.academique import (
     Semestre,
 )
 from app.modeles.audit import JournalAudit
+from app.modeles.biometrie import EncodageFacial, ProfilBiometrique
 from app.modeles.deliberations import DecisionJury, MembreJury, ResultatSemestrielOfficiel, SessionDeliberation
 from app.modeles.enrolements import EnrolementAcademique
 from app.modeles.inscriptions import DemandeInscription
 from app.modeles.notes import Evaluation, Note, ResultatCours, TypeEvaluation
 from app.modeles.notifications import Notification
 from app.modeles.projets import EncadrementProjet, ProjetAcademique
-from app.modeles.presences_academiques import PresenceAcademique, SeanceAcademique
+from app.modeles.presences_academiques import CorrectionPresenceAcademique, PresenceAcademique, SeanceAcademique
 from app.modeles.specialites import SpecialiteEncadrementEnseignant
 from app.modeles.reclamations import HistoriqueReclamation, MessageReclamation, Reclamation
 from app.modeles.securite import JetonActualisation, Permission, Role, RolePermission, Utilisateur, UtilisateurRole
@@ -26,8 +27,10 @@ from app.modeles.valve import LecturePublication, PieceJointePublication, Public
 
 __all__ = [
     "AnneeAcademique",
+    "EncodageFacial",
     "Cours",
     "CoursEnseignant",
+    "CorrectionPresenceAcademique",
     "DemandeInscription",
     "EncadrementProjet",
     "DecisionJury",
@@ -49,6 +52,7 @@ __all__ = [
     "PieceJointePublication",
     "Presence",
     "PresenceAcademique",
+    "ProfilBiometrique",
     "Promotion",
     "PublicationValve",
     "ProjetAcademique",

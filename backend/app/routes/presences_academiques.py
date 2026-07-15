@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.base_de_donnees.connexion import obtenir_session
-from app.dependances.authentification import ContexteUtilisateur, exiger_role
-from app.schemas.presences_academiques import ControleAccesPresence, SeanceAcademiqueCreation
+from app.dependances.authentification import ContexteUtilisateur, exiger_role, exiger_un_des_roles
+from app.schemas.presences_academiques import CorrectionPresence, ControleAccesPresence, SeanceAcademiqueCreation
 from app.services import presences_academiques as service
 from app.utilitaires.reponses import reponse_succes
 
@@ -70,7 +70,38 @@ def lister_presences(
     _contexte: ContexteUtilisateur = Depends(exiger_role("surveillant")),
     session: Session = Depends(obtenir_session),
 ):
-    return reponse_succes("Presences academiques recuperees", {"elements": service.lister_presences(session, seance_id)})
+    return reponse_succes(
+        "Presences academiques recuperees",
+        {"elements": service.lister_presences(session, seance_id, inclure_financier=True)},
+    )
+
+
+@routeur_presences_academiques.get("/surveillant/seances/{seance_id}/resume")
+def resume_seance(
+    seance_id: int,
+    _contexte: ContexteUtilisateur = Depends(exiger_role("surveillant")),
+    session: Session = Depends(obtenir_session),
+):
+    return reponse_succes("Resume de seance recupere", service.resume_seance(session, seance_id))
+
+
+@routeur_presences_academiques.patch("/surveillant/seances/{seance_id}/presences/{presence_id}")
+def corriger_presence(
+    seance_id: int,
+    presence_id: int,
+    donnees: CorrectionPresence,
+    contexte: ContexteUtilisateur = Depends(exiger_un_des_roles("surveillant", "appariteur")),
+    session: Session = Depends(obtenir_session),
+):
+    presence = service.corriger_presence(
+        session,
+        contexte.utilisateur.id,
+        contexte.role_actif,
+        seance_id,
+        presence_id,
+        donnees,
+    )
+    return reponse_succes("Presence corrigee", presence)
 
 
 @routeur_presences_academiques.get("/surveillant/seances/{seance_id}/etudiants")
@@ -128,4 +159,56 @@ def lister_presences_chef(
     return reponse_succes(
         "Presences de la promotion recuperees",
         {"elements": service.lister_presences_chef(session, contexte.utilisateur.id, seance_id)},
+    )
+
+
+@routeur_presences_academiques.get("/enseignants/moi/seances")
+def lister_seances_enseignant(
+    date_seance: date | None = Query(default=None),
+    statut: str | None = Query(default=None, max_length=20),
+    annee_academique_id: int | None = Query(default=None, gt=0),
+    contexte: ContexteUtilisateur = Depends(exiger_role("enseignant")),
+    session: Session = Depends(obtenir_session),
+):
+    elements = service.lister_seances_enseignant(
+        session,
+        contexte.utilisateur.id,
+        date_seance=date_seance,
+        statut=statut,
+        annee_academique_id=annee_academique_id,
+    )
+    return reponse_succes("Seances des cours enseignant recuperees", {"elements": elements, "total": len(elements)})
+
+
+@routeur_presences_academiques.get("/enseignants/moi/seances/{seance_id}/presences")
+def lister_presences_enseignant(
+    seance_id: int,
+    contexte: ContexteUtilisateur = Depends(exiger_role("enseignant")),
+    session: Session = Depends(obtenir_session),
+):
+    return reponse_succes(
+        "Presences du cours recuperees",
+        {"elements": service.lister_presences_enseignant(session, contexte.utilisateur.id, seance_id)},
+    )
+
+
+@routeur_presences_academiques.get("/etudiants/moi/presences")
+def lister_presences_etudiant(
+    annee_academique_id: int | None = Query(default=None, gt=0),
+    semestre_id: int | None = Query(default=None, gt=0),
+    cours_id: int | None = Query(default=None, gt=0),
+    statut: str | None = Query(default=None, max_length=20),
+    contexte: ContexteUtilisateur = Depends(exiger_role("etudiant")),
+    session: Session = Depends(obtenir_session),
+):
+    return reponse_succes(
+        "Presences etudiant recuperees",
+        service.lister_presences_etudiant(
+            session,
+            contexte.utilisateur.id,
+            annee_academique_id=annee_academique_id,
+            semestre_id=semestre_id,
+            cours_id=cours_id,
+            statut=statut,
+        ),
     )
