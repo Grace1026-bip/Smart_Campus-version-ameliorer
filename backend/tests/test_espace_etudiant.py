@@ -236,7 +236,7 @@ def test_routes_etudiant_refusent_roles_absents_et_falsifies(client: TestClient,
         utilisateur = session.scalar(select(Utilisateur).where(Utilisateur.email == "etudiant@smartfaculty.test"))
         assert utilisateur is not None
         token_falsifie = creer_access_token(str(utilisateur.id), "appariteur")
-    assert client.get("/api/v1/etudiants/moi/projets", headers=_headers(token_falsifie)).status_code == 401
+    assert client.get("/api/v1/etudiants/moi/projets", headers=_headers(token_falsifie)).status_code == 403
 
 
 def test_etudiant_voit_son_projet_et_encadreurs_actifs(client: TestClient, suffixe: str):

@@ -186,13 +186,14 @@ def test_access_token_refuse_si_role_retire(client: TestClient, suffixe: str):
 
     reponse = client.get("/api/v1/auth/moi", headers={"Authorization": f"Bearer {token}"})
 
-    assert reponse.status_code == 401
+    assert reponse.status_code == 403
 
 
 def test_role_flutter_falsifie_est_refuse_par_backend(client: TestClient):
     reponse = _connecter(client, "etudiant@smartfaculty.test", "administrateur")
 
-    assert reponse.status_code == 401
+    assert reponse.status_code == 403
+    assert reponse.json()["message"] == "Role non autorise pour ce compte"
 
 
 def test_compte_bloque_refuse(client: TestClient, suffixe: str):
@@ -238,7 +239,23 @@ def test_acces_avec_mauvais_role_refuse(client: TestClient):
             "role": "enseignant",
         },
     )
-    assert reponse.status_code == 401
+    assert reponse.status_code == 403
+
+
+def test_role_avec_tiret_est_invalide(client: TestClient):
+    reponse = _connecter(client, "etudiant@smartfaculty.test", "vice-doyen")
+
+    assert reponse.status_code == 422
+
+
+def test_role_non_attribue_est_distinct_des_identifiants(client: TestClient, suffixe: str):
+    email = f"role.absent.{suffixe}@smartfaculty.test"
+    _creer_utilisateur(email, ["etudiant"])
+
+    reponse = _connecter(client, email, "surveillant")
+
+    assert reponse.status_code == 403
+    assert reponse.json()["message"] == "Role non autorise pour ce compte"
 
 
 def test_actualisation_et_deconnexion(client: TestClient):

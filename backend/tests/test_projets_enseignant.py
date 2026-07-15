@@ -156,7 +156,7 @@ def test_role_actif_falsifie_et_compte_enseignant_inactif_refuses(client: TestCl
         token_falsifie = creer_access_token(str(etudiant.id), "enseignant")
     email, _enseignant_id, _ = _creer_enseignant(client, token_admin, suffixe, statut="suspendu")
     token_inactif = _connexion(client, email, "enseignant")
-    assert client.get("/api/v1/enseignants/moi/encadrements", headers=_headers(token_falsifie)).status_code == 401
+    assert client.get("/api/v1/enseignants/moi/encadrements", headers=_headers(token_falsifie)).status_code == 403
     assert client.get("/api/v1/enseignants/moi/encadrements", headers=_headers(token_inactif)).status_code == 403
 
 

@@ -178,6 +178,85 @@ void main() {
     expect(storage.session?.containsKey('mot_de_passe'), isFalse);
   });
 
+  test('ApiAuthService envoie le role canonique surveillant', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {
+          'access_token': 'access-surveillant',
+          'refresh_token': 'refresh-surveillant',
+          'role_actif': 'surveillant',
+          'utilisateur': {
+            'id': 8,
+            'nom': 'Surveillance',
+            'prenom': 'Campus',
+            'email': 'surveillant@smartfaculty.test',
+            'statut': 'actif',
+            'roles': ['surveillant'],
+          },
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    await const ApiAuthService().login(
+      identifier: 'surveillant@smartfaculty.test',
+      password: 'Smart@123456',
+      role: UserRole.surveillant,
+    );
+
+    final body = jsonDecode(fake.requests.single.body!) as Map<String, dynamic>;
+    expect(body['role'], 'surveillant');
+  });
+
+  test('ApiAuthService envoie le role canonique vice_doyen', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {
+        'succes': true,
+        'donnees': {
+          'access_token': 'access-vice-doyen',
+          'refresh_token': 'refresh-vice-doyen',
+          'role_actif': 'vice_doyen',
+          'utilisateur': {
+            'id': 9,
+            'nom': 'Tshibanda',
+            'prenom': 'Vice',
+            'email': 'vice.doyen@smartfaculty.test',
+            'statut': 'actif',
+            'roles': ['vice_doyen'],
+          },
+        },
+      }),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    await const ApiAuthService().login(
+      identifier: 'vice.doyen@smartfaculty.test',
+      password: 'Smart@123456',
+      role: UserRole.viceDean,
+    );
+
+    final body = jsonDecode(fake.requests.single.body!) as Map<String, dynamic>;
+    expect(body['role'], 'vice_doyen');
+  });
+
+  test('ApiException distingue compte inactif, role refuse et role invalide',
+      () {
+    expect(
+      ApiException('Compte non actif', statusCode: 403).messagePourUtilisateur,
+      'Votre compte n’est pas actif.',
+    );
+    expect(
+      ApiException('Role non autorise pour ce compte', statusCode: 403)
+          .messagePourUtilisateur,
+      'Ce rôle n’est pas autorisé pour ce compte.',
+    );
+    expect(
+      ApiException('Role invalide', statusCode: 422).messagePourUtilisateur,
+      'Le rôle sélectionné est invalide.',
+    );
+  });
+
   test('ApiAuthService restaure et confirme le role actif via /auth/moi',
       () async {
     final storage = _FakeSessionStorage()

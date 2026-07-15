@@ -127,7 +127,7 @@ def test_role_actif_falsifie_et_compte_non_actif_sont_refuses(
     email, _ = _creer_enseignant(client, token_admin, suffixe, statut="suspendu")
     token_non_actif = _connexion(client, email, "enseignant")
 
-    assert client.get("/api/v1/enseignants/moi", headers=_headers(token_falsifie)).status_code == 401
+    assert client.get("/api/v1/enseignants/moi", headers=_headers(token_falsifie)).status_code == 403
     assert client.get("/api/v1/enseignants/moi", headers=_headers(token_non_actif)).status_code == 403
 
 

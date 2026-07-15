@@ -1,0 +1,5450 @@
+{
+  "revision_modele": "20260715_0010",
+  "tables": [
+    {
+      "nom": "annees_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "libelle",
+          "type": "VARCHAR(30)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_debut",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_fin",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_active",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_annees_academiques_libelle",
+          "detail": "libelle"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_annees_academiques_ck_annees_academiques_dates",
+          "detail": "date_fin > date_debut"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_annees_academiques_est_active",
+          "colonnes": [
+            "est_active"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "permissions",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "code",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_permissions_code",
+          "detail": "code"
+        }
+      ],
+      "index": []
+    },
+    {
+      "nom": "roles",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(60)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_roles_nom",
+          "detail": "nom"
+        }
+      ],
+      "index": []
+    },
+    {
+      "nom": "types_evaluations",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_types_evaluations_nom",
+          "detail": "nom"
+        }
+      ],
+      "index": []
+    },
+    {
+      "nom": "utilisateurs",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "postnom",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "prenom",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "email",
+          "type": "VARCHAR(190)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "mot_de_passe_hash",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "telephone",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "photo",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('en_attente','actif','bloque','rejete','archive')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "derniere_connexion",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [],
+      "index": [
+        {
+          "nom": "ix_utilisateurs_email",
+          "colonnes": [
+            "email"
+          ],
+          "unique": true
+        },
+        {
+          "nom": "ix_utilisateurs_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "enseignants",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "matricule_agent",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "grade",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "departement",
+          "type": "VARCHAR(150)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('actif','suspendu','archive')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_enseignants_utilisateur_id",
+          "detail": "utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enseignants_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_enseignants_matricule_agent",
+          "detail": "matricule_agent"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_enseignants_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "jetons_actualisation",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "jeton_hash",
+          "type": "VARCHAR(190)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "expiration",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_revoque",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "revoque_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "appareil",
+          "type": "VARCHAR(255)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "adresse_ip",
+          "type": "VARCHAR(45)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_jetons_actualisation_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_jetons_actualisation_jeton_hash",
+          "detail": "jeton_hash"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_jetons_actualisation_expiration",
+          "colonnes": [
+            "expiration"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_jetons_actualisation_utilisateur_id",
+          "colonnes": [
+            "utilisateur_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "journaux_audit",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "action",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "entite",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "entite_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "details_json",
+          "type": "JSON",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_journaux_audit_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_journaux_audit_entite",
+          "colonnes": [
+            "entite",
+            "entite_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_journaux_audit_utilisateur_id",
+          "colonnes": [
+            "utilisateur_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "notifications",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "type_notification",
+          "type": "ENUM('nouvelle_note','nouvelle_publication','reclamation_mise_a_jour','alerte_academique','information_systeme')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "titre",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "contenu",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "donnees_json",
+          "type": "JSON",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_lue",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "lue_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_notifications_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_notifications_est_lue",
+          "colonnes": [
+            "est_lue"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_notifications_utilisateur_id",
+          "colonnes": [
+            "utilisateur_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "promotions",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(150)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "niveau",
+          "type": "VARCHAR(60)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "est_active",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_promotions_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_promotions_nom_annee",
+          "detail": "nom, annee_academique_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_promotions_annee_academique_id",
+          "colonnes": [
+            "annee_academique_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_promotions_est_active",
+          "colonnes": [
+            "est_active"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "role_permissions",
+      "colonnes": [
+        {
+          "nom": "role_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "roles.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "permission_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "permissions.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_role_permissions_role_permission",
+          "detail": "role_id, permission_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_role_permissions_role_id_roles",
+          "detail": "role_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_role_permissions_permission_id_permissions",
+          "detail": "permission_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_role_permissions_permission_id",
+          "colonnes": [
+            "permission_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "semestres",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "numero",
+          "type": "INTEGER UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_semestres_annee_numero",
+          "detail": "annee_academique_id, numero"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_semestres_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_semestres_ck_semestres_numero_positif",
+          "detail": "numero > 0"
+        }
+      ],
+      "index": []
+    },
+    {
+      "nom": "utilisateur_roles",
+      "colonnes": [
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "role_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "roles.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "attribue_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "attribue_par",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_utilisateur_roles_role_id_roles",
+          "detail": "role_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_utilisateur_roles_attribue_par_utilisateurs",
+          "detail": "attribue_par"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_utilisateur_roles_utilisateur_role",
+          "detail": "utilisateur_id, role_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_utilisateur_roles_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_utilisateur_roles_role_id",
+          "colonnes": [
+            "role_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "cours",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "code",
+          "type": "VARCHAR(40)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "intitule",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nombre_heures",
+          "type": "INTEGER UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nombre_credits",
+          "type": "INTEGER UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "semestre_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "semestres.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "est_actif",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "CHECK",
+          "nom": "ck_cours_ck_cours_nombre_heures_positif",
+          "detail": "nombre_heures > 0"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_cours_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_cours_semestre_id_semestres",
+          "detail": "semestre_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_cours_ck_cours_nombre_credits_positif",
+          "detail": "nombre_credits > 0"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_cours_code_promotion_semestre",
+          "detail": "code, promotion_id, semestre_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_cours_est_actif",
+          "colonnes": [
+            "est_actif"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_cours_promotion_id",
+          "colonnes": [
+            "promotion_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_cours_semestre_id",
+          "colonnes": [
+            "semestre_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "demandes_inscription",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "reference",
+          "type": "VARCHAR(40)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "type_demande",
+          "type": "ENUM('etudiant','enseignant')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "email",
+          "type": "VARCHAR(190)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nom",
+          "type": "VARCHAR(100)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "postnom",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "prenom",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "telephone",
+          "type": "VARCHAR(30)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "mot_de_passe_hash",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "matricule",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "matricule_agent",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "grade",
+          "type": "VARCHAR(100)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "departement",
+          "type": "VARCHAR(150)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('en_attente','approuvee','rejetee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "traite_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "motif_rejet",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "traite_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_demandes_inscription_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_demandes_inscription_reference",
+          "detail": "reference"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_demandes_inscription_traite_par_utilisateur_id_utilisateurs",
+          "detail": "traite_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_demandes_inscription_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_demandes_inscription_email",
+          "colonnes": [
+            "email"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_demandes_inscription_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_demandes_inscription_type_statut",
+          "colonnes": [
+            "type_demande",
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "etudiants",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "matricule",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_inscription",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut_academique",
+          "type": "ENUM('actif','suspendu','diplome','abandon','archive')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_etudiants_matricule",
+          "detail": "matricule"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_etudiants_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_etudiants_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_etudiants_utilisateur_id",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_etudiants_promotion_id",
+          "colonnes": [
+            "promotion_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_etudiants_statut_academique",
+          "colonnes": [
+            "statut_academique"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "sessions_deliberation",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "semestre_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "semestres.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('preparation','ouverte','cloturee','publiee','annulee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "president_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_ouverture",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_cloture",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif_reouverture",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_sessions_deliberation_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_sessions_deliberation_perimetre_version",
+          "detail": "promotion_id, annee_academique_id, semestre_id, version"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_sessions_deliberation_president_utilisateur_id_utilisateurs",
+          "detail": "president_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_sessions_deliberation_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_sessions_deliberation_cree_par_utilisateur_id_utilisateurs",
+          "detail": "cree_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_sessions_deliberation_semestre_id_semestres",
+          "detail": "semestre_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_sessions_deliberation_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "specialites_encadrement_enseignant",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "enseignant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "enseignants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "type_projet",
+          "type": "ENUM('reseaux','systemes_embarques','intelligence_artificielle','genie_logiciel')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "actif",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_desactivation",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cle_doublon_active",
+          "type": "VARCHAR(120)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_specialites_encadrement_enseignant_cree_par_utilisateur_id_utilisateurs",
+          "detail": "cree_par_utilisateur_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_specialites_encadrement_cle_active",
+          "detail": "cle_doublon_active"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_specialites_encadrement_enseignant_enseignant_id_enseignants",
+          "detail": "enseignant_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_specialites_encadrement_enseignant_actif",
+          "colonnes": [
+            "enseignant_id",
+            "actif"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_specialites_encadrement_type_actif",
+          "colonnes": [
+            "type_projet",
+            "actif"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "cours_enseignants",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "enseignant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "enseignants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "type_intervenant",
+          "type": "ENUM('professeur','assistant','charge_de_cours')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_responsable",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "attribue_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_cours_enseignants_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_cours_enseignants_intervention",
+          "detail": "cours_id, enseignant_id, type_intervenant"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_cours_enseignants_enseignant_id_enseignants",
+          "detail": "enseignant_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_cours_enseignants_enseignant_id",
+          "colonnes": [
+            "enseignant_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "decisions_jury",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "session_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "sessions_deliberation.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "decision",
+          "type": "ENUM('ADM','COMP','DEF','AJ')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "enregistre_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_decisions_jury_enregistre_par_utilisateur_id_utilisateurs",
+          "detail": "enregistre_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_decisions_jury_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_decisions_jury_session_id_sessions_deliberation",
+          "detail": "session_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_decisions_jury_session_etudiant",
+          "detail": "session_id, etudiant_id"
+        }
+      ],
+      "index": []
+    },
+    {
+      "nom": "enrolements_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_enrolement",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('en_attente','valide','annule')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "valide_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annule_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "reference_fiche",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_validation",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_annulation",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif_annulation",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "pourcentage_paiement",
+          "type": "NUMERIC(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_modification",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cle_doublon_actif",
+          "type": "VARCHAR(180)",
+          "nullable": true,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_enrolements_academiques_reference",
+          "detail": "reference_fiche"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_enrolements_academiques_cle_doublon_actif",
+          "detail": "cle_doublon_actif"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_cree_par_utilisateur_id_utilisateurs",
+          "detail": "cree_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_annule_par_utilisateur_id_utilisateurs",
+          "detail": "annule_par_utilisateur_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_enrolements_academiques_ck_enrolements_academiques_paiement_valide",
+          "detail": "pourcentage_paiement >= 0 AND pourcentage_paiement <= 100"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_valide_par_utilisateur_id_utilisateurs",
+          "detail": "valide_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_enrolements_academiques_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_enrolements_academiques_etudiant_annee",
+          "colonnes": [
+            "etudiant_id",
+            "annee_academique_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_enrolements_academiques_promotion_statut",
+          "colonnes": [
+            "promotion_id",
+            "statut"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_enrolements_academiques_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "evaluations",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "type_evaluation_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "types_evaluations.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "titre",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "note_maximale",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "ponderation",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('brouillon','publiee','archivee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_par",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_evaluation",
+          "type": "DATE",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_publication",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_verrouillee",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "CHECK",
+          "nom": "ck_evaluations_ck_evaluations_note_maximale_positive",
+          "detail": "note_maximale > 0"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_evaluations_cree_par_utilisateurs",
+          "detail": "cree_par"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_evaluations_ck_evaluations_ponderation_positive",
+          "detail": "ponderation > 0"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_evaluations_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_evaluations_type_evaluation_id_types_evaluations",
+          "detail": "type_evaluation_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_evaluations_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_evaluations_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_evaluations_type_evaluation_id",
+          "colonnes": [
+            "type_evaluation_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "evaluations_risque",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "score_risque",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "niveau_risque",
+          "type": "ENUM('faible','moyen','eleve')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "raisons",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "calcule_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_active",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_evaluations_risque_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_evaluations_risque_ck_evaluations_risque_score_min",
+          "detail": "score_risque >= 0"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_evaluations_risque_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_evaluations_risque_ck_evaluations_risque_score_max",
+          "detail": "score_risque <= 100"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_evaluations_risque_active",
+          "colonnes": [
+            "est_active"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_evaluations_risque_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_evaluations_risque_etudiant_id",
+          "colonnes": [
+            "etudiant_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_evaluations_risque_niveau",
+          "colonnes": [
+            "niveau_risque"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "inscriptions_cours",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_inscription",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('active','retiree','validee','archivee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_inscriptions_cours_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_inscriptions_cours_etudiant_cours_annee",
+          "detail": "etudiant_id, cours_id, annee_academique_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_inscriptions_cours_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_inscriptions_cours_cours_id_cours",
+          "detail": "cours_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_inscriptions_cours_annee_academique_id",
+          "colonnes": [
+            "annee_academique_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_inscriptions_cours_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_inscriptions_cours_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "membres_jury",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "session_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "sessions_deliberation.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "qualite",
+          "type": "ENUM('president','membre','secretaire')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "present",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_ajout",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_membres_jury_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_membres_jury_session_id_sessions_deliberation",
+          "detail": "session_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_membres_jury_session_utilisateur",
+          "detail": "session_id, utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_membres_jury_utilisateur_id",
+          "colonnes": [
+            "utilisateur_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "presences",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_seance",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('present','absent','retard','justifie')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "enregistre_par",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_enregistre_par_utilisateurs",
+          "detail": "enregistre_par"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_presences_etudiant_cours_seance",
+          "detail": "etudiant_id, cours_id, date_seance"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_presences_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_presences_enregistre_par",
+          "colonnes": [
+            "enregistre_par"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "profils_biometriques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('actif','suspendu','revoque')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "version_moteur",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "seuil_utilise",
+          "type": "DECIMAL(6, 4)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "consentement_enregistre",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_consentement",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_modification",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_revocation",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif_revocation",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cle_profil_actif",
+          "type": "VARCHAR(80)",
+          "nullable": true,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_profils_biometriques_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_profils_biometriques_cle_actif",
+          "detail": "cle_profil_actif"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_profils_biometriques_cle_profil_actif",
+          "detail": "cle_profil_actif"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_profils_biometriques_cree_par_utilisateur_id_utilisateurs",
+          "detail": "cree_par_utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_profils_biometriques_etudiant_statut",
+          "colonnes": [
+            "etudiant_id",
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "projets_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "titre",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "type_projet",
+          "type": "ENUM('reseaux','systemes_embarques','intelligence_artificielle','genie_logiciel')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('propose','en_cours','suspendu','termine','archive')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_projets_academiques_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_projets_academiques_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_projets_academiques_promotion_id_promotions",
+          "detail": "promotion_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_projets_academiques_etudiant_id",
+          "colonnes": [
+            "etudiant_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_projets_academiques_promotion_annee",
+          "colonnes": [
+            "promotion_id",
+            "annee_academique_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_projets_academiques_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_projets_academiques_type_statut",
+          "colonnes": [
+            "type_projet",
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "publications_valve",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "auteur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "type_publication",
+          "type": "ENUM('annonce','communique','devoir','support_de_cours','changement_horaire','consigne_examen','rappel','publication_notes')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "titre",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "contenu",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_importante",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('brouillon','publiee','archivee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "publie_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_publications_valve_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_publications_valve_auteur_id_utilisateurs",
+          "detail": "auteur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_publications_valve_auteur_id",
+          "colonnes": [
+            "auteur_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_publications_valve_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_publications_valve_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "resultats_cours",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "moyenne",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "credits_obtenus",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut_resultat",
+          "type": "ENUM('en_attente','reussi','echoue')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "calcule_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_cours_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_cours_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_resultats_cours_etudiant_cours",
+          "detail": "etudiant_id, cours_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_resultats_cours_ck_resultats_cours_moyenne_positive",
+          "detail": "moyenne >= 0"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_resultats_cours_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_resultats_cours_statut_resultat",
+          "colonnes": [
+            "statut_resultat"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "resultats_semestre_officiels",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "session_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "sessions_deliberation.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "semestre_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "semestres.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "moyenne_ponderee",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "credits_prevus",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "credits_capitalises",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "credits_non_capitalises",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "decision",
+          "type": "ENUM('ADM','COMP','DEF','AJ')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut_publication",
+          "type": "ENUM('non_publie','publie','remplace')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "formule_version",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "valide_par_jury",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "president_jury_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_validation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "publie_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_publication",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "version",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_actif",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif_correction",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_session_id_sessions_deliberation",
+          "detail": "session_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_semestre_id_semestres",
+          "detail": "semestre_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_president_jury_id_utilisateurs",
+          "detail": "president_jury_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_snapshots_etudiant_perimetre_version",
+          "detail": "etudiant_id, annee_academique_id, semestre_id, version"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_snapshots_session_etudiant",
+          "detail": "session_id, etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_publie_par_utilisateur_id_utilisateurs",
+          "detail": "publie_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_resultats_semestre_officiels_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_snapshots_etudiant_actif",
+          "colonnes": [
+            "etudiant_id",
+            "est_actif"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "seances_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "promotion_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "promotions.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "enseignant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "enseignants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "annee_academique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "annees_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "semestre_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "semestres.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_seance",
+          "type": "DATE",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "heure_debut",
+          "type": "TIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "heure_fin",
+          "type": "TIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "type_cours",
+          "type": "ENUM('cours_1','cours_2','autre')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('planifiee','ouverte','fermee','annulee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "ouverte_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_ouverture",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_fermeture",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "fermee_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "confirme_cours_2_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "confirme_cours_2_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_modification",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_promotion_id_promotions",
+          "detail": "promotion_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_ouverte_par_utilisateur_id_utilisateurs",
+          "detail": "ouverte_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_fermee_par_utilisateur_id_utilisateurs",
+          "detail": "fermee_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_confirme_cours_2_par_utilisateur_id_utilisateurs",
+          "detail": "confirme_cours_2_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_annee_academique_id_annees_academiques",
+          "detail": "annee_academique_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_semestre_id_semestres",
+          "detail": "semestre_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_seances_academiques_ck_seances_academiques_heures_coherentes",
+          "detail": "heure_fin IS NULL OR heure_debut IS NULL OR heure_fin > heure_debut"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_enseignant_id_enseignants",
+          "detail": "enseignant_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_seances_academiques_cours_date_type",
+          "detail": "cours_id, date_seance, type_cours"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_seances_academiques_cours_id_cours",
+          "detail": "cours_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_seances_academiques_promotion_date",
+          "colonnes": [
+            "promotion_id",
+            "date_seance"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_seances_academiques_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "encadrements_projet",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "projet_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "projets_academiques.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "enseignant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "enseignants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "attribue_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "role_encadrement",
+          "type": "ENUM('principal','coencadreur')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_attribution",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "actif",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_fin",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "desactive_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_encadrements_projet_desactive_par_utilisateur_id_utilisateurs",
+          "detail": "desactive_par_utilisateur_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_encadrements_projet_enseignant",
+          "detail": "projet_id, enseignant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_encadrements_projet_enseignant_id_enseignants",
+          "detail": "enseignant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_encadrements_projet_attribue_par_utilisateur_id_utilisateurs",
+          "detail": "attribue_par_utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_encadrements_projet_projet_id_projets_academiques",
+          "detail": "projet_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_encadrements_projet_actif",
+          "colonnes": [
+            "actif"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_encadrements_projet_enseignant_actif",
+          "colonnes": [
+            "enseignant_id",
+            "actif"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_encadrements_projet_projet_actif",
+          "colonnes": [
+            "projet_id",
+            "actif"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "encodages_faciaux",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "profil_biometrique_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "profils_biometriques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "encodage_binaire",
+          "type": "BLOB",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "dimension",
+          "type": "INTEGER",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "format",
+          "type": "VARCHAR(40)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "version_moteur",
+          "type": "VARCHAR(80)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "actif",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "empreinte_integrite",
+          "type": "VARCHAR(64)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_encodages_faciaux_profil_biometrique_id_profils_biometriques",
+          "detail": "profil_biometrique_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_encodages_faciaux_ck_encodages_faciaux_dimension_positive",
+          "detail": "dimension > 0"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_encodages_faciaux_profil_actif",
+          "colonnes": [
+            "profil_biometrique_id",
+            "actif"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "lectures_publications",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "publication_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "publications_valve.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "lu_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_lectures_publications_publication_utilisateur",
+          "detail": "publication_id, utilisateur_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_lectures_publications_publication_id_publications_valve",
+          "detail": "publication_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_lectures_publications_utilisateur_id_utilisateurs",
+          "detail": "utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_lectures_publications_utilisateur_id",
+          "colonnes": [
+            "utilisateur_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "notes",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "evaluation_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "evaluations.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "note_obtenue",
+          "type": "DECIMAL(5, 2)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "commentaire",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "encodee_par",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_notes_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_notes_encodee_par_utilisateurs",
+          "detail": "encodee_par"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_notes_evaluation_etudiant",
+          "detail": "evaluation_id, etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_notes_evaluation_id_evaluations",
+          "detail": "evaluation_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_notes_ck_notes_note_obtenue_positive",
+          "detail": "note_obtenue >= 0"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_notes_encodee_par",
+          "colonnes": [
+            "encodee_par"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_notes_etudiant_id",
+          "colonnes": [
+            "etudiant_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "pieces_jointes_publications",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "publication_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "publications_valve.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "nom_original",
+          "type": "VARCHAR(255)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nom_stockage",
+          "type": "VARCHAR(190)",
+          "nullable": false,
+          "primaire": false,
+          "unique": true,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "chemin",
+          "type": "VARCHAR(500)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "type_mime",
+          "type": "VARCHAR(120)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "taille",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_archivee",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "ajoute_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "archivee_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_pieces_jointes_publications_nom_stockage",
+          "detail": "nom_stockage"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_pieces_jointes_publications_publication_id_publications_valve",
+          "detail": "publication_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_pieces_jointes_publications_est_archivee",
+          "colonnes": [
+            "est_archivee"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_pieces_jointes_publications_publication_id",
+          "colonnes": [
+            "publication_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "presences_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "seance_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "seances_academiques.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('present','retard','absent','refuse')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "heure_identification",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "heure_enregistrement",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "methode_identification",
+          "type": "ENUM('manuelle','matricule','future_reconnaissance_faciale','reconnaissance_faciale')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "enregistre_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "motif_refus",
+          "type": "ENUM('autorise','paiement_insuffisant','etudiant_inactif','non_enrole','mauvaise_promotion','seance_fermee','deja_enregistre','etudiant_introuvable')",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "pourcentage_paiement_observe",
+          "type": "NUMERIC(5, 2)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_creation",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "date_modification",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_academiques_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "UNIQUE",
+          "nom": "uq_presences_academiques_seance_etudiant",
+          "detail": "seance_id, etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_academiques_enregistre_par_utilisateur_id_utilisateurs",
+          "detail": "enregistre_par_utilisateur_id"
+        },
+        {
+          "genre": "CHECK",
+          "nom": "ck_presences_academiques_ck_presences_academiques_paiement_valide",
+          "detail": "pourcentage_paiement_observe IS NULL OR (pourcentage_paiement_observe >= 0 AND pourcentage_paiement_observe <= 100)"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_presences_academiques_seance_id_seances_academiques",
+          "detail": "seance_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_presences_academiques_etudiant",
+          "colonnes": [
+            "etudiant_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_presences_academiques_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "corrections_presences_academiques",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "presence_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "presences_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "seance_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "seances_academiques.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "ancien_statut",
+          "type": "ENUM('present','retard','absent','refuse')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nouveau_statut",
+          "type": "ENUM('present','retard','absent','refuse')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "motif",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "corrige_par_utilisateur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "date_correction",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_corrections_presences_academiques_presence_id_presences_academiques",
+          "detail": "presence_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_corrections_presences_academiques_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_corrections_presences_academiques_seance_id_seances_academiques",
+          "detail": "seance_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_corrections_presences_academiques_corrige_par_utilisateur_id_utilisateurs",
+          "detail": "corrige_par_utilisateur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_corrections_presences_presence_id",
+          "colonnes": [
+            "presence_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_corrections_presences_seance_etudiant",
+          "colonnes": [
+            "seance_id",
+            "etudiant_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "reclamations",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "etudiant_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "etudiants.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "cours_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "cours.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "note_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "notes.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "categorie",
+          "type": "ENUM('erreur_note','inscription','cours','document_academique','autre')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "objet",
+          "type": "VARCHAR(180)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "description",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "statut",
+          "type": "ENUM('en_attente','en_cours','resolue','rejetee')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "priorite",
+          "type": "ENUM('faible','normale','elevee','urgente')",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "assignee_a",
+          "type": "BIGINT UNSIGNED",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "SET NULL"
+            }
+          ]
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "resolue_le",
+          "type": "DATETIME",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_reclamations_etudiant_id_etudiants",
+          "detail": "etudiant_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_reclamations_cours_id_cours",
+          "detail": "cours_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_reclamations_assignee_a_utilisateurs",
+          "detail": "assignee_a"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_reclamations_note_id_notes",
+          "detail": "note_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_reclamations_assignee_a",
+          "colonnes": [
+            "assignee_a"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_reclamations_cours_id",
+          "colonnes": [
+            "cours_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_reclamations_etudiant_id",
+          "colonnes": [
+            "etudiant_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_reclamations_note_id",
+          "colonnes": [
+            "note_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_reclamations_statut",
+          "colonnes": [
+            "statut"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "historiques_reclamations",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "reclamation_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "reclamations.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "ancien_statut",
+          "type": "VARCHAR(40)",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "nouveau_statut",
+          "type": "VARCHAR(40)",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_par",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "commentaire",
+          "type": "TEXT",
+          "nullable": true,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "modifie_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_historiques_reclamations_reclamation_id_reclamations",
+          "detail": "reclamation_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_historiques_reclamations_modifie_par_utilisateurs",
+          "detail": "modifie_par"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_historiques_reclamations_modifie_par",
+          "colonnes": [
+            "modifie_par"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_historiques_reclamations_reclamation_id",
+          "colonnes": [
+            "reclamation_id"
+          ],
+          "unique": false
+        }
+      ]
+    },
+    {
+      "nom": "messages_reclamations",
+      "colonnes": [
+        {
+          "nom": "id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": true,
+          "unique": false,
+          "auto_increment": true,
+          "references": []
+        },
+        {
+          "nom": "reclamation_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "reclamations.id",
+              "suppression": "CASCADE"
+            }
+          ]
+        },
+        {
+          "nom": "auteur_id",
+          "type": "BIGINT UNSIGNED",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": [
+            {
+              "cible": "utilisateurs.id",
+              "suppression": "RESTRICT"
+            }
+          ]
+        },
+        {
+          "nom": "message",
+          "type": "TEXT",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "cree_le",
+          "type": "DATETIME",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        },
+        {
+          "nom": "est_interne",
+          "type": "BOOL",
+          "nullable": false,
+          "primaire": false,
+          "unique": false,
+          "auto_increment": false,
+          "references": []
+        }
+      ],
+      "contraintes": [
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_messages_reclamations_reclamation_id_reclamations",
+          "detail": "reclamation_id"
+        },
+        {
+          "genre": "FOREIGN KEY",
+          "nom": "fk_messages_reclamations_auteur_id_utilisateurs",
+          "detail": "auteur_id"
+        }
+      ],
+      "index": [
+        {
+          "nom": "ix_messages_reclamations_auteur_id",
+          "colonnes": [
+            "auteur_id"
+          ],
+          "unique": false
+        },
+        {
+          "nom": "ix_messages_reclamations_reclamation_id",
+          "colonnes": [
+            "reclamation_id"
+          ],
+          "unique": false
+        }
+      ]
+    }
+  ]
+}

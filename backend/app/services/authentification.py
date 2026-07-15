@@ -28,6 +28,7 @@ from app.schemas.authentification import (
 
 
 MESSAGE_IDENTIFIANTS_INVALIDES = "Email, mot de passe ou role incorrect"
+MESSAGE_ROLE_NON_AUTORISE = "Role non autorise pour ce compte"
 
 
 def charger_utilisateur_par_email(session: Session, email: str) -> Utilisateur | None:
@@ -94,7 +95,7 @@ def verifier_compte_actif(utilisateur: Utilisateur) -> None:
 
 def verifier_role(utilisateur: Utilisateur, role: str) -> None:
     if role not in roles_utilisateur(utilisateur):
-        raise AuthentificationRequise(MESSAGE_IDENTIFIANTS_INVALIDES)
+        raise AccesInterdit(MESSAGE_ROLE_NON_AUTORISE)
 
 
 def construire_reponse_jetons(session: Session, utilisateur: Utilisateur, role: str, request: Request | None, appareil: str | None) -> dict:

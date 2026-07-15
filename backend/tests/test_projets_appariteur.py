@@ -293,4 +293,4 @@ def test_role_actif_falsifie_est_refuse(client: TestClient):
         etudiant = session.scalar(select(Utilisateur).where(Utilisateur.email == "etudiant@smartfaculty.test"))
         assert etudiant is not None
         token = creer_access_token(str(etudiant.id), "appariteur")
-    assert client.get("/api/v1/appariteur/projets", headers=_headers(token)).status_code == 401
+    assert client.get("/api/v1/appariteur/projets", headers=_headers(token)).status_code == 403

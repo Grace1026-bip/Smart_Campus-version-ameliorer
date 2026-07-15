@@ -33,10 +33,21 @@ class ApiException implements Exception {
   String get messagePourUtilisateur {
     switch (statusCode) {
       case 401:
-        return 'Identifiants incorrects.';
+        return 'Email ou mot de passe incorrect.';
       case 403:
+        final texte = '$message ${errors.values.join(' ')}'.toLowerCase();
+        if (texte.contains('non actif')) {
+          return 'Votre compte n’est pas actif.';
+        }
+        if (texte.contains('role') || texte.contains('rôle')) {
+          return 'Ce rôle n’est pas autorisé pour ce compte.';
+        }
         return 'Compte non autorise ou acces refuse.';
       case 422:
+        final texte = '$message ${errors.values.join(' ')}'.toLowerCase();
+        if (texte.contains('role') || texte.contains('rôle')) {
+          return 'Le rôle sélectionné est invalide.';
+        }
         return 'Requete invalide. Verifiez les donnees saisies.';
       case 500:
         return 'Le serveur FastAPI a rencontre une erreur.';
