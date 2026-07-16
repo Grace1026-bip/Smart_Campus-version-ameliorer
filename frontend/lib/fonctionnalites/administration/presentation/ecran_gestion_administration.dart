@@ -40,7 +40,7 @@ class AdminManagementScreen extends StatelessWidget {
         children: [
           SectionPanel(
             title: 'Creer ou modifier',
-            subtitle: 'Formulaire mocke, pret pour une mutation API REST.',
+            subtitle: 'Gestion disponible lorsque la route API correspondante est exposee.',
             child: LayoutBuilder(
               builder: (context, constraints) {
                 final compact = constraints.maxWidth < 760;
@@ -186,7 +186,7 @@ class AdminManagementScreen extends StatelessWidget {
         return const _ManagementConfig(
           title: 'Utilisateurs',
           subtitle: 'Comptes, roles et acces de la plateforme.',
-          tableSubtitle: 'Comptes institutionnels de demonstration.',
+          tableSubtitle: 'Comptes institutionnels retournes par FastAPI.',
           columns: ['Utilisateur', 'Email', 'Role', 'Statut'],
           rows: [
             [

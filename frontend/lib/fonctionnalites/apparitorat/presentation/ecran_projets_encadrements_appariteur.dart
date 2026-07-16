@@ -247,6 +247,48 @@ class _ApparitorProjectsSupervisionsScreenState
     );
   }
 
+  Future<void> _deciderSoumission(String action) async {
+    final id = _asInt(_detail?['id']);
+    if (id == null) return;
+    String motif = '';
+    if (action != 'approuver') {
+      final controller = TextEditingController();
+      motif = await showDialog<String>(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: Text(action == 'rejeter' ? 'Rejeter le projet' : 'Demander une correction'),
+              content: TextField(
+                controller: controller,
+                minLines: 2,
+                maxLines: 4,
+                decoration: const InputDecoration(labelText: 'Motif obligatoire'),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, controller.text.trim()),
+                  child: const Text('Confirmer'),
+                ),
+              ],
+            ),
+          ) ??
+          '';
+      controller.dispose();
+      if (motif.isEmpty) return;
+    }
+    await _executer(
+      () => _service.decisionProjet(
+        projetId: id,
+        action: action,
+        motif: motif.isEmpty ? null : motif,
+      ),
+      action == 'approuver' ? 'Projet approuve.' : 'Decision enregistree.',
+    );
+  }
+
   Future<void> _executer(
     Future<Map<String, dynamic>> Function() action,
     String message, {
@@ -508,6 +550,36 @@ class _ApparitorProjectsSupervisionsScreenState
           ),
           if (!archive) ...[
             const SizedBox(height: 16),
+            if (detail['statut'] == 'en_attente_validation' ||
+                detail['statut'] == 'correction_demandee')
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: [
+                  FilledButton.icon(
+                    onPressed: _actionEnCours
+                        ? null
+                        : () => _deciderSoumission('approuver'),
+                    icon: const Icon(Icons.check_circle_outline_rounded),
+                    label: const Text('Approuver'),
+                  ),
+                  OutlinedButton.icon(
+                    onPressed: _actionEnCours
+                        ? null
+                        : () => _deciderSoumission('correction'),
+                    icon: const Icon(Icons.edit_note_rounded),
+                    label: const Text('Demander une correction'),
+                  ),
+                  TextButton.icon(
+                    onPressed: _actionEnCours
+                        ? null
+                        : () => _deciderSoumission('rejeter'),
+                    icon: const Icon(Icons.cancel_outlined),
+                    label: const Text('Rejeter'),
+                  ),
+                ],
+              ),
+            const SizedBox(height: 12),
             FilledButton.icon(
               onPressed: _actionEnCours ? null : _attribuer,
               icon: const Icon(Icons.person_add_alt_1_rounded),

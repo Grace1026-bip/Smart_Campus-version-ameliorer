@@ -1,5 +1,5 @@
-// The existing web transport uses dart:html; this conditional adapter keeps
-// the multipart transport on the same platform-specific boundary.
+// Le transport Web existant utilise dart:html; cet adaptateur conditionnel
+// conserve le transport multipart sur la meme limite par plateforme.
 // ignore_for_file: deprecated_member_use, avoid_web_libraries_in_flutter
 
 import 'dart:async';

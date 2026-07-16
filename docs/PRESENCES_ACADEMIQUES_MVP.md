@@ -1,5 +1,23 @@
 # Presences academiques et controle d'acces MVP
 
+## Finalisation avant defense - 2026-07-16
+
+Le controle manuel par matricule reste le mode de repli officiel. Le mode
+facial ne cree jamais directement une presence : il identifie un candidat,
+puis appelle `controler_acces` pour verifier le compte actif, l'etudiant,
+l'enrolement valide, la promotion, l'inscription au cours, la seance ouverte,
+le paiement d'au moins 50 % et l'unicite de la presence.
+
+L'ecran Surveillant distingue `Identification manuelle` et
+`Reconnaissance faciale`, affiche le visage reconnu, la distance moyenne,
+l'acces, le motif et la presence enregistree. La double reconnaissance reste
+idempotente. La mention de vivacite renforcee en cours de finalisation est
+visible ; aucune garantie anti-spoofing n'est revendiquee.
+
+La base principale est a `20260715_0011` et ses tables biometrie sont
+presentes, sans profil de demonstration cree dans cette intervention. Les
+tests restent exclusivement sur `smart_faculty_test`.
+
 ## Regles retenues
 
 - Une presence est rattachee a une seance et a un cours, jamais uniquement a une journee.

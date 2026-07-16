@@ -63,6 +63,7 @@ class SharedPreferencesSessionStorage implements SessionStorage {
 }
 
 class SessionPersistenceService {
+  // Le stockage est resolu a la premiere operation pour eviter tout appel plateforme pendant l import.
   static SessionStorage _storage = SharedPreferencesSessionStorage();
 
   static void configureStorage(SessionStorage storage) {
@@ -85,7 +86,7 @@ class SessionPersistenceService {
         roleActif: roleActif,
       );
     } catch (_) {
-      // A storage failure must not invalidate an otherwise valid API session.
+      // Une panne du stockage ne doit pas invalider une session API encore valide.
     }
   }
 
@@ -101,7 +102,7 @@ class SessionPersistenceService {
     try {
       await _storage.clearSession();
     } catch (_) {
-      // Logout still clears the in-memory session when local storage is down.
+      // La deconnexion efface tout de meme la session en memoire si le stockage local est indisponible.
     }
   }
 }

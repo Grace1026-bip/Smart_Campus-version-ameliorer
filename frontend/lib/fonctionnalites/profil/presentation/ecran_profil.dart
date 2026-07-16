@@ -103,7 +103,7 @@ class ProfileScreen extends StatelessWidget {
                 metric: KpiMetric(
                   title: 'Securite',
                   value: 'OK',
-                  trend: 'demo',
+                  trend: 'compte actif',
                   description: 'auth future JWT/session',
                 ),
                 icon: Icons.lock_rounded,
@@ -167,9 +167,9 @@ class _StudentApiProfileScreenState extends State<_StudentApiProfileScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -310,7 +310,7 @@ class _TeacherApiProfileScreenState extends State<_TeacherApiProfileScreen> {
             return SectionPanel(
               title: 'Profil indisponible',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -661,7 +661,7 @@ class _ProfileForm extends StatelessWidget {
 
     return SectionPanel(
       title: 'Informations personnelles',
-      subtitle: 'Formulaire mocke pour preparer la future API profil.',
+      subtitle: 'La modification sera disponible lorsque la route API profil sera exposee.',
       child: Column(
         children: [
           TextField(

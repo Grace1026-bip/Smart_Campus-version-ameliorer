@@ -343,12 +343,19 @@ class _ControleAccesSurveillantScreenState
                   'La seance doit etre ouverte pour enregistrer une presence.')),
         if (resultat != null) ...[
           const SizedBox(height: 14),
+          if (resultat['visage_reconnu'] == true)
+            Text('Visage reconnu',
+                style: Theme.of(context).textTheme.titleSmall),
+          if (resultat['distance_moyenne'] != null)
+            Text('Distance moyenne : ${resultat['distance_moyenne']}'),
           Text(
               resultat['acces_autorise'] == true
                   ? 'Acces autorise'
                   : 'Acces refuse',
               style: Theme.of(context).textTheme.titleSmall),
           Text('Motif : ${resultat['motif'] ?? '-'}'),
+          if (resultat['presence_enregistree'] == true)
+            const Text('Presence enregistree.'),
         ],
         if (_presences.isNotEmpty) ...[
           const SizedBox(height: 14),

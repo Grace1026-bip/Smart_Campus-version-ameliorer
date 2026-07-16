@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
@@ -11,20 +10,38 @@ import '../../../commun/composants/badge_statut.dart';
 
 class ComplaintDetailScreen extends StatefulWidget {
   ComplaintDetailScreen({super.key, Complaint? complaint})
-      : complaint = complaint ?? MockFacultyData.complaints.first;
+      : complaint = complaint;
 
-  final Complaint complaint;
+  final Complaint? complaint;
 
   @override
   State<ComplaintDetailScreen> createState() => _ComplaintDetailScreenState();
 }
 
 class _ComplaintDetailScreenState extends State<ComplaintDetailScreen> {
-  late ComplaintStatus _status = widget.complaint.status;
+  late ComplaintStatus _status;
+
+  @override
+  void initState() {
+    super.initState();
+    _status = widget.complaint?.status ?? ComplaintStatus.pending;
+  }
 
   @override
   Widget build(BuildContext context) {
     final complaint = widget.complaint;
+    if (complaint == null) {
+      return SmartFacultyShell(
+        role: SessionService.currentRole,
+        selectedRoute: AppRoutes.complaintDetail,
+        title: 'Detail reclamation',
+        subtitle: 'Consultation d une reclamation reelle.',
+        body: const SectionPanel(
+          title: 'Reclamation introuvable',
+          child: Text('Aucune reclamation reelle n a ete transmise a cet ecran.'),
+        ),
+      );
+    }
     final role = SessionService.currentRole;
     final canUpdateStatus = _canUpdateStatus(role, complaint);
 

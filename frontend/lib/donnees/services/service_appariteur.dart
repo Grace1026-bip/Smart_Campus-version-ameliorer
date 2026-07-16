@@ -224,6 +224,20 @@ class AppariteurApiService {
     return ApiDataSource.client.get('/appariteur/projets/$id');
   }
 
+  Future<Map<String, dynamic>> decisionProjet({
+    required int projetId,
+    required String action,
+    String? motif,
+  }) async {
+    return ApiDataSource.client.post(
+      '/appariteur/projets/$projetId/decision',
+      body: {
+        'action': action,
+        if (motif != null && motif.trim().isNotEmpty) 'motif': motif.trim(),
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> modifierProjet(
     int id, {
     String? titre,

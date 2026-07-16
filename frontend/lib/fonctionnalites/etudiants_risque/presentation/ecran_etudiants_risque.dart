@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/config/api_config.dart';
-import '../../../coeur/routes/routes_application.dart';
-import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
-import '../../../donnees/modeles/modeles_faculte.dart';
-import '../../../donnees/services/service_enseignant.dart';
-import '../../../donnees/services/service_session.dart';
-import '../../../commun/mises_en_page/structure_adaptative.dart';
+import '../../../commun/composants/badge_statut.dart';
+import '../../../commun/composants/carte_statistique.dart';
 import '../../../commun/composants/grille_adaptative.dart';
 import '../../../commun/composants/panneau_section.dart';
 import '../../../commun/composants/tableau_intelligent.dart';
-import '../../../commun/composants/carte_statistique.dart';
-import '../../../commun/composants/badge_statut.dart';
+import '../../../commun/mises_en_page/structure_adaptative.dart';
+import '../../../coeur/routes/routes_application.dart';
+import '../../../coeur/theme/couleurs_application.dart';
+import '../../../donnees/modeles/modeles_faculte.dart';
+import '../../../donnees/services/service_api.dart';
+import '../../../donnees/services/service_enseignant.dart';
+import '../../../donnees/services/service_risques.dart';
+import '../../../donnees/services/service_session.dart';
 
 class RiskStudentsScreen extends StatefulWidget {
   const RiskStudentsScreen({super.key});
@@ -27,200 +27,80 @@ class _RiskStudentsScreenState extends State<RiskStudentsScreen> {
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
-    if (role == UserRole.teacher) {
-      return _TeacherRiskStudentsScreen(
-        selectedLevel: _selectedLevel,
-        onLevelSelected: (level) => setState(() => _selectedLevel = level),
-      );
-    }
-
-    final scopedStudents = _studentsForRole(role);
-    final students = scopedStudents
-        .where(
-          (student) =>
-              _selectedLevel == null || student.level == _selectedLevel,
-        )
-        .toList();
-
     return SmartFacultyShell(
       role: role,
       selectedRoute: AppRoutes.riskStudents,
-      title: _titleFor(role),
-      subtitle: _subtitleFor(role),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ResponsiveGrid(children: _riskStats(scopedStudents)),
-          const SizedBox(height: 22),
-          SectionPanel(
-            title: 'Filtrer par niveau',
-            subtitle: _filterSubtitle(role),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                ChoiceChip(
-                  label: const Text('Tous'),
-                  selected: _selectedLevel == null,
-                  onSelected: (_) => setState(() => _selectedLevel = null),
-                ),
-                for (final level in RiskLevel.values)
-                  ChoiceChip(
-                    label: Text(level.label),
-                    selected: _selectedLevel == level,
-                    onSelected: (_) => setState(() => _selectedLevel = level),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          if (role == UserRole.student) ...[
-            SectionPanel(
-              title: 'Alerte academique personnelle',
-              subtitle: 'Visible uniquement par l etudiant concerne.',
-              child: Text(
-                students.isEmpty
-                    ? 'Aucune alerte academique active pour vos cours publies.'
-                    : 'Attention : votre moyenne en ${students.first.course} est faible. Vous etes a risque dans ce cours.',
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w800,
-                  height: 1.4,
-                ),
-              ),
-            ),
-            const SizedBox(height: 22),
-          ],
-          SmartTable(
-            title: _tableTitle(role),
-            subtitle: '${students.length} profil(s) affiche(s).',
-            columns: const [
-              DataColumn(label: Text('Nom')),
-              DataColumn(label: Text('Promotion')),
-              DataColumn(label: Text('Cours')),
-              DataColumn(label: Text('Enseignant')),
-              DataColumn(label: Text('Moyenne')),
-              DataColumn(label: Text('Echecs')),
-              DataColumn(label: Text('Niveau')),
-              DataColumn(label: Text('Signal')),
-            ],
-            rows: [
-              for (final student in students)
-                DataRow(
-                  cells: [
-                    DataCell(Text(student.name)),
-                    DataCell(Text(student.promotion)),
-                    DataCell(Text(student.course)),
-                    DataCell(Text(student.teacher)),
-                    DataCell(Text(student.average.toStringAsFixed(1))),
-                    DataCell(Text('${student.failures}')),
-                    DataCell(StatusBadge.risk(student.level)),
-                    DataCell(Text(student.reason)),
-                  ],
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _TeacherRiskStudentsScreen extends StatelessWidget {
-  const _TeacherRiskStudentsScreen({
-    required this.selectedLevel,
-    required this.onLevelSelected,
-  });
-
-  final RiskLevel? selectedLevel;
-  final ValueChanged<RiskLevel?> onLevelSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    return SmartFacultyShell(
-      role: UserRole.teacher,
-      selectedRoute: AppRoutes.riskStudents,
       title: 'Etudiants a risque',
-      subtitle: 'Risques calcules uniquement dans vos cours publies.',
-      body: FutureBuilder<Map<String, dynamic>>(
-        future: EnseignantDataSource.service.tableauDeBord(),
+      subtitle: 'Signaux calcules par FastAPI a partir des notes publiees.',
+      body: FutureBuilder<List<dynamic>>(
+        future: _load(role),
         builder: (context, snapshot) {
           if (snapshot.connectionState != ConnectionState.done) {
             return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
+            final message = snapshot.error is ApiException
+                ? (snapshot.error as ApiException).messagePourUtilisateur
+                : 'Les signaux de risque ne peuvent pas etre charges.';
             return SectionPanel(
-              title: 'Connexion API impossible',
-              subtitle: snapshot.error.toString(),
-              child: const Text(
-                ApiConfig.serverUnavailableMessage,
-              ),
+              title: 'Donnees indisponibles',
+              subtitle: message,
+              child: Text(message),
             );
           }
-
-          final data = snapshot.data ?? {};
-          final allStudents =
-              data['etudiants_a_risque'] as List<dynamic>? ?? const [];
-          final students = allStudents.where((student) {
-            if (selectedLevel == null) return true;
-            return _riskLevelFromApi('${student['niveau'] ?? ''}') ==
-                selectedLevel;
+          final all = snapshot.data ?? const [];
+          final students = all.where((item) {
+            if (_selectedLevel == null || item is! Map) return true;
+            return _level('${item['niveau'] ?? item['niveau_risque'] ?? ''}') ==
+                _selectedLevel;
           }).toList();
-
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ResponsiveGrid(children: _apiRiskStats(allStudents)),
+              ResponsiveGrid(children: _stats(all)),
               const SizedBox(height: 22),
               SectionPanel(
                 title: 'Filtrer par niveau',
-                subtitle: 'Le filtre agit uniquement sur vos cours.',
                 child: Wrap(
                   spacing: 10,
-                  runSpacing: 10,
                   children: [
                     ChoiceChip(
                       label: const Text('Tous'),
-                      selected: selectedLevel == null,
-                      onSelected: (_) => onLevelSelected(null),
+                      selected: _selectedLevel == null,
+                      onSelected: (_) => setState(() => _selectedLevel = null),
                     ),
                     for (final level in RiskLevel.values)
                       ChoiceChip(
                         label: Text(level.label),
-                        selected: selectedLevel == level,
-                        onSelected: (_) => onLevelSelected(level),
+                        selected: _selectedLevel == level,
+                        onSelected: (_) =>
+                            setState(() => _selectedLevel = level),
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 22),
               SmartTable(
-                title: 'Risques dans mes cours',
-                subtitle: '${students.length} profil(s) affiche(s).',
+                title: 'Signaux disponibles',
+                subtitle: '${students.length} signalement(s) affiche(s).',
                 columns: const [
-                  DataColumn(label: Text('Nom')),
-                  DataColumn(label: Text('Matricule')),
-                  DataColumn(label: Text('Promotion')),
+                  DataColumn(label: Text('Etudiant')),
                   DataColumn(label: Text('Cours')),
-                  DataColumn(label: Text('Moyenne')),
+                  DataColumn(label: Text('Score')),
                   DataColumn(label: Text('Niveau')),
                   DataColumn(label: Text('Motif')),
                 ],
                 rows: [
-                  for (final student in students)
-                    DataRow(cells: [
-                      DataCell(Text('${student['nom'] ?? '-'}')),
-                      DataCell(Text('${student['matricule'] ?? '-'}')),
-                      DataCell(Text('${student['promotion'] ?? '-'}')),
-                      DataCell(Text('${student['cours'] ?? '-'}')),
-                      DataCell(Text(_formatApiNumber(student['moyenne']))),
-                      DataCell(
-                        StatusBadge.risk(
-                          _riskLevelFromApi('${student['niveau'] ?? ''}'),
-                        ),
-                      ),
-                      DataCell(Text('${student['motif'] ?? '-'}')),
-                    ]),
+                  for (final item in students)
+                    if (item is Map)
+                      DataRow(cells: [
+                        DataCell(Text('${item['nom'] ?? item['etudiant']?['nom'] ?? '-'}')),
+                        DataCell(Text('${item['cours'] ?? item['cours']?['intitule'] ?? '-'}')),
+                        DataCell(Text('${item['score_risque'] ?? '-'}')),
+                        DataCell(StatusBadge.risk(_level(
+                            '${item['niveau'] ?? item['niveau_risque'] ?? ''}'))),
+                        DataCell(Text('${item['motif'] ?? item['raisons'] ?? '-'}')),
+                      ]),
                 ],
               ),
             ],
@@ -229,207 +109,54 @@ class _TeacherRiskStudentsScreen extends StatelessWidget {
       ),
     );
   }
+
+  Future<List<dynamic>> _load(UserRole role) async {
+    switch (role) {
+      case UserRole.student:
+        final data = await RisquesDataSource.service.risquesEtudiant();
+        return data['risques'] as List<dynamic>? ?? const [];
+      case UserRole.teacher:
+        final data = await EnseignantDataSource.service.tableauDeBord();
+        return data['etudiants_a_risque'] as List<dynamic>? ?? const [];
+      case UserRole.apparitor:
+      case UserRole.dean:
+      case UserRole.administrator:
+        final data = await RisquesDataSource.service.risquesGlobal(taille: 100);
+        return data['elements'] as List<dynamic>? ?? const [];
+      case UserRole.promotionChief:
+      case UserRole.surveillant:
+      case UserRole.viceDean:
+        throw ApiException(
+            'Aucune route de risques n est exposee pour ce role.');
+    }
+  }
 }
 
-List<Widget> _apiRiskStats(List<dynamic> students) {
-  final high = students
-      .where((item) =>
-          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.high)
-      .length;
-  final medium = students
-      .where((item) =>
-          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.medium)
-      .length;
-  final low = students
-      .where((item) =>
-          _riskLevelFromApi('${item['niveau'] ?? ''}') == RiskLevel.low)
-      .length;
-
+List<Widget> _stats(List<dynamic> students) {
+  final high = students.where((item) => item is Map &&
+      _level('${item['niveau'] ?? item['niveau_risque'] ?? ''}') == RiskLevel.high).length;
+  final medium = students.where((item) => item is Map &&
+      _level('${item['niveau'] ?? item['niveau_risque'] ?? ''}') == RiskLevel.medium).length;
   return [
-    StatCard(
-      metric: KpiMetric(
-        title: 'Risque eleve',
-        value: '$high',
-        trend: 'moyenne < 10',
-        description: 'action prioritaire',
-      ),
-      icon: Icons.priority_high_rounded,
-      color: AppColors.danger,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Risque moyen',
-        value: '$medium',
-        trend: 'proche seuil',
-        description: 'suivi renforce',
-      ),
-      icon: Icons.warning_amber_rounded,
-      color: AppColors.warning,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Risque faible',
-        value: '$low',
-        trend: 'prevention',
-        description: 'surveillance legere',
-      ),
-      icon: Icons.trending_down_rounded,
-      color: AppColors.success,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Total',
-        value: '${students.length}',
-        trend: 'mes cours',
-        description: 'notes publiees',
-      ),
-      icon: Icons.groups_rounded,
-      color: AppColors.primary,
-    ),
+    _stat('Risque eleve', high, AppColors.danger),
+    _stat('Risque moyen', medium, AppColors.warning),
+    _stat('Risque faible', students.length - high - medium, AppColors.success),
+    _stat('Total', students.length, AppColors.primary),
   ];
 }
 
-List<Widget> _riskStats(List<RiskStudent> students) {
-  final high = students.where((item) => item.level == RiskLevel.high).length;
-  final medium =
-      students.where((item) => item.level == RiskLevel.medium).length;
-  final low = students.where((item) => item.level == RiskLevel.low).length;
-  final lowestAverage = students.isEmpty
-      ? 0
-      : students
-          .map((item) => item.average)
-          .reduce((value, element) => value < element ? value : element);
-
-  return [
-    StatCard(
+StatCard _stat(String title, int value, Color color) => StatCard(
       metric: KpiMetric(
-        title: 'Risque eleve',
-        value: '$high',
-        trend: high == 0 ? 'aucun cas' : 'priorite',
-        description: 'actions urgentes',
+        title: title,
+        value: '$value',
+        trend: 'donnees reelles',
+        description: 'calculees par FastAPI',
       ),
-      icon: Icons.priority_high_rounded,
-      color: AppColors.danger,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Risque moyen',
-        value: '$medium',
-        trend: medium == 0 ? 'stable' : 'suivi renforce',
-        description: 'a surveiller',
-      ),
-      icon: Icons.warning_amber_rounded,
-      color: AppColors.warning,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Risque faible',
-        value: '$low',
-        trend: 'prevention',
-        description: 'surveillance legere',
-      ),
-      icon: Icons.trending_down_rounded,
-      color: AppColors.success,
-    ),
-    StatCard(
-      metric: KpiMetric(
-        title: 'Moyenne basse',
-        value: lowestAverage.toStringAsFixed(1),
-        trend: 'seuil',
-        description: 'profil fragile',
-      ),
-      icon: Icons.analytics_rounded,
-      color: AppColors.primary,
-    ),
-  ];
-}
+      icon: Icons.health_and_safety_rounded,
+      color: color,
+    );
 
-List<RiskStudent> _studentsForRole(UserRole role) {
-  const students = MockFacultyData.riskStudents;
-  final user = SessionService.currentUser;
-  switch (role) {
-    case UserRole.teacher:
-      return students.where((student) => student.teacher == user.name).toList();
-    case UserRole.promotionChief:
-      return students
-          .where((student) => student.promotion == user.promotion)
-          .toList();
-    case UserRole.student:
-      return students.where((student) => student.name == user.name).toList();
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-    case UserRole.administrator:
-    case UserRole.dean:
-    case UserRole.viceDean:
-      return students;
-  }
-}
-
-String _titleFor(UserRole role) {
-  switch (role) {
-    case UserRole.promotionChief:
-      return 'Risques de ma promotion';
-    case UserRole.teacher:
-      return 'Signaux pedagogiques';
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-      return 'Risques par promotion et cours';
-    case UserRole.student:
-      return 'Mon accompagnement';
-    case UserRole.dean:
-      return 'Etudiants a risque';
-    case UserRole.viceDean:
-      return 'Etudiants a risque';
-    case UserRole.administrator:
-      return 'Suivi des risques';
-  }
-}
-
-String _subtitleFor(UserRole role) {
-  switch (role) {
-    case UserRole.promotionChief:
-      return 'Vue limitee aux etudiants de L2 Informatique.';
-    case UserRole.teacher:
-      return 'Reperer les etudiants fragiles dans les cours suivis.';
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-      return 'Vue apparitorat par promotion, cours et niveau de risque.';
-    case UserRole.student:
-      return 'Comprendre les signaux d accompagnement academique.';
-    case UserRole.dean:
-      return 'Identifier les priorites d accompagnement facultaires.';
-    case UserRole.viceDean:
-      return 'Identifier les priorites d accompagnement facultaires.';
-    case UserRole.administrator:
-      return 'Suivre moyennes, echecs et niveaux de risque.';
-  }
-}
-
-String _filterSubtitle(UserRole role) {
-  return role == UserRole.promotionChief
-      ? 'Le filtre agit seulement sur votre promotion.'
-      : 'Le filtre agit sur le perimetre visible par votre role.';
-}
-
-String _tableTitle(UserRole role) {
-  switch (role) {
-    case UserRole.promotionChief:
-      return 'Etudiants a suivre dans la promotion';
-    case UserRole.teacher:
-      return 'Risques dans mes cours';
-    case UserRole.student:
-      return 'Mes alertes academiques';
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-      return 'Etudiants a risque par promotion et cours';
-    case UserRole.dean:
-    case UserRole.viceDean:
-    case UserRole.administrator:
-      return 'Liste des etudiants a risque';
-  }
-}
-
-RiskLevel _riskLevelFromApi(String value) {
+RiskLevel _level(String value) {
   switch (value) {
     case 'eleve':
     case 'high':
@@ -440,10 +167,4 @@ RiskLevel _riskLevelFromApi(String value) {
     default:
       return RiskLevel.low;
   }
-}
-
-String _formatApiNumber(dynamic value) {
-  if (value == null) return '-';
-  if (value is num) return value.toStringAsFixed(2);
-  return value.toString();
 }

@@ -16,7 +16,7 @@ class AppColors {
   static const Color disabledBackground = Color(0xFFE7DDD2);
   static const Color disabledText = Color(0xFF9B8E87);
 
-  // Aliases kept so existing widgets continue to use one central palette.
+  // Alias conserves pour que les widgets existants utilisent une palette centrale.
   static const Color primaryDark = brownPrimary;
   static const Color primary = brownSecondary;
   static const Color primarySoft = beigePrimary;
@@ -26,7 +26,7 @@ class AppColors {
   static const Color info = terracotta;
   static const Color secondary = brownSecondary;
 
-  // Muted category colors retained for charts and non-status comparisons.
+  // Couleurs de categorie attenuees conservees pour les graphiques et comparaisons non semantiques.
   static const Color cyan = Color(0xFF6F8A8A);
   static const Color violet = Color(0xFF8A6F8A);
   static const Color sidebarText = Color(0xFFF9F1E7);

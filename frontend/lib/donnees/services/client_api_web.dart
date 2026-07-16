@@ -107,8 +107,8 @@ Future<ReponseOctetsHttp> envoyerRequeteOctetsHttp({
 
 Future<bool> _serveurJoignableSansCors(Uri uri) async {
   try {
-    // A successful no-cors probe only proves that this API origin is reachable.
-    // The browser refusal of the original XHR is the separate signal reported.
+    // Une sonde no-cors reussie prouve seulement que cette origine est joignable.
+    // Le refus du XHR original par le navigateur est le signal rapporte separement.
     await html.window.fetch(
       uri.toString(),
       {'mode': 'no-cors', 'cache': 'no-store'},

@@ -1,4 +1,3 @@
-import '../donnees_fictives/donnees_faculte_fictives.dart';
 import '../modeles/modeles_faculte.dart';
 
 abstract class FacultyRepository {
@@ -15,60 +14,6 @@ abstract class FacultyRepository {
   Future<List<FacultyNotification>> fetchNotifications();
   Future<List<ActivityItem>> fetchRecentActivities();
   Future<List<ApparitorInsight>> fetchApparitorInsights();
-}
-
-class MockFacultyRepository implements FacultyRepository {
-  const MockFacultyRepository();
-
-  @override
-  Future<List<Complaint>> fetchComplaints() async => MockFacultyData.complaints;
-
-  @override
-  Future<List<CourseGrade>> fetchGrades() async => MockFacultyData.grades;
-
-  @override
-  Future<List<AcademicHistory>> fetchAcademicHistory() async =>
-      MockFacultyData.academicHistory;
-
-  @override
-  Future<List<InternshipOffer>> fetchInternshipOffers() async =>
-      MockFacultyData.internshipOffers;
-
-  @override
-  Future<List<InternshipApplication>> fetchInternshipApplications() async =>
-      MockFacultyData.internshipApplications;
-
-  @override
-  Future<List<PartnerCompany>> fetchPartnerCompanies() async =>
-      MockFacultyData.partnerCompanies;
-
-  @override
-  Future<List<AcademicProject>> fetchProjects() async =>
-      MockFacultyData.projects;
-
-  @override
-  Future<List<RiskStudent>> fetchRiskStudents() async =>
-      MockFacultyData.riskStudents;
-
-  @override
-  Future<List<CourseAssignment>> fetchCourseAssignments() async =>
-      MockFacultyData.courseAssignments;
-
-  @override
-  Future<List<PromotionStudent>> fetchPromotionStudents() async =>
-      MockFacultyData.promotionStudents;
-
-  @override
-  Future<List<FacultyNotification>> fetchNotifications() async =>
-      MockFacultyData.notifications;
-
-  @override
-  Future<List<ActivityItem>> fetchRecentActivities() async =>
-      MockFacultyData.recentActivities;
-
-  @override
-  Future<List<ApparitorInsight>> fetchApparitorInsights() async =>
-      MockFacultyData.apparitorInsights;
 }
 
 class ApiFacultyRepository implements FacultyRepository {
@@ -132,5 +77,5 @@ class ApiFacultyRepository implements FacultyRepository {
 }
 
 class FacultyDataSource {
-  static FacultyRepository repository = const MockFacultyRepository();
+  static FacultyRepository repository = ApiFacultyRepository(baseUrl: '');
 }

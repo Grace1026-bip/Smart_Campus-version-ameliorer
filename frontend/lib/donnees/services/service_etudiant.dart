@@ -113,6 +113,22 @@ class EtudiantApiService {
     return ApiDataSource.client.get('/etudiants/moi/projets/$id');
   }
 
+  Future<Map<String, dynamic>> soumettreProjet({
+    required String titre,
+    required String typeProjet,
+    String? description,
+  }) async {
+    return ApiDataSource.client.post(
+      '/etudiants/moi/projets',
+      body: {
+        'titre': titre.trim(),
+        'type_projet': typeProjet,
+        if (description != null && description.trim().isNotEmpty)
+          'description': description.trim(),
+      },
+    );
+  }
+
   Future<Map<String, dynamic>> modifierProfil(
     Map<String, dynamic> donnees,
   ) async {

@@ -36,7 +36,7 @@ class StudentNotesScreen extends StatelessWidget {
           final notes = snapshot.data?['notes'] as List<dynamic>? ?? const [];
           if (notes.isEmpty) {
             return const SectionPanel(
-              title: 'Aucune note publiee',
+              title: 'Aucune note publiee pour le moment',
               subtitle: 'Les evaluations non publiees restent invisibles.',
               child: SizedBox.shrink(),
             );

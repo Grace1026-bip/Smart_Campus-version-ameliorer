@@ -1,5 +1,28 @@
 # Reconnaissance faciale MVP - Prompt 7C-A
 
+## Finalisation urgente - 2026-07-16
+
+Le moteur reel est maintenant disponible et importable dans `backend/.venv`.
+Les images sont decodees par Pillow puis analysees par `face_recognition` ;
+FastAPI n'utilise ni `cv.VideoCapture`, ni `cv.imshow`, ni boucle camera.
+La camera reste dans Flutter.
+
+La reconnaissance exige exactement trois captures. Chaque capture doit
+contenir exactement un visage ; les captures doivent correspondre au meme
+profil et chaque distance doit rester strictement sous 0,5. Le meilleur profil
+est selectionne par `numpy.argmin` sur la distance moyenne. Un profil sans
+encodage actif, un visage inconnu, une distance a 0,5 ou une incoherence
+refuse la reconnaissance sans creer de presence. La reponse expose seulement
+la decision, la distance moyenne et l'etudiant necessaire au controle ; elle
+n'expose ni encodage ni image.
+
+Validation : 185 tests backend reussis deux fois, dont les tests biometrie et
+les tests d'import du moteur reel ; 70 tests Flutter reussis deux fois ;
+build Web release reussi ; health checks FastAPI HTTP 200. La reconnaissance
+positive par camera n'est pas declaree validee automatiquement : elle exige
+un visage reel autorise, un consentement et une captation manuelle dans
+Chrome. L'anti-spoofing et la vivacite avancee restent hors perimetre.
+
 ## Perimetre et statut
 
 Le Prompt 7C-A pose la fondation biométrique de Smart Faculty et ajoute un

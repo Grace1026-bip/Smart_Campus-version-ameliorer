@@ -28,9 +28,9 @@ class ApparitorAssistantScreen extends StatelessWidget {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 

@@ -49,16 +49,25 @@ class _StudentProjectsScreenState extends State<StudentProjectsScreen> {
           }
           final projets = snapshot.data ?? const [];
           if (projets.isEmpty) {
-            return const _StatePanel(
-              title: 'Aucun projet academique',
-              message:
-                  'Aucun projet academique ne vous est actuellement attribue.',
-              icon: Icons.work_outline_rounded,
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _SubmitProjectButton(onPressed: _showSubmission),
+                const SizedBox(height: 16),
+                const _StatePanel(
+                  title: 'Aucun projet academique',
+                  message:
+                      'Aucun projet academique ne vous est actuellement attribue.',
+                  icon: Icons.work_outline_rounded,
+                ),
+              ],
             );
           }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              _SubmitProjectButton(onPressed: _showSubmission),
+              const SizedBox(height: 16),
               for (final item in projets) ...[
                 _ProjectCard(
                     item: _map(item), onDetail: () => _showDetail(_map(item))),
@@ -69,6 +78,105 @@ class _StudentProjectsScreenState extends State<StudentProjectsScreen> {
         },
       ),
     );
+  }
+
+  Future<void> _showSubmission() async {
+    final titre = TextEditingController();
+    final description = TextEditingController();
+    var typeProjet = 'genie_logiciel';
+    var erreur = '';
+    final soumis = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Soumettre mon projet'),
+          content: SizedBox(
+            width: 560,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titre,
+                    decoration: const InputDecoration(labelText: 'Titre'),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: typeProjet,
+                    decoration: const InputDecoration(labelText: 'Type de projet'),
+                    items: const [
+                      DropdownMenuItem(value: 'reseaux', child: Text('Reseaux')),
+                      DropdownMenuItem(
+                        value: 'systemes_embarques',
+                        child: Text('Systemes embarques'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'intelligence_artificielle',
+                        child: Text('Intelligence artificielle'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'genie_logiciel',
+                        child: Text('Genie logiciel'),
+                      ),
+                    ],
+                    onChanged: (value) => setDialogState(
+                      () => typeProjet = value ?? typeProjet,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: description,
+                    minLines: 3,
+                    maxLines: 5,
+                    decoration: const InputDecoration(labelText: 'Description (facultative)'),
+                  ),
+                  if (erreur.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(erreur, style: const TextStyle(color: AppColors.danger)),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                if (titre.text.trim().length < 3) {
+                  setDialogState(() => erreur = 'Le titre doit comporter au moins 3 caracteres.');
+                  return;
+                }
+                try {
+                  await EtudiantDataSource.service.soumettreProjet(
+                    titre: titre.text,
+                    typeProjet: typeProjet,
+                    description: description.text,
+                  );
+                  if (dialogContext.mounted) Navigator.pop(dialogContext, true);
+                } on ApiException catch (error) {
+                  if (dialogContext.mounted) {
+                    setDialogState(() => erreur = error.messagePourUtilisateur);
+                  }
+                }
+              },
+              icon: const Icon(Icons.send_rounded),
+              label: const Text('Soumettre'),
+            ),
+          ],
+        ),
+      ),
+    );
+    titre.dispose();
+    description.dispose();
+    if (soumis == true && mounted) {
+      setState(() => _future = EtudiantDataSource.service.projetsAcademiques());
+    }
   }
 
   Future<void> _showDetail(Map<String, dynamic> item) async {
@@ -141,6 +249,22 @@ class _StudentProjectsScreenState extends State<StudentProjectsScreen> {
       ),
     );
   }
+}
+
+class _SubmitProjectButton extends StatelessWidget {
+  const _SubmitProjectButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) => Align(
+        alignment: Alignment.centerLeft,
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: const Icon(Icons.add_task_rounded),
+          label: const Text('Soumettre mon projet'),
+        ),
+      );
 }
 
 class _ProjectCard extends StatelessWidget {

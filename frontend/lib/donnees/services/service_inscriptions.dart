@@ -112,6 +112,22 @@ abstract class InscriptionService {
 class ApiInscriptionService implements InscriptionService {
   const ApiInscriptionService();
 
+  Future<List<dynamic>> demandesDoyen() async {
+    final data = await ApiDataSource.client.get('/inscriptions/demandes-compte');
+    return data['elements'] as List<dynamic>? ?? const [];
+  }
+
+  Future<Map<String, dynamic>> approuverDoyen(int id) {
+    return ApiDataSource.client.post('/inscriptions/demandes-compte/$id/approuver');
+  }
+
+  Future<Map<String, dynamic>> rejeterDoyen(int id, {String? motif}) {
+    return ApiDataSource.client.post(
+      '/inscriptions/demandes-compte/$id/rejeter',
+      body: {if (motif != null && motif.trim().isNotEmpty) 'motif': motif.trim()},
+    );
+  }
+
   @override
   Future<DemandeInscription> creerDemande(
     DemandeInscriptionPayload payload,

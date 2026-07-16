@@ -137,8 +137,7 @@ class _AcademicResultsScreenState extends State<AcademicResultsScreen> {
       return SectionPanel(
         title: 'Apercu indisponible',
         subtitle: _erreur.toString(),
-        child: const Text(
-            'Les resultats academiques ne peuvent pas etre charges.'),
+        child: Text(_erreur.toString()),
       );
     }
     if (!_estEtudiant && _etudiants.isEmpty) {
@@ -165,7 +164,7 @@ class _AcademicResultsScreenState extends State<AcademicResultsScreen> {
             if (_estEtudiant &&
                 ((_officiel?['resultats'] as List<dynamic>?)?.isEmpty ?? true))
               const SectionPanel(
-                  title: 'Resultat en attente de deliberation',
+                  title: 'Aucun resultat publie pour le moment',
                   subtitle: 'Ce resultat n est pas encore officiel.',
                   child: SizedBox.shrink()),
             if (_estEtudiant &&

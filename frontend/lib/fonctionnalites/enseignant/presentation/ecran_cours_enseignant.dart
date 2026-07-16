@@ -794,16 +794,16 @@ class _ErrorPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionPanel(
-      title: 'Connexion API impossible',
+      title: 'Donnees indisponibles',
       subtitle: message,
-      child: const Text(ApiConfig.serverUnavailableMessage),
+      child: Text(message),
     );
   }
 }
 
 String _messageErreur(Object error) {
   if (error is ApiException) return error.messagePourUtilisateur;
-  return ApiConfig.serverUnavailableMessage;
+  return 'Les donnees ne peuvent pas etre chargees pour le moment.';
 }
 
 StatusBadge _notesBadge(String status) {

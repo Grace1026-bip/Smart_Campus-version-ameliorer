@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController(
     text: 'admin@smartfaculty.test',
   );
-  final _passwordController = TextEditingController(text: 'Smart@123456');
+  final _passwordController = TextEditingController();
   UserRole _selectedRole = UserRole.administrator;
   bool _passwordHidden = true;
   bool _loading = false;
@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   String _messageErreur(Object error) {
     if (error is ApiException) return error.messagePourUtilisateur;
-    return 'Le serveur FastAPI est inaccessible.';
+    return 'Une erreur inattendue est survenue. Veuillez reessayer.';
   }
 
   void _changeRole(UserRole role) {
@@ -119,21 +119,21 @@ class _LoginScreenState extends State<LoginScreen> {
   List<String> _defaultCredentials(UserRole role) {
     switch (role) {
       case UserRole.student:
-        return ['etudiant@smartfaculty.test', 'Smart@123456'];
+        return ['etudiant@smartfaculty.test', ''];
       case UserRole.teacher:
-        return ['enseignant@smartfaculty.test', 'Smart@123456'];
+        return ['enseignant@smartfaculty.test', ''];
       case UserRole.administrator:
-        return ['admin@smartfaculty.test', 'Smart@123456'];
+        return ['admin@smartfaculty.test', ''];
       case UserRole.apparitor:
-        return ['appariteur@smartfaculty.test', 'Smart@123456'];
+        return ['appariteur@smartfaculty.test', ''];
       case UserRole.surveillant:
-        return ['surveillant@smartfaculty.test', 'Smart@123456'];
+        return ['surveillant@smartfaculty.test', ''];
       case UserRole.promotionChief:
-        return ['chef.promotion@smartfaculty.test', 'Smart@123456'];
+        return ['chef.promotion@smartfaculty.test', ''];
       case UserRole.dean:
-        return ['doyen@smartfaculty.test', 'Smart@123456'];
+        return ['doyen@smartfaculty.test', ''];
       case UserRole.viceDean:
-        return ['vice.doyen@smartfaculty.test', 'Smart@123456'];
+        return ['vice.doyen@smartfaculty.test', ''];
     }
   }
 }
@@ -168,7 +168,7 @@ class _InstitutionPanel extends StatelessWidget {
           ),
           SizedBox(height: 14),
           Text(
-            'Un espace unique pour suivre notes, reclamations, stages, projets, profils et indicateurs de la faculte.',
+            'Un espace unique pour suivre notes, reclamations, stages, projets, profils et indicateurs de la faculté.',
             style: TextStyle(
               color: AppColors.sidebarText,
               fontSize: 16,
@@ -182,8 +182,7 @@ class _InstitutionPanel extends StatelessWidget {
             runSpacing: 10,
             children: [
               _SignalChip(label: 'Donnees MySQL'),
-              _SignalChip(label: 'Responsive web/mobile'),
-              _SignalChip(label: 'API REST FastAPI'),
+              _SignalChip(label: 'Responsive web/mobile')
             ],
           ),
         ],
@@ -211,8 +210,8 @@ class _AcademicVisual extends StatelessWidget {
             children: [
               _VisualTile(
                 icon: Icons.account_balance_rounded,
-                label: 'Faculte',
-                value: 'FASI',
+                label: 'Moderne',
+                value: 'Facile',
                 color: Colors.white,
               ),
               SizedBox(width: 12),

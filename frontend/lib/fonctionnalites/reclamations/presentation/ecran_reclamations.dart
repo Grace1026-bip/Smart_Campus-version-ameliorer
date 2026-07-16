@@ -3,10 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../core/config/api_config.dart';
 import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
-import '../../../donnees/donnees_fictives/donnees_faculte_fictives.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/service_enseignant.dart';
 import '../../../donnees/services/service_etudiant.dart';
+import '../../../donnees/services/service_reclamations.dart';
+import '../../../donnees/services/service_api.dart';
 import '../../../donnees/services/service_session.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/grille_adaptative.dart';
@@ -23,9 +24,6 @@ class ComplaintsScreen extends StatefulWidget {
 }
 
 class _ComplaintsScreenState extends State<ComplaintsScreen> {
-  ComplaintStatus? _statusFilter;
-  ComplaintType? _typeFilter;
-
   @override
   Widget build(BuildContext context) {
     final role = SessionService.currentRole;
@@ -36,185 +34,9 @@ class _ComplaintsScreenState extends State<ComplaintsScreen> {
       return const _TeacherComplaintsScreen();
     }
 
-    final config = _configForRole(role);
-    final scopedComplaints = _complaintsForRole(role);
-    final complaints = scopedComplaints.where((complaint) {
-      final statusOk =
-          _statusFilter == null || complaint.status == _statusFilter;
-      final typeOk = _typeFilter == null || complaint.type == _typeFilter;
-      return statusOk && typeOk;
-    }).toList();
-
-    return SmartFacultyShell(
-      role: role,
-      selectedRoute: AppRoutes.complaints,
-      title: config.title,
-      subtitle: config.subtitle,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ResponsiveGrid(children: _buildStats(scopedComplaints, role)),
-          const SizedBox(height: 22),
-          if (config.canSubmit) ...[
-            SectionPanel(
-              title: config.formTitle,
-              subtitle: config.formSubtitle,
-              child: _ComplaintForm(role: role),
-            ),
-            const SizedBox(height: 22),
-          ],
-          SectionPanel(
-            title: 'Filtres',
-            subtitle: config.filterSubtitle,
-            child: Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                SizedBox(
-                  width: 240,
-                  child: DropdownButtonFormField<ComplaintStatus?>(
-                    initialValue: _statusFilter,
-                    decoration: const InputDecoration(labelText: 'Statut'),
-                    items: [
-                      const DropdownMenuItem<ComplaintStatus?>(
-                        value: null,
-                        child: Text('Tous les statuts'),
-                      ),
-                      for (final status in ComplaintStatus.values)
-                        DropdownMenuItem<ComplaintStatus?>(
-                          value: status,
-                          child: Text(status.label),
-                        ),
-                    ],
-                    onChanged: (value) => setState(() => _statusFilter = value),
-                  ),
-                ),
-                SizedBox(
-                  width: 260,
-                  child: DropdownButtonFormField<ComplaintType?>(
-                    initialValue: _typeFilter,
-                    decoration: const InputDecoration(labelText: 'Type'),
-                    items: [
-                      const DropdownMenuItem<ComplaintType?>(
-                        value: null,
-                        child: Text('Tous les types'),
-                      ),
-                      for (final type in ComplaintType.values)
-                        DropdownMenuItem<ComplaintType?>(
-                          value: type,
-                          child: Text(type.label),
-                        ),
-                    ],
-                    onChanged: (value) => setState(() => _typeFilter = value),
-                  ),
-                ),
-                OutlinedButton.icon(
-                  onPressed: () => setState(() {
-                    _statusFilter = null;
-                    _typeFilter = null;
-                  }),
-                  icon: const Icon(Icons.filter_alt_off_rounded),
-                  label: const Text('Reinitialiser'),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-          SmartTable(
-            title: config.listTitle,
-            subtitle: '${complaints.length} demande(s) affichee(s).',
-            columns: const [
-              DataColumn(label: Text('ID')),
-              DataColumn(label: Text('Objet')),
-              DataColumn(label: Text('Type')),
-              DataColumn(label: Text('Demandeur')),
-              DataColumn(label: Text('Priorite')),
-              DataColumn(label: Text('Statut')),
-              DataColumn(label: Text('Action')),
-            ],
-            rows: [
-              for (final complaint in complaints)
-                DataRow(
-                  cells: [
-                    DataCell(Text(complaint.id)),
-                    DataCell(Text(complaint.title)),
-                    DataCell(Text(complaint.type.label)),
-                    DataCell(Text(complaint.author)),
-                    DataCell(Text(complaint.priority)),
-                    DataCell(StatusBadge.complaint(complaint.status)),
-                    DataCell(
-                      TextButton.icon(
-                        onPressed: () => Navigator.of(context).pushNamed(
-                          AppRoutes.complaintDetail,
-                          arguments: complaint,
-                        ),
-                        icon: const Icon(Icons.open_in_new_rounded, size: 18),
-                        label: const Text('Detail'),
-                      ),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
+    return const _TreatmentComplaintsScreen();
   }
 
-  List<Widget> _buildStats(List<Complaint> complaints, UserRole role) {
-    final pending = complaints
-        .where((item) => item.status == ComplaintStatus.pending)
-        .length;
-    final inProgress = complaints
-        .where((item) => item.status == ComplaintStatus.inProgress)
-        .length;
-    final resolved = complaints
-        .where((item) => item.status == ComplaintStatus.resolved)
-        .length;
-
-    return [
-      StatCard(
-        metric: KpiMetric(
-          title: _totalTitle(role),
-          value: '${complaints.length}',
-          trend: _scopeLabel(role),
-          description: 'dans votre perimetre',
-        ),
-        icon: Icons.mark_email_unread_rounded,
-        color: AppColors.primary,
-      ),
-      StatCard(
-        metric: KpiMetric(
-          title: 'En attente',
-          value: '$pending',
-          trend: pending == 0 ? 'stable' : 'a suivre',
-          description: 'non traitee(s)',
-        ),
-        icon: Icons.schedule_rounded,
-        color: AppColors.warning,
-      ),
-      StatCard(
-        metric: KpiMetric(
-          title: 'En cours',
-          value: '$inProgress',
-          trend: inProgress == 0 ? 'calme' : 'actif',
-          description: 'dossier(s) ouvert(s)',
-        ),
-        icon: Icons.sync_rounded,
-        color: AppColors.cyan,
-      ),
-      StatCard(
-        metric: KpiMetric(
-          title: 'Resolues',
-          value: '$resolved',
-          trend: resolved == 0 ? 'a venir' : 'cloturees',
-          description: 'reponse apportee',
-        ),
-        icon: Icons.check_circle_rounded,
-        color: AppColors.success,
-      ),
-    ];
-  }
 }
 
 class _StudentComplaintsScreen extends StatefulWidget {
@@ -308,9 +130,9 @@ class _StudentComplaintsScreenState extends State<_StudentComplaintsScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -777,11 +599,9 @@ class _TeacherComplaintsScreenState extends State<_TeacherComplaintsScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(
-                ApiConfig.serverUnavailableMessage,
-              ),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -1119,96 +939,6 @@ StatusBadge _statusBadge(String status) {
   }
 }
 
-class _ComplaintForm extends StatelessWidget {
-  const _ComplaintForm({required this.role});
-
-  final UserRole role;
-
-  @override
-  Widget build(BuildContext context) {
-    final isChief = role == UserRole.promotionChief;
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 760;
-        final fields = [
-          DropdownButtonFormField<ComplaintType>(
-            initialValue:
-                isChief ? ComplaintType.schedule : ComplaintType.gradeError,
-            decoration: const InputDecoration(
-              labelText: 'Type de reclamation',
-              prefixIcon: Icon(Icons.category_rounded),
-            ),
-            items: ComplaintType.values
-                .map(
-                  (type) =>
-                      DropdownMenuItem(value: type, child: Text(type.label)),
-                )
-                .toList(),
-            onChanged: (_) {},
-          ),
-          TextField(
-            decoration: InputDecoration(
-              labelText: isChief ? 'Objet collectif' : 'Objet',
-              prefixIcon: const Icon(Icons.subject_rounded),
-            ),
-          ),
-        ];
-
-        return Column(
-          children: [
-            if (compact)
-              Column(
-                children: [
-                  for (final field in fields) ...[
-                    field,
-                    const SizedBox(height: 12),
-                  ],
-                ],
-              )
-            else
-              Row(
-                children: [
-                  for (final field in fields) ...[
-                    Expanded(child: field),
-                    const SizedBox(width: 12),
-                  ],
-                ],
-              ),
-            const SizedBox(height: 12),
-            TextField(
-              minLines: 3,
-              maxLines: 5,
-              decoration: InputDecoration(
-                labelText: isChief
-                    ? 'Expliquez la situation de la promotion'
-                    : 'Description',
-                alignLabelWithHint: true,
-                prefixIcon: const Icon(Icons.notes_rounded),
-              ),
-            ),
-            const SizedBox(height: 14),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton.icon(
-                onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('La reclamation est prete a etre transmise.'),
-                  ),
-                ),
-                icon: const Icon(Icons.send_rounded),
-                label: Text(
-                  isChief ? 'Soumettre pour la promotion' : 'Soumettre',
-                ),
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
 class _ComplaintRoleConfig {
   const _ComplaintRoleConfig({
     required this.title,
@@ -1296,66 +1026,70 @@ _ComplaintRoleConfig _configForRole(UserRole role) {
   }
 }
 
-List<Complaint> _complaintsForRole(UserRole role) {
-  final complaints = MockFacultyData.complaints;
-  final user = SessionService.currentUser;
+class _TreatmentComplaintsScreen extends StatelessWidget {
+  const _TreatmentComplaintsScreen();
 
-  switch (role) {
-    case UserRole.student:
-      return complaints.where((item) => item.author == user.name).toList();
-    case UserRole.teacher:
-      return complaints
-          .where((item) => item.type == ComplaintType.gradeError)
-          .toList();
-    case UserRole.promotionChief:
-      return complaints
-          .where((item) => item.author.contains('Promotion'))
-          .toList();
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-    case UserRole.administrator:
-    case UserRole.dean:
-      return complaints;
-    case UserRole.viceDean:
-      return complaints;
+  @override
+  Widget build(BuildContext context) {
+    final role = SessionService.currentRole;
+    final config = _configForRole(role);
+    return SmartFacultyShell(
+      role: role,
+      selectedRoute: AppRoutes.complaints,
+      title: config.title,
+      subtitle: config.subtitle,
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: ReclamationsDataSource.service.reclamationsTraitement(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return SectionPanel(
+              title: 'Donnees indisponibles',
+              subtitle: _apiMessage(snapshot.error!),
+              child: Text(_apiMessage(snapshot.error!)),
+            );
+          }
+          final payload = snapshot.data ?? const {};
+          final elements = payload['elements'] as List<dynamic>? ?? const [];
+          if (elements.isEmpty) {
+            return const SectionPanel(
+              title: 'Aucune reclamation',
+              child: Text('Aucune reclamation disponible pour ce compte.'),
+            );
+          }
+          return SmartTable(
+            title: config.listTitle,
+            subtitle: '${elements.length} demande(s) provenant de FastAPI.',
+            columns: const [
+              DataColumn(label: Text('ID')),
+              DataColumn(label: Text('Objet')),
+              DataColumn(label: Text('Categorie')),
+              DataColumn(label: Text('Statut')),
+              DataColumn(label: Text('Priorite')),
+            ],
+            rows: [
+              for (final item in elements)
+                if (item is Map)
+                  DataRow(cells: [
+                    DataCell(Text('${item['id'] ?? '-'}')),
+                    DataCell(Text('${item['objet'] ?? '-'}')),
+                    DataCell(Text('${item['categorie'] ?? '-'}')),
+                    DataCell(Text('${item['statut'] ?? '-'}')),
+                    DataCell(Text('${item['priorite'] ?? '-'}')),
+                  ]),
+            ],
+          );
+        },
+      ),
+    );
   }
 }
 
-String _scopeLabel(UserRole role) {
-  switch (role) {
-    case UserRole.student:
-      return 'personnel';
-    case UserRole.teacher:
-      return 'cours';
-    case UserRole.promotionChief:
-      return 'promotion';
-    case UserRole.dean:
-      return 'faculte';
-    case UserRole.viceDean:
-      return 'faculte';
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-      return 'apparitorat';
-    case UserRole.administrator:
-      return 'global';
-  }
-}
-
-String _totalTitle(UserRole role) {
-  switch (role) {
-    case UserRole.student:
-      return 'Mes demandes';
-    case UserRole.teacher:
-      return 'A traiter';
-    case UserRole.promotionChief:
-      return 'Collectives';
-    case UserRole.dean:
-    case UserRole.viceDean:
-    case UserRole.apparitor:
-    case UserRole.surveillant:
-    case UserRole.administrator:
-      return 'Total';
-  }
+String _apiMessage(Object error) {
+  if (error is ApiException) return error.messagePourUtilisateur;
+  return 'Les reclamations ne peuvent pas etre chargees pour le moment.';
 }
 
 int _asInt(dynamic value) {

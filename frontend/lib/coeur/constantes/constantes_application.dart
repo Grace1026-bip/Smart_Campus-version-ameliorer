@@ -2,9 +2,8 @@ class AppConstants {
   static const String appName = 'FASI Smart Faculty';
   static const String shortName = 'Smart Faculty';
   static const String facultyName = 'Faculte des Sciences Informatiques';
-  static const String demoEmail = 'demo@smartfaculty.cd';
   static const String apiFutureNote =
-      'Comptes test : etudiant@smartfaculty.test, enseignant@smartfaculty.test, appariteur@smartfaculty.test, doyen@smartfaculty.test, admin@smartfaculty.test. Mot de passe commun : Smart@123456.';
+      'Les comptes de demonstration sont fournis separement et leurs mots de passe ne sont jamais embarques dans l application.';
   /*static const String apiArchitectureNote =
       'Les espaces academiques consomment maintenant l API REST FastAPI.';*/
 

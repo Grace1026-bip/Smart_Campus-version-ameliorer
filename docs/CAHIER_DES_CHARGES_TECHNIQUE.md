@@ -1,5 +1,20 @@
 # Smart Faculty - Cahier des charges technique
 
+## Finalisation reconnaissance faciale - 2026-07-16
+
+Le moteur reel est charge depuis `backend/.venv` avec `dlib 20.0.1`,
+`face_recognition` importable, `numpy 2.4.6` et Pillow `12.3.0`. Aucune
+installation globale n'a ete effectuee. La reconnaissance traite exactement
+trois captures, exige un visage par capture, compare les encodages actifs avec
+`numpy.argmin`, applique un seuil strict inferieur a 0,5 et delegue toujours
+la decision au service central de controle des presences.
+
+Les tests biometrie utilisent un faux moteur pour les regles metier et une
+image synthetique sans visage pour le moteur reel. Aucune photo personnelle
+ou image originale n'est versionnee. `smart_faculty` est a `20260715_0011`
+avec les tables biometriques presentes mais sans profil ni encodage cree ;
+`smart_faculty_test` reste la seule base d'execution des tests.
+
 ## Role du document
 
 Ce document est la memoire technique permanente du projet Smart Faculty.
@@ -53,6 +68,24 @@ Toute prochaine modification doit rester coherente avec ces documents.
 - Schemas SQL initiaux archives dans `legacy/autres/bdd_initiale` et `legacy/php/backend_database`.
 - Migrations Alembic presentes dans `backend/alembic/versions`.
 - Les tests backend exigent une base separee dont le nom finit par `_test`.
+
+## Politique des donnees d affichage - 2026-07-16
+
+Les ecrans Flutter ne doivent pas afficher de compteurs, listes, notes,
+risques, reclamations, projets ou graphiques issus d un jeu de demonstration.
+Les valeurs metier sont calculees ou filtrees par FastAPI puis formatees par
+Flutter. Les services et ecrans reutilisent les routes existantes : espaces
+Etudiant, Enseignant, Appariteur, risques, reclamations, resultats et
+dashboard decisionnel.
+
+Lorsqu un role ne dispose d aucune route backend autorisee, l ecran affiche
+un etat explicite de donnees indisponibles. Cela distingue une absence reelle
+de donnees d une valeur zero et evite de presenter un prototype statique comme
+une information academique. Les stages et la consultation generique des
+projets restent signales comme non exposes tant qu un contrat FastAPI autorise
+n est pas disponible. Les tests de services peuvent utiliser des fakes, mais
+les tests et donnees de production ne lisent jamais `smart_faculty` comme jeu
+de test.
 
 ## Decisions techniques actuelles
 
@@ -778,3 +811,34 @@ biometriques. La validation compte 174 tests backend et 62 tests Flutter
 reussis lors de deux executions completes, sans erreur d'analyse Flutter, et
 un build Web release reussi. L'anti-spoofing et la vivacite renforcee sont
 hors perimetre et reportes au Prompt 7C-B.
+
+## Workflows de defense - 2026-07-15
+
+La migration additive `20260715_0011_workflows_defense` couvre les derniers
+workflows de demonstration. Un Etudiant authentifie soumet son projet via
+`POST /api/v1/etudiants/moi/projets`; le backend derive l'Etudiant, la
+promotion, l'annee active et l'enrolement valide du token. Flutter ne peut
+pas imposer `etudiant_id`, `promotion_id` ou une annee academique. Le statut
+initial est `en_attente_validation`; l'Appariteur peut approuver, rejeter ou
+demander une correction avec motif, sans effacer l'historique de decision.
+
+Les types autorises sont `reseaux`, `systemes_embarques`,
+`intelligence_artificielle` et `genie_logiciel`. Les encadrements existants
+restent la structure active ; les specialites servent au filtrage des
+enseignants. L'interface Etudiant permet la soumission et le suivi du statut,
+et l'espace Appariteur expose la decision et le motif sans reconstruire les
+tableaux de bord.
+
+Le workflow de compte reutilise `DemandeInscription`. Le Doyen peut consulter,
+approuver ou rejeter les demandes avec motif ; l'utilisateur n'est actif
+qu'apres approbation. Les demandes publiques de mot de passe sont stockees
+dans `demandes_reinitialisation_mot_de_passe`. A l'approbation, un jeton
+temporaire est genere, seul son hash est persiste, il expire apres une heure
+et ne peut etre utilise qu'une fois. Aucun mot de passe ni hash n'est expose
+au Doyen ou dans les journaux.
+
+Le script `backend/scripts/preparer_demo_defense.py` est un outil local
+explicitement confirme, limite a `smart_faculty`, sans suppression et sans
+seed de migration. Il ajoute les donnees marquees `DEFENSE-2026` : L1 a L4,
+20 Etudiants, 10 Enseignants, cours, inscriptions, publications, projets,
+encadrements et une seance de presence. Le mot de passe est fourni hors depot.

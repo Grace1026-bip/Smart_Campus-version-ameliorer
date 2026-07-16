@@ -244,16 +244,43 @@ void main() {
       () {
     expect(
       ApiException('Compte non actif', statusCode: 403).messagePourUtilisateur,
-      'Votre compte n’est pas actif.',
+      "Votre compte n'est pas actif.",
     );
     expect(
       ApiException('Role non autorise pour ce compte', statusCode: 403)
           .messagePourUtilisateur,
-      'Ce rôle n’est pas autorisé pour ce compte.',
+      "Ce role n'est pas autorise pour ce compte.",
     );
     expect(
       ApiException('Role invalide', statusCode: 422).messagePourUtilisateur,
-      'Le rôle sélectionné est invalide.',
+      'Le role selectionne est invalide.',
+    );
+  });
+
+  test('ApiException explique l absence du profil academique', () {
+    final erreur = ApiException(
+      'Profil etudiant indisponible',
+      statusCode: 403,
+    );
+
+    expect(
+      erreur.messagePourUtilisateur,
+      "Aucun profil etudiant n'est associe a ce compte.",
+    );
+    expect(erreur.toString(), erreur.messagePourUtilisateur);
+  });
+
+  test('ApiException distingue une session expiree des identifiants invalides',
+      () {
+    expect(
+      ApiException('Token invalide ou expire', statusCode: 401)
+          .messagePourUtilisateur,
+      'Votre session a expire. Veuillez vous reconnecter.',
+    );
+    expect(
+      ApiException('Email, mot de passe ou role incorrect', statusCode: 401)
+          .messagePourUtilisateur,
+      'Identifiants incorrects.',
     );
   });
 

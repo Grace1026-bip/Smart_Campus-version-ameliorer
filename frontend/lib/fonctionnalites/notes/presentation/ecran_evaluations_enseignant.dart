@@ -81,9 +81,9 @@ class _TeacherEvaluationsScreenState extends State<TeacherEvaluationsScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -638,7 +638,7 @@ class _TeacherNotesPanelState extends State<_TeacherNotesPanel> {
           return SectionPanel(
             title: 'Notes indisponibles',
             subtitle: snapshot.error.toString(),
-            child: const Text(ApiConfig.serverUnavailableMessage),
+            child: Text(snapshot.error.toString()),
           );
         }
 

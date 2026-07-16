@@ -22,13 +22,14 @@ autorises en developpement par la politique CORS FastAPI pour `localhost` et
 
 ## Comptes de test FastAPI
 
-Mot de passe commun : `Smart@123456`.
-
 - `etudiant@smartfaculty.test`
 - `enseignant@smartfaculty.test`
 - `appariteur@smartfaculty.test`
 - `doyen@smartfaculty.test`
 - `admin@smartfaculty.test`
+
+Les mots de passe de test sont fournis uniquement par l'environnement local
+et ne sont pas versionnes.
 
 ## Etat actuel
 

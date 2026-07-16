@@ -487,9 +487,9 @@ class _ErrorPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionPanel(
-      title: 'Connexion API impossible',
+      title: 'Donnees indisponibles',
       subtitle: message,
-      child: const Text(ApiConfig.serverUnavailableMessage),
+      child: Text(message),
     );
   }
 }

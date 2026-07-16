@@ -175,6 +175,23 @@ void main() {
     expect(fake.requests[7].uri.path,
         '/api/v1/appariteur/projets/12/encadrements/21/desactiver');
   });
+
+  test('AppariteurApiService enregistre une decision avec motif', () async {
+    final fake = _FakeHttp([
+      _jsonResponse(200, {'id': 12, 'statut': 'correction_demandee'}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final resultat = await const AppariteurApiService().decisionProjet(
+      projetId: 12,
+      action: 'correction',
+      motif: 'Precisier la methode.',
+    );
+
+    expect(resultat['statut'], 'correction_demandee');
+    expect(fake.requests.single.uri.path,
+        '/api/v1/appariteur/projets/12/decision');
+  });
 }
 
 class _FakeHttp {

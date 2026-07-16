@@ -31,33 +31,58 @@ class ApiException implements Exception {
   final Map<String, dynamic> errors;
 
   String get messagePourUtilisateur {
+    final texte = '$message ${errors.values.join(' ')}'
+        .toLowerCase()
+        .replaceAll('é', 'e')
+        .replaceAll('è', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('à', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('ô', 'o');
+
     switch (statusCode) {
       case 401:
-        return 'Email ou mot de passe incorrect.';
+        if (texte.contains('token') ||
+            texte.contains('session') ||
+            texte.contains('expire') ||
+            texte.contains('refresh')) {
+          return 'Votre session a expire. Veuillez vous reconnecter.';
+        }
+        return 'Identifiants incorrects.';
       case 403:
-        final texte = '$message ${errors.values.join(' ')}'.toLowerCase();
+        if (texte.contains('profil etudiant') ||
+            texte.contains('profil academique')) {
+          return "Aucun profil etudiant n'est associe a ce compte.";
+        }
+        if (texte.contains('profil enseignant')) {
+          return "Aucun profil enseignant n'est associe a ce compte.";
+        }
         if (texte.contains('non actif')) {
-          return 'Votre compte n’est pas actif.';
+          return "Votre compte n'est pas actif.";
         }
-        if (texte.contains('role') || texte.contains('rôle')) {
-          return 'Ce rôle n’est pas autorisé pour ce compte.';
+        if (texte.contains('role')) {
+          return "Ce role n'est pas autorise pour ce compte.";
         }
-        return 'Compte non autorise ou acces refuse.';
+        if (texte.contains('non inscrit') || texte.contains('inscription')) {
+          return "Ce compte n'est pas encore rattache a des donnees academiques.";
+        }
+        return 'Acces refuse pour cette operation.';
       case 422:
-        final texte = '$message ${errors.values.join(' ')}'.toLowerCase();
-        if (texte.contains('role') || texte.contains('rôle')) {
-          return 'Le rôle sélectionné est invalide.';
+        if (texte.contains('role')) {
+          return 'Le role selectionne est invalide.';
         }
         return 'Requete invalide. Verifiez les donnees saisies.';
       case 500:
-        return 'Le serveur FastAPI a rencontre une erreur.';
+        return 'Le serveur rencontre une erreur. Veuillez reessayer plus tard.';
       default:
-        return message;
+        return message.trim().isEmpty
+            ? 'Les donnees ne sont pas disponibles.'
+            : message;
     }
   }
 
   @override
-  String toString() => message;
+  String toString() => messagePourUtilisateur;
 }
 
 class ApiService {

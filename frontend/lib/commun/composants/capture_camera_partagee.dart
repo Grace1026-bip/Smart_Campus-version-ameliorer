@@ -4,11 +4,16 @@ import 'package:flutter/material.dart';
 class CaptureCameraPartagee extends StatefulWidget {
   const CaptureCameraPartagee({
     super.key,
-    required this.onCapturesTerminees,
+    this.onCapturesChangees,
+    this.onCapturesTerminees,
     this.titre = 'Capture faciale',
-  });
+  }) : assert(
+          onCapturesChangees != null || onCapturesTerminees != null,
+          'Un callback de capture est requis.',
+        );
 
-  final Future<void> Function(List<XFile> images) onCapturesTerminees;
+  final ValueChanged<List<XFile>>? onCapturesChangees;
+  final Future<void> Function(List<XFile> images)? onCapturesTerminees;
   final String titre;
 
   @override
@@ -113,22 +118,24 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
     if (_captureEnCours ||
         _traitement ||
         controller == null ||
-        !controller.value.isInitialized) {
+        !controller.value.isInitialized ||
+        _captures.length >= (widget.onCapturesTerminees == null ? 5 : 3)) {
       return;
     }
     setState(() => _captureEnCours = true);
     try {
       final image = await controller.takePicture();
       final captures = [..._captures, image];
-      if (captures.length == 3) {
-        setState(() {
-          _captures = captures;
-          _traitement = true;
-        });
-        await widget.onCapturesTerminees(captures);
-        if (mounted) setState(() => _traitement = false);
-      } else if (mounted) {
-        setState(() => _captures = captures);
+      if (mounted) setState(() => _captures = captures);
+      if (widget.onCapturesTerminees != null && captures.length == 3) {
+        if (mounted) setState(() => _traitement = true);
+        try {
+          await widget.onCapturesTerminees!(List.unmodifiable(captures));
+        } finally {
+          if (mounted) setState(() => _traitement = false);
+        }
+      } else {
+        widget.onCapturesChangees?.call(List.unmodifiable(captures));
       }
     } on CameraException catch (exception) {
       if (mounted) setState(() => _erreur = _messageCamera(exception));
@@ -143,6 +150,7 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
       _erreur = null;
       _traitement = false;
     });
+    widget.onCapturesChangees?.call(const []);
   }
 
   String _messageCamera(CameraException exception) {
@@ -161,7 +169,7 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
       children: [
         Text(widget.titre, style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
-        const Text('Verification de vivacite renforcee non encore activee.'),
+        const Text('Les captures restent temporaires jusqu a leur enregistrement.'),
         const SizedBox(height: 12),
         if (_initialisation)
           const Center(child: CircularProgressIndicator())
@@ -196,7 +204,7 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
                 ),
               ),
               const SizedBox(height: 8),
-              Text('Capture ${_captures.length + 1} sur 3'),
+              Text(_libelleCapture),
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -206,7 +214,14 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
                       icon: const Icon(Icons.flip_camera_android)),
                   FilledButton.icon(
                       onPressed:
-                          _captureEnCours || _traitement ? null : _capturer,
+                          _captureEnCours ||
+                                  _traitement ||
+                                  _captures.length >=
+                                      (widget.onCapturesTerminees == null
+                                          ? 5
+                                          : 3)
+                              ? null
+                              : _capturer,
                       icon: const Icon(Icons.camera_alt),
                       label: Text(_traitement ? 'Traitement...' : 'Capturer')),
                   IconButton(
@@ -219,5 +234,12 @@ class _CaptureCameraPartageeState extends State<CaptureCameraPartagee>
           ),
       ],
     );
+  }
+
+  String get _libelleCapture {
+    final maximum = widget.onCapturesTerminees == null ? 5 : 3;
+    return _captures.length >= maximum
+        ? 'Maximum de $maximum captures atteint'
+        : 'Capture ${_captures.length + 1} sur $maximum';
   }
 }

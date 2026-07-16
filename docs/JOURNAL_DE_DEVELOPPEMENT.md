@@ -1,5 +1,46 @@
 # Smart Faculty - Journal de developpement
 
+## 2026-07-16 - Audit des donnees statiques et branchement API
+
+L audit Flutter a identifie un ancien jeu `MockFacultyData` utilise par les
+ecrans Stages, Projets, Reclamations, Analyses, Notes, Risques et le dashboard
+Chef de promotion. Ce jeu a ete retire du code de production ainsi que du
+referentiel par defaut.
+
+Les ecrans qui disposent d une route active utilisent desormais les services
+FastAPI existants : dashboard decisionnel, risques par role, reclamations de
+traitement, seances de promotion et espaces academiques. Pour les stages et
+la consultation generique des projets, aucune route backend autorisee n a ete
+inventee : l interface affiche une indisponibilite explicite. Les valeurs
+metier ne sont donc plus remplacees par des nombres ou listes de demonstration.
+
+Cette intervention n ajoute ni migration ni ecriture dans `smart_faculty`.
+Les tests Flutter restent bases sur des fakes HTTP et les tests backend
+continuent d utiliser exclusivement `smart_faculty_test`.
+
+## 2026-07-16 - Finalisation reconnaissance faciale des presences
+
+L'audit a confirme la branche `main`, la chaine Alembic jusqu'a
+`20260715_0011` et les tables `profils_biometriques` et
+`encodages_faciaux` dans `smart_faculty`. La base principale contient zero
+profil et zero encodage biometrie apres verification en lecture seule ; aucun
+profil n'a ete cree sans consentement. Les tests ont utilise uniquement
+`smart_faculty_test`.
+
+Le moteur reel `face_recognition`/`dlib` est importable dans le venv backend.
+La reconnaissance exige trois captures, un seul visage par image, une
+distance moyenne strictement inferieure a 0,5 et une selection du meilleur
+profil par `numpy.argmin`. La route reutilise le controle d'acces central et
+reste idempotente. Les images originales et les encodages ne sont pas
+retournes.
+
+Les tests cibles biometrie passent a 9. Deux executions backend donnent
+185/185, deux executions Flutter donnent 70/70, le build Web release reussit,
+`flutter analyze` conserve uniquement les 14 informations historiques et les
+trois health checks retournent HTTP 200. Une reconnaissance positive avec une
+personne reelle doit encore etre realisee manuellement dans Chrome avec
+consentement ; elle ne doit pas etre simulee dans la documentation.
+
 ## 2026-07-13 - Prompt 4C-B2B-RDC - Decisions LMD avant implementation
 
 ### Decisions documentees
@@ -1335,3 +1376,33 @@ ni avertissement avec 14 informations historiques, build Web release reussi
 et health checks FastAPI HTTP 200. La verification interactive Chrome n'a pas
 pu etre realisee dans cette session, l'extension de controle etant
 indisponible et le port Flutter 52100 etant deja occupe.
+
+## 2026-07-15 - Derniers ajustements avant defense
+
+Une sauvegarde SQL de `smart_faculty` a ete creee avant toute evolution :
+`backend/sauvegardes/smart_faculty_avant_demo_defense_20260715_122703.sql`.
+La migration `20260715_0011_workflows_defense` a ensuite ete appliquee sur la
+base principale apres validation de la chaine Alembic sur
+`smart_faculty_test`. Elle ajoute les statuts de soumission de projet et la
+table des demandes de reinitialisation ; aucune table existante n'est
+supprimee.
+
+Le backend derive l'identite de l'Etudiant du token, verifie l'enrolement
+actif et bloque les doublons de projet. L'Appariteur traite une soumission
+avec `approuver`, `rejeter` ou `correction` et un motif obligatoire pour les
+deux derniers cas. Flutter propose la soumission Etudiant, la decision
+Appariteur et la demande publique de reinitialisation. Les types de projet
+sont controles par Pydantic et par l'enum SQL.
+
+Le script `preparer_demo_defense.py` exige `--confirmer`, refuse toute base
+autre que `smart_faculty`, ne supprime aucune donnee et utilise une variable
+d'environnement ou une saisie masquee pour le mot de passe. Deux executions
+successives ont reussi sans doublons. Les comptes de demonstration sont
+identifiables par le domaine `defense.*@smartfaculty.test`; leurs mots de
+passe ne sont pas documentes.
+
+Etat controle : 4 promotions de demonstration, 20 Etudiants, 10 Enseignants,
+20 projets, 16 encadrements et une seance de presence. Les tests Flutter
+passent a 68 et les cinq tests backend dedies passent sur `smart_faculty_test`.
+La suite backend complete, le build Web, les health checks et la verification
+du diff sont les controles de cloture de cette intervention.

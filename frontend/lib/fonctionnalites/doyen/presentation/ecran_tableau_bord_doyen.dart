@@ -5,6 +5,9 @@ import '../../../coeur/routes/routes_application.dart';
 import '../../../coeur/theme/couleurs_application.dart';
 import '../../../donnees/modeles/modeles_faculte.dart';
 import '../../../donnees/services/service_tableau_de_bord.dart';
+import '../../../donnees/services/service_api.dart';
+import '../../../donnees/services/service_inscriptions.dart';
+import '../../../donnees/services/service_reinitialisations.dart';
 import '../../../commun/mises_en_page/structure_adaptative.dart';
 import '../../../commun/composants/badge_statut.dart';
 import '../../../commun/composants/carte_statistique.dart';
@@ -53,9 +56,9 @@ class _DeanDashboardScreenState extends State<DeanDashboardScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -134,6 +137,8 @@ class _DeanDashboardScreenState extends State<DeanDashboardScreen> {
                 ],
               ),
               const SizedBox(height: 22),
+              const _DoyenWorkflowPanel(),
+              const SizedBox(height: 22),
               SmartTable(
                 title: 'Etudiants prioritaires',
                 subtitle: '${data.risques.length} signalement(s) recent(s).',
@@ -169,6 +174,171 @@ class _DeanDashboardScreenState extends State<DeanDashboardScreen> {
       ),
     );
   }
+}
+
+class _DoyenWorkflowPanel extends StatefulWidget {
+  const _DoyenWorkflowPanel();
+
+  @override
+  State<_DoyenWorkflowPanel> createState() => _DoyenWorkflowPanelState();
+}
+
+class _DoyenWorkflowPanelState extends State<_DoyenWorkflowPanel> {
+  final _inscriptions = const ApiInscriptionService();
+  final _reinitialisations = ReinitialisationsDataSource.service;
+  late Future<List<dynamic>> _demandes = _inscriptions.demandesDoyen();
+  late Future<List<dynamic>> _reset = _reinitialisations.demandesDoyen();
+
+  Future<void> _actualiser() async {
+    setState(() {
+      _demandes = _inscriptions.demandesDoyen();
+      _reset = _reinitialisations.demandesDoyen();
+    });
+  }
+
+  Future<void> _approuverCompte(int id) async {
+    try {
+      await _inscriptions.approuverDoyen(id);
+      await _actualiser();
+    } on ApiException catch (error) {
+      if (mounted) _message(error.messagePourUtilisateur);
+    }
+  }
+
+  Future<void> _rejeterCompte(int id) async {
+    final motif = await _motif('Rejeter la demande de compte');
+    if (motif == null) return;
+    try {
+      await _inscriptions.rejeterDoyen(id, motif: motif);
+      await _actualiser();
+    } on ApiException catch (error) {
+      if (mounted) _message(error.messagePourUtilisateur);
+    }
+  }
+
+  Future<String?> _motif(String titre) async {
+    final controller = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(titre),
+        content: TextField(
+          controller: controller,
+          minLines: 2,
+          maxLines: 4,
+          decoration: const InputDecoration(labelText: 'Motif'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('Confirmer'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return result?.isEmpty == true ? null : result;
+  }
+
+  void _message(String value) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(value)));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SectionPanel(
+      title: 'Demandes a traiter',
+      subtitle: 'Comptes et reinitialisations soumis a validation du Doyen.',
+      trailing: IconButton(
+        tooltip: 'Actualiser les demandes',
+        onPressed: _actualiser,
+        icon: const Icon(Icons.refresh_rounded),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          FutureBuilder<List<dynamic>>(
+            future: _demandes,
+            builder: (context, snapshot) => _requestList(
+              snapshot,
+              empty: 'Aucune demande de compte en attente.',
+              action: (item) => _decisionTile(
+                item,
+                onApprove: () => _approuverCompte(_id(item)),
+                onReject: () => _rejeterCompte(_id(item)),
+              ),
+            ),
+          ),
+          const Divider(height: 28),
+          FutureBuilder<List<dynamic>>(
+            future: _reset,
+            builder: (context, snapshot) => _requestList(
+              snapshot,
+              empty: 'Aucune demande de reinitialisation en attente.',
+              action: (item) => ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.lock_reset_rounded),
+                title: Text('${item['email'] ?? 'Compte'}'),
+                subtitle: Text('${item['statut'] ?? 'en_attente'}'),
+                trailing: const Text('Traitement API'),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _requestList(
+    AsyncSnapshot<List<dynamic>> snapshot, {
+    required String empty,
+    required Widget Function(Map<String, dynamic>) action,
+  }) {
+    if (snapshot.connectionState != ConnectionState.done) {
+      return const LinearProgressIndicator();
+    }
+    if (snapshot.hasError) return Text('Demandes indisponibles: ${snapshot.error}');
+    final items = snapshot.data ?? const [];
+    if (items.isEmpty) return Text(empty);
+    return Column(
+      children: [
+        for (final value in items)
+          if (value is Map<String, dynamic>) action(value),
+      ],
+    );
+  }
+
+  Widget _decisionTile(
+    Map<String, dynamic> item, {
+    required VoidCallback onApprove,
+    required VoidCallback onReject,
+  }) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const Icon(Icons.person_add_alt_1_rounded),
+      title: Text('${item['email'] ?? '-'}'),
+      subtitle: Text('${item['type_demande'] ?? 'compte'} - ${item['statut'] ?? '-'}'),
+      trailing: Wrap(
+        spacing: 6,
+        children: [
+          IconButton(
+            tooltip: 'Approuver',
+            onPressed: onApprove,
+            icon: const Icon(Icons.check_circle_outline_rounded, color: AppColors.success),
+          ),
+          IconButton(
+            tooltip: 'Rejeter',
+            onPressed: onReject,
+            icon: const Icon(Icons.cancel_outlined, color: AppColors.danger),
+          ),
+        ],
+      ),
+    );
+  }
+
+  int _id(Map<String, dynamic> item) =>
+      item['id'] is num ? (item['id'] as num).toInt() : int.parse('${item['id']}');
 }
 
 List<Widget> _statCards(_DecisionDashboardData data) {

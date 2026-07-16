@@ -1,5 +1,18 @@
 # Smart Faculty
 
+## Finalisation reconnaissance faciale - 2026-07-16
+
+Le moteur reel `face_recognition`/`dlib` est disponible dans `backend/.venv`.
+La route `POST /api/v1/surveillant/seances/{id}/reconnaissance-faciale`
+exige exactement trois captures JPEG ou PNG, refuse une distance moyenne
+superieure ou egale a 0,5 et reutilise le controle d'acces Presence central.
+Les images originales et les encodages ne sont jamais exposes dans la reponse.
+
+La base `smart_faculty` est a la revision `20260715_0011` et ses tables
+biometriques existent, sans profil ni encodage cree pendant cette intervention.
+Les tests utilisent exclusivement `smart_faculty_test`. La procedure de
+defense se trouve dans `docs/DEMONSTRATION_PRESENCES.md`.
+
 Smart Faculty est une application de gestion academique pour une faculte. Le projet couvre les comptes et parcours administrateur, etudiant, enseignant, appariteur, doyen et chef de promotion, avec des modules comme les notes, la valve academique, les reclamations, les notifications, les etudiants a risque et les tableaux de bord.
 
 ## Technologies officielles
@@ -54,6 +67,17 @@ Le module enseignant consulte ses projets et etudiants encadres via les routes
 le backend. L'attribution par l'appariteur et la consultation des encadreurs
 par l'etudiant restent reservees aux prochains modules. Voir
 `docs/PROJETS_ENCADREMENTS_MVP.md`.
+
+## Donnees d affichage
+
+Les compteurs, listes, notes, risques, reclamations, projets et indicateurs
+affiches en production proviennent des services FastAPI. L ancien jeu
+`MockFacultyData` a ete retire du code Flutter. Lorsqu aucun endpoint autorise
+n existe pour un role ou un module, l interface affiche un etat explicite de
+donnees indisponibles au lieu d afficher une valeur de demonstration.
+
+Les tests de services utilisent des fakes locaux pour verifier les contrats
+HTTP, mais aucune donnee fictive n est utilisee par les ecrans de production.
 
 ## Configuration backend
 
@@ -692,3 +716,30 @@ sans erreur ni avertissement avec 14 informations historiques, build Web
 release reussi et trois health checks FastAPI HTTP 200. La validation Chrome
 interactive reste a effectuer dans un environnement ou le navigateur et le
 port Flutter sont disponibles.
+
+## Derniers ajustements avant defense - 2026-07-15
+
+La migration additive `20260715_0011_workflows_defense` ajoute la soumission
+de projet par l'Etudiant derive du token, la decision Appariteur avec motif,
+et les demandes de reinitialisation de mot de passe a usage unique. Les routes
+principales sont `POST /api/v1/etudiants/moi/projets`,
+`POST /api/v1/appariteur/projets/{id}/decision` et les routes
+`/api/v1/auth/mot-de-passe-oublie/*`. Les types de projet sont controles par
+le backend.
+
+Le script `backend/scripts/preparer_demo_defense.py` prepare uniquement la
+base principale `smart_faculty` apres `--confirmer`. Il est idempotent,
+n'effectue aucune suppression et demande le mot de passe via
+`SMART_FACULTY_DEMO_PASSWORD` ou une saisie masquee. Aucun mot de passe n'est
+versionne. Une sauvegarde a ete creee dans
+`backend/sauvegardes/smart_faculty_avant_demo_defense_20260715_122703.sql`.
+
+La demonstration contient les promotions L1 a L4, des comptes de chaque role,
+des cours, enrolements, publications Valve, projets, encadrements et une
+seance de presence. Les demandes de compte et de mot de passe restent soumises
+a l'approbation du Doyen ; un compte ne devient actif qu'apres approbation.
+
+Validation de transmission : migration principale en `20260715_0011`,
+tests backend dedies reussis, 68 tests Flutter reussis et aucune modification
+de `.vscode/settings.json`. Les suites completes et le build Web restent les
+controles finaux a consigner apres la derniere execution.

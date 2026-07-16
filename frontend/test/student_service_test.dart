@@ -141,6 +141,24 @@ void main() {
   test('la navigation Etudiant expose Historique', () {
     expect(AppRoutes.studentHistory, '/student/history');
   });
+
+  test('EtudiantApiService soumet un projet avec une categorie controlee',
+      () async {
+    final fake = _FakeHttp([
+      _jsonResponse(201, {'id': 19, 'statut': 'en_attente_validation'}),
+    ]);
+    ApiDataSource.client = ApiService(envoyer: fake.send);
+
+    final resultat = await const EtudiantApiService().soumettreProjet(
+      titre: 'Laboratoire numerique',
+      typeProjet: 'reseaux',
+      description: 'Description de demonstration.',
+    );
+
+    expect(resultat['statut'], 'en_attente_validation');
+    expect(fake.requests.single.methode, 'POST');
+    expect(fake.requests.single.uri.path, '/api/v1/etudiants/moi/projets');
+  });
 }
 
 class _FakeHttp {

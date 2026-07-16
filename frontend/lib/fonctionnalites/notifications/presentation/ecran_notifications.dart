@@ -106,9 +106,9 @@ class _NotificationsApiScreenState extends State<_NotificationsApiScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(ApiConfig.serverUnavailableMessage),
+              child: Text(snapshot.error.toString()),
             );
           }
 
@@ -369,11 +369,9 @@ class _TeacherValveScreenState extends State<_TeacherValveScreen> {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: snapshot.error.toString(),
-              child: const Text(
-                ApiConfig.serverUnavailableMessage,
-              ),
+              child: Text(snapshot.error.toString()),
             );
           }
 

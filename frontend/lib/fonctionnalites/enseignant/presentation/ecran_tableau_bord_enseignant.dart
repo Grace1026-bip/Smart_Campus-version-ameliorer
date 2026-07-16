@@ -32,7 +32,7 @@ class TeacherDashboardScreen extends StatelessWidget {
           }
           if (snapshot.hasError) {
             return SectionPanel(
-              title: 'Connexion API impossible',
+              title: 'Donnees indisponibles',
               subtitle: _messageErreur(snapshot.error!),
               child: Text(_messageErreur(snapshot.error!)),
             );
@@ -385,5 +385,5 @@ String _initials(String name) {
 
 String _messageErreur(Object error) {
   if (error is ApiException) return error.messagePourUtilisateur;
-  return ApiConfig.serverUnavailableMessage;
+  return 'Les donnees ne peuvent pas etre chargees pour le moment.';
 }

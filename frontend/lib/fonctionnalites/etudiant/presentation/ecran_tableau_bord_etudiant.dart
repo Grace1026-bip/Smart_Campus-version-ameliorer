@@ -223,7 +223,7 @@ class _ErrorPanel extends StatelessWidget {
   const _ErrorPanel({required this.message});
   final String message;
   @override
-  Widget build(BuildContext context) => SectionPanel(title: 'Espace etudiant indisponible', subtitle: message, child: const Text('Verifiez votre session ou reessayez dans quelques instants.'));
+  Widget build(BuildContext context) => SectionPanel(title: 'Donnees academiques indisponibles', subtitle: message, child: Text(message));
 }
 
 Map<String, dynamic> _map(dynamic value) => value is Map<String, dynamic> ? value : const {};
